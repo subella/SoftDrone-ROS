@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>intel_aero_ros</name>
+  <version>0.0.0</version>
+  <description>Some quick utilities to work with the intel aero RTF drone</description>
+
+  <maintainer email="na26933@mit.edu">Nathan Hughes</maintainer>
+  <license>TODO</license>
+  <author email="na26933@mit.edu">Nathan Hughes</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>acl_msgs</exec_depend>
+  <exec_depend>optitrack_motive_2_client</exec_depend>
+  <exec_depend>mavros</exec_depend>
+
+  <export>
+  </export>
+</package>

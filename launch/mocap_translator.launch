@@ -1,0 +1,20 @@
+<launch>
+	<arg name="mocap_ip" default="192.168.1.12"/>
+
+	<arg name="gcs_ip" default=""/>
+    <arg name="forward_gcs" value="$(eval arg('gcs_ip') != '')"/>
+
+    <node name="mocap_wrapper" pkg="intel_aero_ros" type="mocap_wrapper">
+        <param name="mocap_ip" value="$(arg mocap_ip)"/>
+        <param name="publish_rate" value="50.0"/>
+	<remap from="vicon" to="/vicon"/>
+	<remap from="pose" to="/mavros/vision_pose/pose"/>
+    </node>
+
+	<node name="mavros" pkg="mavros" type="mavros_node" output="screen">
+		<param name="fcu_url" value="tcp://127.0.0.1:5760"/>
+		<param name="system_id" value="2"/>
+		<param if="$(arg forward_gcs)" name="gcs_url" value="udp://@$(arg gcs_ip)"/>
+	</node>
+
+</launch>

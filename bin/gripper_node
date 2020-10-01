@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+"""Node to control the gripper."""
+import rospy
+import std_msgs.msg 
+import serial
+
+idx = 0
+def set_idx(msg):
+    global idx
+    if msg.data >= 2:
+    	idx = msg.data
+
+
+def main(): 
+    rospy.init_node("gripper_node")
+
+    port = rospy.get_param("~serial_port", "/dev/ttyACM0")
+    baud_rate = rospy.get_param("~baud_rate", 57600)
+
+    waypoint_sub = rospy.Subscriber("target_index", std_msgs.msg.Int64, set_idx, queue_size=10)
+ 
+    open_lengths = [100, 100, 100, 100]
+    close_lengths = [80, 80, 160, 160]
+ 
+    with serial.Serial(port, baud_rate, timeout=.1) as arduino:
+        rospy.sleep(rospy.Duration(1.0))  # give the connection a second to settle
+
+        def send(array):
+            barray = bytearray(array)
+            msg = 'b' + str(barray) + '\n'
+            arduino.write(msg)
+
+        while not rospy.is_shutdown():
+            while arduino.in_waiting:
+                print(arduino.readline())
+            rospy.sleep(rospy.Duration(0.1))
+
+            if not idx%2:
+                send(open_lengths)
+            else:
+                send(close_lengths)
+
+ 
+ 
+if __name__ == "__main__":
+    main()
+                          

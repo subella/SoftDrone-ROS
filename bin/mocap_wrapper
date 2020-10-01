@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+import geometry_msgs.msg
+import acl_msgs.msg
+import subprocess
+import argparse
+import signal
+import socket
+import rospy
+import os
+
+
+class MocapTranslator:
+    """Class that listens to mocap pose and forwards to mavros."""
+
+    def __init__(self):
+        """Set up the publisher, subscriber and timer."""
+        pub_rate = rospy.get_param("~publish_rate", 50.0)
+        if pub_rate < 20.0:
+            rospy.logfatal("Publish rate must be >= 20.0, not {}".format(pub_rate))
+            rospy.signal_shutdown("invalid publish rate")
+        else:
+            self._pose_pub = rospy.Publisher(
+                "pose", geometry_msgs.msg.PoseStamped, queue_size=10
+            )
+            self._vicon_sub = rospy.Subscriber(
+                "vicon", acl_msgs.msg.ViconState, self._mocap_callback, tcp_nodelay=True
+            )
+            self._latest_pose = None
+
+            self._timer = rospy.Timer(
+                rospy.Duration(1.0 / pub_rate), self._timer_callback
+            )
+
+    def _mocap_callback(self, msg):
+        """Cache latest mocap pose."""
+        self._latest_pose = geometry_msgs.msg.PoseStamped()
+        self._latest_pose.header.stamp = rospy.Time.now()
+        self._latest_pose.pose.position.x = msg.pose.position.x
+        self._latest_pose.pose.position.y = msg.pose.position.y
+        self._latest_pose.pose.position.z = msg.pose.position.z
+        self._latest_pose.pose.orientation.x = msg.pose.orientation.x
+        self._latest_pose.pose.orientation.y = msg.pose.orientation.y
+        self._latest_pose.pose.orientation.z = msg.pose.orientation.z
+        self._latest_pose.pose.orientation.w = msg.pose.orientation.w
+
+    def _timer_callback(self, event):
+        """Send latest pose periodically if it exists."""
+        if self._latest_pose is not None:
+            self._pose_pub.publish(self._latest_pose)
+
+
+def start_mocap_node_process():
+    """Start mocap node process after verifying that server address is reachable."""
+    if not rospy.has_param("~mocap_ip"):
+        rospy.logfatal("Must supply the mocap ip parameter!")
+        rospy.signal_shutdown("no mocap_ip provided")
+    mocap_ip = rospy.get_param("~mocap_ip")
+
+    ret = 1
+    ping_rate = rospy.Rate(1)
+    with open(os.devnull, "w") as devnull:
+        while ret != 0 and not rospy.is_shutdown():
+            rospy.loginfo("Testing mocap connectivity via ping.")
+            # TODO(nathan) change this to run if we move to noetic
+            ret = subprocess.call(["ping", mocap_ip, "-c", "1"], stdout=devnull)
+            ping_rate.sleep()
+
+    # https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect((mocap_ip, 1))
+        local_ip = s.getsockname()[0]
+    except Exception as e:
+        rospy.logwarn(
+            "Unable to find local ip: {}. Something is probably wrong", e.what()
+        )
+        local_ip = "127.0.0.1"
+    finally:
+        s.close()
+
+    return subprocess.Popen(
+        [
+            "rosrun",
+            "optitrack_motive_2_client",
+            "optitrack_motive_2_client_node",
+            "--server",
+            mocap_ip,
+            "--local",
+            local_ip,
+        ]
+    )
+
+
+def main():
+    rospy.init_node("mavros_bridge")
+
+    mocap_proc = start_mocap_node_process()
+
+    try:
+        node = MocapTranslator()
+        rospy.spin()
+    finally:
+        mocap_proc.send_signal(signal.SIGINT)
+        mocap_proc.kill()
+        rospy.loginfo("waiting for mocap process to shutdown")
+        mocap_proc.wait()
+
+
+if __name__ == "__main__":
+    main()

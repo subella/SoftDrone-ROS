@@ -1,0 +1,8 @@
+- git:
+    local-name: acl_msgs
+    uri: https://bitbucket.org/brettlopez/acl_msgs.git
+    version: b13c12c368b1b392a6ccc321a30d1ce2dee940ac
+- git:
+    local-name: optitrack_motive_2_client
+    uri: https://github.com/AgileDrones/OptiTrack-Motive-2-Client.git
+    version: de03a25311c868444561ad98e75941fbb07b5d18

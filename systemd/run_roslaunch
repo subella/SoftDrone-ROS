@@ -1,0 +1,5 @@
+#!/bin/bash
+source ~/vnav_ws/devel/setup.bash
+source /etc/ros/env.sh
+export ROS_HOME=$(echo ~)/.ros
+roslaunch intel_aero_ros mocap_wrapper.launch
