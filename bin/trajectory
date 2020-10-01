@@ -5,6 +5,9 @@ import geometry_msgs.msg
 import mavros_msgs.msg
 import std_msgs.msg
 import numpy as np
+import enum
+import serial
+import math
 
 import inspect
 from os import path, sys
@@ -86,12 +89,14 @@ class WaypointNode:
             hover_pose = self._home_pose
             hover_pose.pose.position.z += 1.0
 
-            start_position = np.array(hover_pose.position)
-            end_position = start_position + [0.5, 0.0, -0.0])
-            tendon_target = end_position + [0, 0, -.150]
+            start_position = np.array([hover_pose.pose.position.x, hover_pose.pose.position.y, hover_pose.pose.position.z])
+            end_position = start_position + np.array([0.5, 0.0, -0.0])
+            tendon_target = end_position + np.array([0, 0, -.150])
 
-            positions, velocities, lengths = find_trajectory(start_position, end_position, tendon_target, 
+            print("Planning trajectory...")
+            positions, velocities, lengths = find_trajectory.find_trajectory(start_position, end_position, tendon_target, 
                                                              total_time=self._total_time, num_frames=self._num_frames)
+            print("Planned trajectory.")
 
             self._waypoints.append(("HOME", self._home_pose))
             self._waypoints.append(("TAKEOFF", hover_pose))
@@ -152,7 +157,7 @@ class WaypointNode:
             self._target_index_pub.publish(self._waypoint_index)
 
             tendon_index = self._waypoint_index - 2
-            if tendon_index < num_frames:
+            if tendon_index < self._num_frames:
                 self._send_lengths(self._lengths[tendon_index])
 
     def _check_pose(self):
@@ -165,6 +170,8 @@ class WaypointNode:
 
 def main():
     """Run everything."""
+    port = "/dev/ttyACM0"
+    baud_rate = 57600
     with serial.Serial(port, baud_rate, timeout=.1) as arduino:
         rospy.init_node("fly_waypoints")
 
@@ -172,3 +179,6 @@ def main():
 
         rospy.spin()
 
+
+if __name__ == "__main__":
+    main()
