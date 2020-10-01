@@ -101,7 +101,7 @@ class WaypointNode:
             self._waypoints.append(("HOME", self._home_pose))
             self._waypoints.append(("TAKEOFF", hover_pose))
 
-            for position in positions:
+            for i, position in enumerate(positions):
                 temp_pose = geometry_msgs.msg.PoseStamped()
                 temp_pose.pose.position.x = position[0]
                 temp_pose.pose.position.y = position[2]
@@ -110,7 +110,7 @@ class WaypointNode:
                 temp_pose.pose.orientation.x = 0.0
                 temp_pose.pose.orientation.y = 0.0
                 temp_pose.pose.orientation.z = 0.0
-                self._waypoints.append(temp_pose)
+                self._waypoints.append(('Trajectory {}'.format{i}, temp_pose))
 
             self._waypoints.append(("LAND", hover_pose))
             self._waypoints.append(("HOME", self._home_pose))
