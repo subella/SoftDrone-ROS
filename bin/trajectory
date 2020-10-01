@@ -72,7 +72,7 @@ class WaypointNode:
 
         self._arduino = arduino
 
-    def _send_lengths(array):
+    def _send_lengths(self, array):
             barray = bytearray([int(a) for a in array])
             msg = 'b' + str(barray) + '\n'
             self._arduino.write(msg)
