@@ -110,7 +110,7 @@ class WaypointNode:
                 temp_pose.pose.orientation.x = 0.0
                 temp_pose.pose.orientation.y = 0.0
                 temp_pose.pose.orientation.z = 0.0
-                self._waypoints.append(('Trajectory {}'.format{i}, temp_pose))
+                self._waypoints.append(('Trajectory {}'.format(i), temp_pose))
 
             self._waypoints.append(("LAND", hover_pose))
             self._waypoints.append(("HOME", self._home_pose))
