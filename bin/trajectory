@@ -104,7 +104,7 @@ class WaypointNode:
             for i, position in enumerate(positions):
                 temp_pose = geometry_msgs.msg.PoseStamped()
                 temp_pose.pose.position.x = position[0]
-                temp_pose.pose.position.y = position[2]
+                temp_pose.pose.position.y = position[1]
                 temp_pose.pose.position.z = position[2]
                 temp_pose.pose.orientation.w = 1.0
                 temp_pose.pose.orientation.x = 0.0
