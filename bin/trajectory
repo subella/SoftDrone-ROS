@@ -114,6 +114,7 @@ class WaypointNode:
 
             self._waypoints.append(("LAND", hover_pose))
             self._waypoints.append(("HOME", self._home_pose))
+            self._lengths = lengths
 
     def _timer_callback(self, msg):
         """Handle timer."""
