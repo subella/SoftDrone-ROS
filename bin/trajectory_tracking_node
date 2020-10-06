@@ -1,0 +1,228 @@
+#!/usr/bin/env python
+"""Script to get a positions/velocities/lengths trajectory."""
+import rospy
+import geometry_msgs.msg
+import mavros_msgs.msg
+import std_msgs.msg
+import numpy as np
+import enum
+import math
+
+import importlib
+import pathlib
+import sys
+
+
+class State(enum.Enum):
+    """Current state of the node."""
+
+    WAITING_FOR_HOME = 0
+    WAITING_FOR_ARM = 1
+    TAKEOFF = 2
+    MOVING_TO_START = 3
+    EXECUTING_MISSION = 4
+    MOVING_TO_HOME = 5
+    FINISHED = 6
+
+
+class TrajectoryTrackingNode:
+    """Class for tracking a trajectory."""
+
+    def __init__(self, positions, twists, lengths):
+        """Set everything up."""
+        control_rate = rospy.get_param("~control_rate", 100)
+        if control_rate < 20.0:
+            rospy.logfatal("Invalid control rate, must be above 20 hz")
+            rospy.signal_shutdown("invalid control rate")
+            return
+
+        self._dist_threshold = rospy.get_param("~dist_threshold", 0.2)
+
+        self._state_handlers = {
+            State.WAITING_FOR_HOME: self._handle_waiting_for_home,
+            State.WAITING_FOR_ARM: self._handle_waiting_for_arm,
+            State.TAKEOFF: self._handle_takeoff,
+            State.MOVING_TO_START: self._handle_moving_to_start,
+            State.EXECUTING_MISSION: self._handle_executing_mission,
+            State.MOVING_TO_HOME: self._handle_moving_to_home,
+            State.FINISHED: self._handle_finished,
+        }
+
+        self._state = State.WAITING_FOR_HOME
+        self._waypoint_index = 0
+        self._current_state = None
+        self._current_pose = None
+        self._home_pose = None
+
+        self._waypoints = positions
+        self._lengths = lengths
+
+        self._state_sub = rospy.Subscriber(
+            "state", mavros_msgs.msg.State, self._state_callback, queue_size=10
+        )
+        self._pose_sub = rospy.Subscriber(
+            "pose", geometry_msgs.msg.PoseStamped, self._pose_callback, queue_size=10
+        )
+        self._target_pub = rospy.Publisher(
+            "target", geometry_msgs.msg.PoseStamped, queue_size=10
+        )
+        self._lengths_pub = rospy.Publisher(
+            "lengths", std_msgs.msg.Int64MultiArray, queue_size=10
+        )
+        self._dist_pub = rospy.Publisher("dist", std_msgs.msg.Float64, queue_size=10)
+        self._timer = rospy.Timer(
+            rospy.Duration(1.0 / control_rate), self._timer_callback
+        )
+
+    def _handle_waiting_for_home(self):
+        """State handler for WAITING_FOR_HOME."""
+        have_home = self._home_pose is not None
+        return State.WAITING_FOR_ARM if have_home else State.WAITING_FOR_HOME
+
+    def _handle_waiting_for_arm(self):
+        """State handler for WAITING_FOR_ARM."""
+        armed = self._current_state is not None and self._current_state.armed
+        return State.TAKEOFF if armed else State.WAITING_FOR_ARM
+
+    def _handle_takeoff(self):
+        """State handler for TAKEOFF."""
+        self._send_target(self._home_pose)
+        finished = self._check_pose(self._home_pose)
+        return State.MOVING_TO_START if finished else State.TAKEOFF
+
+    def _handle_moving_to_start(self):
+        """State handle for MOVING_TO_START."""
+        self._send_target(self._waypoints[0])
+        finished = self._check_pose(self._waypoints[0])
+        return State.EXECUTING_MISSION if finished else State.MOVING_TO_START
+
+    def _handle_executing_mission(self):
+        """State handler for EXECUTING_MISSION."""
+        self._send_target(self._waypoints[self._waypoint_index])
+        self._send_lengths(self._lengths[self._waypoint_index])
+
+        finished = False
+        if self._check_pose(self._waypoints[self._waypoint_index]):
+            if self._waypoint_index < len(self._waypoints) - 1:
+                self._waypoint_index += 1
+                rospy.logwarn("Moving to waypoint: {}".format(self._waypoint_index))
+            else:
+                finished = True
+        return State.MOVING_TO_HOME if finished else State.EXECUTING_MISSION
+
+    def _handle_moving_to_home(self):
+        """State handle for MOVING_TO_START."""
+        self._send_target(self._home_pose)
+        finished = self._check_pose(self._home_pose)
+        return State.FINISHED if finished else State.MOVING_TO_HOME
+
+    def _handle_finished(self):
+        self._send_target(self._home_pose)
+        return State.FINISHED
+
+    def _send_target(self, position):
+        """Send a waypoint target to mavros."""
+        msg = geometry_msgs.msg.PoseStamped()
+        msg.header.stamp = rospy.Time.now()
+        msg.pose.position.x = position[0]
+        msg.pose.position.y = position[1]
+        msg.pose.position.z = position[2]
+        msg.pose.orientation.w = 1.0
+        msg.pose.orientation.x = 0.0
+        msg.pose.orientation.y = 0.0
+        msg.pose.orientation.z = 0.0
+        self._target_pub.publish(msg)
+
+    def _send_lengths(self, lengths):
+        """Set a length target to the gripper."""
+        msg = std_msgs.msg.Int64MultiArray()
+        msg.data = [int(1000 * length) for length in lengths]
+
+        msg_dim = std_msgs.msg.MultiArrayDimension()
+        msg_dim.label = "data"
+        msg_dim.size = 4
+        msg_dim.stride = 4
+
+        msg.layout.dim.append(msg_dim)
+        msg.layout.data_offset = 0
+        self._lengths_pub.publish(msg)
+
+    def _timer_callback(self, msg):
+        """Handle timer."""
+        if self._state not in self._state_handlers:
+            rospy.logfatal("State {} is not handled".format(self._state))
+            rospy.signal_shutdown("unhandled state")
+            return
+
+        rospy.logwarn_throttle(2.0, "Current state: {}".format(self._state))
+        self._state = self._state_handlers[self._state]()
+
+    def _state_callback(self, msg):
+        """Handle state callback."""
+        self._current_state = msg
+
+    def _pose_callback(self, msg):
+        """Handle pose callback."""
+        self._current_pose = msg
+        if self._home_pose is None:
+            self._home_pose = np.array(
+                [
+                    self._current_pose.pose.position.x,
+                    self._current_pose.pose.position.y,
+                    self._current_pose.pose.position.z + 1.0,
+                ]
+            )
+
+    def _check_pose(self, position):
+        """Check if we're close to a requested position."""
+        x_diff = self._current_pose.pose.position.x - position[0]
+        y_diff = self._current_pose.pose.position.y - position[1]
+        z_diff = self._current_pose.pose.position.z - position[2]
+        dist = math.sqrt(x_diff ** 2 + y_diff ** 2 + z_diff ** 2)
+        self._dist_pub.publish(dist)
+        return dist < self._dist_threshold
+
+
+def get_trajectory_planner():
+    """Import the trajectory planner code."""
+    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
+    sys.path.append(str(soft_drone_pydir))
+    return importlib.import_module("soft_drone_python.find_trajectory").find_trajectory
+
+
+def main():
+    """Run everything."""
+    rospy.init_node("trajectory_tracking")
+
+    total_time = rospy.get_param("~total_time", 2.5)
+    num_frames = rospy.get_param("~num_frames", 2)
+    rospy.logwarn(
+        "Planning trajectory with {} frames over {} seconds".format(
+            num_frames, total_time
+        )
+    )
+    planner = get_trajectory_planner()
+
+    start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.0]))
+    end_position = start_position + np.array(
+        rospy.get_param("~distance", [1.0, 0, -0.5])
+    )
+    tendon_target = end_position + np.array(rospy.get_param("~offset", [0, 0, -0.150]))
+
+    rospy.loginfo("Start: {}".format(start_position))
+    rospy.loginfo("End: {}".format(end_position))
+    rospy.loginfo("Tendon Target: {}".format(tendon_target))
+    positions, velocities, lengths = planner(
+        start_position,
+        end_position,
+        tendon_target,
+        total_time=total_time,
+        num_frames=num_frames,
+    )
+
+    node = TrajectoryTrackingNode(positions, velocities, lengths)  # NOQA
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    main()

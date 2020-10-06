@@ -1,47 +1,73 @@
 #!/usr/bin/env python
 """Node to control the gripper."""
 import rospy
-import std_msgs.msg 
+import std_msgs.msg
 import serial
 
-idx = 0
-def set_idx(msg):
-    global idx
-    if msg.data >= 2:
-    	idx = msg.data
+
+def _clip(x, low=0, high=255):
+    """Clip a number."""
+    if x < low:
+        return low
+    if x > high:
+        return high
+    return x
 
 
-def main(): 
+class GripperNode:
+    """Node to hold gripper data."""
+
+    def __init__(self):
+        """Grab the device and start up."""
+        self._port = rospy.get_param("~serial_port", "/dev/ttyACM0")
+        self._baud_rate = rospy.get_param("~baud_rate", 57600)
+        self._lengths_sub = rospy.Subscriber(
+            "lengths",
+            std_msgs.msg.Int64MultiArray,
+            self._length_callback,
+            queue_size=10,
+        )
+
+    def __enter__(self):
+        """Open the serial connection."""
+        self._serial_connection = serial.Serial(
+            self._port, self._baud_rate, timeout=0.1
+        )
+        rospy.sleep(rospy.Duration(1.0))  # wait for the connection to settle
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Close the serial connection."""
+        self._serial_connection.close()
+        return exc_type is None
+
+    def _length_callback(self, msg):
+        if len(msg.data) != 4:
+            rospy.log_err("Must provide EXACTLY four lengths!")
+        self._lengths = msg.data
+
+    def _send_lengths(self):
+        """Write the lengths straight to the gripper."""
+        to_send = [_clip(length) for length in self._lengths]
+        self._serial_connection.write("b{}\n".format(bytearray(to_send)))
+
+    def spin(self):
+        """Send lengths as long as ros is ok."""
+        while not rospy.is_shutdown():
+            while self._serial_connection.in_waiting:
+                rospy.log_debug(self._serial_connection.readline())
+
+            rospy.sleep(rospy.Duration(0.1))
+            self._send_lengths()
+
+
+def main():
+    """Run everything."""
     rospy.init_node("gripper_node")
 
-    port = rospy.get_param("~serial_port", "/dev/ttyACM0")
-    baud_rate = rospy.get_param("~baud_rate", 57600)
+    with GripperNode() as node:
+        node.spin()
 
-    waypoint_sub = rospy.Subscriber("target_index", std_msgs.msg.Int64, set_idx, queue_size=10)
- 
-    open_lengths = [100, 100, 100, 100]
-    close_lengths = [80, 80, 160, 160]
- 
-    with serial.Serial(port, baud_rate, timeout=.1) as arduino:
-        rospy.sleep(rospy.Duration(1.0))  # give the connection a second to settle
 
-        def send(array):
-            barray = bytearray(array)
-            msg = 'b' + str(barray) + '\n'
-            arduino.write(msg)
-
-        while not rospy.is_shutdown():
-            while arduino.in_waiting:
-                print(arduino.readline())
-            rospy.sleep(rospy.Duration(0.1))
-
-            if not idx%2:
-                send(open_lengths)
-            else:
-                send(close_lengths)
-
- 
- 
 if __name__ == "__main__":
     main()
-                          

@@ -5,13 +5,15 @@ import geometry_msgs.msg
 import mavros_msgs.msg
 import std_msgs.msg
 import enum
-import math
 
 
 class State(enum.Enum):
+    """Enum to capture waypoint following state."""
+
     WAITING_FOR_HOME = 0
     WAITING_FOR_ARM = 1
     EXECUTING_MISSION = 2
+    FINISHED = 3
 
 
 class WaypointNode:
@@ -115,6 +117,25 @@ class WaypointNode:
             self._waypoints.append(("LAND", hover_pose))
             self._waypoints.append(("HOME", self._home_pose))
 
+    def _send_waypoint(self, desired_index):
+        """Send a waypoint to the controller."""
+        to_send = geometry_msgs.msg.PoseStamped()
+        to_send.header.stamp = rospy.Time.now()
+        to_send.pose = self._waypoints[desired_index][1].pose
+        self._target_pub.publish(to_send)
+
+    def _should_increment_waypoint(self):
+        """Check if we need to update the waypoint."""
+        if self._last_pose_time is None:
+            self._last_pose_time = rospy.Time.now()
+
+        time_diff = rospy.Time.now() - self._last_pose_time
+        return time_diff > rospy.Duration(self._pose_timeout)
+
+    def _can_increment_waypoint(self):
+        """Check if there are waypoints left."""
+        return self._waypoint_index < len(self._waypoints) - 1
+
     def _timer_callback(self, msg):
         """Handle timer."""
         rospy.logwarn_throttle(2.0, "Current state: {}".format(self._waypoint_state))
@@ -126,51 +147,31 @@ class WaypointNode:
             if self._current_state is not None and self._current_state.armed:
                 self._waypoint_state = State.EXECUTING_MISSION
         elif self._waypoint_state == State.EXECUTING_MISSION:
-            if self._last_pose_time is None:
-                self._last_pose_time = rospy.Time.now()
-
-            time_diff = rospy.Time.now() - self._last_pose_time
-            need_new_waypoint = False
-
-            if self._check_pose():
-                need_new_waypoint = True
-            elif time_diff > rospy.Duration(self._pose_timeout):
-                if self._waypoint_index < len(self._waypoints) - 1:
-                    rospy.logerr("Waypoint {} timed out!".format(self._waypoint_index))
-                need_new_waypoint = True
-
-            if need_new_waypoint and self._waypoint_index < len(self._waypoints) - 1:
-                self._last_pose_time = rospy.Time.now()
-                self._waypoint_index += 1
-                rospy.logwarn(
-                    "Moving to waypoint: {}".format(
-                        self._waypoints[self._waypoint_index][0]
+            if self._should_increment_waypoint():
+                if not self._can_increment_waypoint():
+                    self._waypoint_state = State.FINISHED
+                else:
+                    self._last_pose_time = rospy.Time.now()
+                    self._waypoint_index += 1
+                    rospy.logwarn(
+                        "Moving to waypoint: {}".format(
+                            self._waypoints[self._waypoint_index][0]
+                        )
                     )
-                )
-            elif need_new_waypoint:
-                rospy.logwarn_throttle(5.0, "Finished path")
 
-            to_send = geometry_msgs.msg.PoseStamped()
-            to_send.header.stamp = rospy.Time.now()
-            to_send.pose = self._waypoints[self._waypoint_index][1].pose
-            self._target_pub.publish(to_send)
             self._target_index_pub.publish(self._waypoint_index)
+            self._send_waypoint(self._waypoint_index)
 
-    def _check_pose(self):
-        # waypoint_pose = self._waypoints[self._waypoint_index][1]
-        # x_diff = self._current_pose.pose.position.x - waypoint_pose.pose.position.x
-        # y_diff = self._current_pose.pose.position.y - waypoint_pose.pose.position.y
-        # z_diff = self._current_pose.pose.position.z - waypoint_pose.pose.position.z
-        # dist = math.sqrt(x_diff ** 2 + y_diff ** 2 + z_diff ** 2)
-        # return dist < self._dist_threshold
-        return False
+        elif self._waypoint_state == State.FINISHED:
+            self._send_waypoint(-1)
+            # TODO(nathan) publish an index to put the gripper in a land position
+
 
 def main():
     """Run everything."""
     rospy.init_node("fly_waypoints")
 
-    node = WaypointNode()
-
+    node = WaypointNode()  # NOQA
     rospy.spin()
 
 

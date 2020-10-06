@@ -1,12 +1,22 @@
 <launch>
 
-    <node pkg="intel_aero_ros" type="trajectory" name="fly_trajectory" output="screen">
+    <arg name="use_gripper" default="false"/>
+
+    <node pkg="intel_aero_ros" type="trajectory_tracking_node" name="trajectory_tracking_node" output="screen">
         <remap from="state" to="/mavros/state"/>
         <remap from="pose" to="/mavros/local_position/pose"/>
         <remap from="target" to="/mavros/setpoint_position/local"/>
-        <!-- pattern parameter controls -->
-        <param name="dist_threshold" value="0.3"/>
-        <param name="pose_timeout" value="3.0"/>
+        <remap from="lengths" to="/gripper/lengths"/>
+
+        <param name="num_frames" value="5"/>
+        <param name="dist_threshold" value="0.15"/>
+        <rosparam param="start_position">[0, 0, 2]</rosparam>
+        <rosparam param="distance">[1, 0, 1.5]</rosparam>
+        <rosparam param="offset">[0, 0, -0.150]</rosparam>
+    </node>
+
+    <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">
+        <remap from="lengths" to="/gripper/lengths"/>
     </node>
 
 </launch>

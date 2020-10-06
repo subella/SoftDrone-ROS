@@ -2,7 +2,7 @@
 
     <arg name="num_repeats" default="3"/>
 
-    <node pkg="intel_aero_ros" type="fly_waypoints" name="fly_waypoints" output="screen">
+    <node pkg="intel_aero_ros" type="pattern_follower_node" name="pattern_follower_node" output="screen">
         <remap from="state" to="/mavros/state"/>
         <remap from="pose" to="/mavros/local_position/pose"/>
         <remap from="target" to="/mavros/setpoint_position/local"/>
