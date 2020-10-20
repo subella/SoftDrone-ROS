@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import geometry_msgs.msg
-import acl_msgs.msg
 import subprocess
 import argparse
 import signal
@@ -23,7 +22,7 @@ class MocapTranslator:
                 "pose", geometry_msgs.msg.PoseStamped, queue_size=10
             )
             self._vicon_sub = rospy.Subscriber(
-                "vicon", acl_msgs.msg.ViconState, self._mocap_callback, tcp_nodelay=True
+                "vicon", geometry_msgs.msg.PoseStamped, self._mocap_callback, tcp_nodelay=True
             )
             self._latest_pose = None
 
@@ -33,15 +32,7 @@ class MocapTranslator:
 
     def _mocap_callback(self, msg):
         """Cache latest mocap pose."""
-        self._latest_pose = geometry_msgs.msg.PoseStamped()
-        self._latest_pose.header.stamp = rospy.Time.now()
-        self._latest_pose.pose.position.x = msg.pose.position.x
-        self._latest_pose.pose.position.y = msg.pose.position.y
-        self._latest_pose.pose.position.z = msg.pose.position.z
-        self._latest_pose.pose.orientation.x = msg.pose.orientation.x
-        self._latest_pose.pose.orientation.y = msg.pose.orientation.y
-        self._latest_pose.pose.orientation.z = msg.pose.orientation.z
-        self._latest_pose.pose.orientation.w = msg.pose.orientation.w
+	self._latest_pose = msg
 
     def _timer_callback(self, event):
         """Send latest pose periodically if it exists."""
@@ -55,6 +46,9 @@ def start_mocap_node_process():
         rospy.logfatal("Must supply the mocap ip parameter!")
         rospy.signal_shutdown("no mocap_ip provided")
     mocap_ip = rospy.get_param("~mocap_ip")
+    command_port = rospy.get_param("~command_port", 1510)
+    data_port = rospy.get_param("~command_port", 1511)
+    multicast_group = rospy.get_param("~multicast_group", "239.255.42.99")
 
     ret = 1
     ping_rate = rospy.Rate(1)
@@ -81,12 +75,13 @@ def start_mocap_node_process():
     return subprocess.Popen(
         [
             "rosrun",
-            "optitrack_motive_2_client",
-            "optitrack_motive_2_client_node",
-            "--server",
-            mocap_ip,
-            "--local",
-            local_ip,
+            "optitrack",
+            "optitrack",
+            "_server:={}".format(mocap_ip),
+            "_local:={}".format(local_ip),
+            "_command_port:={}".format(command_port),
+            "_data_port:={}".format(data_port),
+            "_multicast_group:={}".format(multicast_group),
         ]
     )
 

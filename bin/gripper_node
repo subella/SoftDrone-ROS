@@ -21,6 +21,7 @@ class GripperNode:
         """Grab the device and start up."""
         self._port = rospy.get_param("~serial_port", "/dev/ttyACM0")
         self._baud_rate = rospy.get_param("~baud_rate", 57600)
+        self._lengths = [121, 121, 138, 138]
         self._lengths_sub = rospy.Subscriber(
             "lengths",
             std_msgs.msg.Int64MultiArray,
@@ -55,7 +56,7 @@ class GripperNode:
         """Send lengths as long as ros is ok."""
         while not rospy.is_shutdown():
             while self._serial_connection.in_waiting:
-                rospy.log_debug(self._serial_connection.readline())
+                rospy.logdebug(self._serial_connection.readline())
 
             rospy.sleep(rospy.Duration(0.1))
             self._send_lengths()

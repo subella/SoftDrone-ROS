@@ -5,13 +5,14 @@
     <node pkg="intel_aero_ros" type="trajectory_tracking_node" name="trajectory_tracking_node" output="screen">
         <remap from="state" to="/mavros/state"/>
         <remap from="pose" to="/mavros/local_position/pose"/>
-        <remap from="target" to="/mavros/setpoint_position/local"/>
+        <remap from="target" to="/mavros/setpoint_raw/local"/>
         <remap from="lengths" to="/gripper/lengths"/>
+        <remap from="tendon_target" to="/sparkgraspobj/world"/>
 
-        <param name="num_frames" value="5"/>
+        <param name="num_frames" value="10"/>
         <param name="dist_threshold" value="0.15"/>
         <rosparam param="start_position">[0, 0, 2]</rosparam>
-        <rosparam param="distance">[1, 0, 1.5]</rosparam>
+        <rosparam param="distance">[1, 0, -0.5]</rosparam>
         <rosparam param="offset">[0, 0, -0.150]</rosparam>
     </node>
 
