@@ -14,7 +14,9 @@ def get_trajectory_planner():
     """Import the trajectory planner code."""
     soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
     sys.path.append(str(soft_drone_pydir))
-    return importlib.import_module("soft_drone_python.find_trajectory").find_trajectory
+    return importlib.import_module(
+        "soft_drone_python.find_trajectory"
+    ).find_trajectory_for_interp
 
 
 tendon_target = None
@@ -23,18 +25,23 @@ tendon_target = None
 def pose_handler(msg):
     """Wait for start pose."""
     global tendon_target
-    tendon_target = np.array(
-        [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
-    )
+    if tendon_target is None:
+        tendon_target = np.array(
+            [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
+        )
 
 
 def main():
     """Run everything."""
+    global tendon_target
     rospy.init_node("trajectory_tracking")
 
     total_time = rospy.get_param("~total_time", 2.5)
-    intermediate_time = total_time * 3.0 / 4
-    num_frames = rospy.get_param("~num_frames", 2)
+    intermediate_distance = rospy.get_param("~intermediate_distance", 0.1)
+    learning_rate = rospy.get_param("~learning_rate", 5.0)
+    gripper_latency = rospy.get_param("~gripper_latency", 0.5)
+    start_gripper_early = rospy.get_param("~start_gripper_early", False)
+
     planner = get_trajectory_planner()
 
     # TODO(nathan) make this cleaner
@@ -50,44 +57,41 @@ def main():
         rospy.logwarn("ROS shutdown before planning ocurred.")
         return
 
-    start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.0]))
-    end_position = tendon_target - np.array(rospy.get_param("~offset", [0, 0, -0.150]))
+    rospy.loginfo("Tendon Target before: {}".format(tendon_target))
+    mocap_offset = np.array(rospy.get_param("~mocap_offset", [0.25, 0, 0.0]))
+    rospy.loginfo("Mocap offset: {}".format(mocap_offset))
+    tendon_target = tendon_target + mocap_offset
 
-    rospy.logwarn(
-        "Planning trajectory with {} frames over {} seconds".format(
-            num_frames, total_time
-        )
-    )
+    start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
+    end_position = tendon_target - np.array(rospy.get_param("~offset", [0, 0, -0.150]))
+    start_position[0] = end_position[0]  # force planar trajectory
+    end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
+
     rospy.loginfo("Start: {}".format(start_position))
     rospy.loginfo("End: {}".format(end_position))
+    rospy.loginfo("End Velocity: {}".format(end_velocity))
     rospy.loginfo("Tendon Target: {}".format(tendon_target))
-    positions, velocities, lengths = planner(
+    polynomial, lengths = planner(
         start_position,
         end_position,
         tendon_target,
         total_time=total_time,
-        num_frames=num_frames,
-        intermediate_time=intermediate_time,
+        intermediate_distance=intermediate_distance,
         intermediate_objective="area",
+        end_velocity=end_velocity,
+	    L_r=learning_rate,
     )
 
-    rospy.logwarn("Planned Trajectory:")
-    rospy.logwarn("===================")
-    for i in range(num_frames):
-        rospy.logwarn(
-            "{}:\n  p: {}\n  v: {}\n  l: {}".format(
-                i, positions[i], velocities[i], lengths[i]
-            )
-        )
-
-    # this is janky, but we don't count the start in the setpoints that we're commanding
-    frame_duration = total_time / (num_frames - 1)
+    print(lengths)
 
     # Set up the things that will make this run
-    trajectory_tracker = intel_aero_ros.TrajectoryTracker(
-        positions, velocities, lengths, frame_duration
+    trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(
+        polynomial,
+        lengths,
+        gripper_latency=gripper_latency,
+        start_gripper_early=start_gripper_early,
     )
-    state_machine = intel_aero_ros.StateMachine(trajectory_tracker)  # NOQA
+    state_machine = intel_aero_ros.GainTuningStateMachine(trajectory_tracker)  # NOQA
 
     rospy.spin()
 

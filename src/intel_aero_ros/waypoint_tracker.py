@@ -22,11 +22,10 @@ class WaypointTracker:
 
     def run(self, curr_position):
         """State handler for EXECUTING_MISSION."""
-        dist = np.linalg.norm(np.array(self._positions[self._index]) - curr_position)
-        if dist < self._distance_threshold:
-            self._index += 1
-
-        rospy.logwarn_throttle(0.5, "Moving to waypoint {}".format(self._index))
+        if self._index < len(self._positions):
+            dist = np.linalg.norm(np.array(self._positions[self._index]) - curr_position)
+            if dist < self._distance_threshold:
+                self._index += 1
 
         if self._index >= len(self._positions):
             return MissionRunResult(
@@ -34,6 +33,8 @@ class WaypointTracker:
                 lengths=self._lengths[-1] if self._lengths is not None else None,
                 finished=True,
             )
+
+        rospy.logwarn_throttle(0.5, "Moving to waypoint {}".format(self._index))
 
         return MissionRunResult(
             self._positions[self._index],

@@ -1,0 +1,21 @@
+<launch>
+
+    <arg name="wait_for_arm" default="true"/>
+    <arg name="use_gripper" default="false"/>
+
+    <node pkg="intel_aero_ros" type="gain_tuning_node" name="gain_tuning_node" output="screen">
+        <remap from="state" to="/mavros/state"/>
+        <remap from="pose" to="/mavros/local_position/pose"/>
+        <remap from="target" to="/mavros/setpoint_raw/local"/>
+        <remap from="lengths" to="/gripper/lengths"/>
+        <param name="wait_for_arm" value="$(arg wait_for_arm)"/>
+        <param name="dist_threshold" value="0.3"/>
+        <param name="hover_duration" value="6.0"/>
+        <rosparam param="end_velocity">[0.5, 0.0, 0.05]</rosparam>
+    </node>
+
+    <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">
+        <remap from="lengths" to="/gripper/lengths"/>
+    </node>
+
+</launch>

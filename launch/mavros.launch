@@ -1,0 +1,14 @@
+<launch>
+
+    <arg name="sitl" default="false"/>
+    <arg name="gcs_ip" default=""/>
+    <arg name="forward_gcs" value="$(eval arg('gcs_ip') != '')"/>
+
+    <node name="mavros" pkg="mavros" type="mavros_node">
+        <param if="$(arg sitl)" name="fcu_url" value="udp://:14540@127.0.0.1:14557"/>
+        <param unless="$(arg sitl)" name="fcu_url" value="tcp://127.0.0.1:5760"/>
+        <param name="system_id" value="2"/>
+        <param if="$(arg forward_gcs)" name="gcs_url" value="udp://@$(arg gcs_ip)"/>
+    </node>
+
+</launch>

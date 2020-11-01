@@ -2,6 +2,7 @@
 """Node to control the gripper."""
 import rospy
 import std_msgs.msg
+import std_srvs.srv
 import serial
 
 
@@ -28,6 +29,7 @@ class GripperNode:
             self._length_callback,
             queue_size=10,
         )
+        self._open_serv = rospy.Service("open", std_srvs.srv.Empty, self._open_callback)
 
     def __enter__(self):
         """Open the serial connection."""
@@ -42,6 +44,12 @@ class GripperNode:
         self._serial_connection.close()
         return exc_type is None
 
+    def _open_callback(self, req):
+        """Handle an open request."""
+        self._lengths = [121, 121, 138, 138]
+        resp = std_srvs.srv.EmptyResponse()
+        return resp
+
     def _length_callback(self, msg):
         if len(msg.data) != 4:
             rospy.log_err("Must provide EXACTLY four lengths!")
@@ -49,7 +57,9 @@ class GripperNode:
 
     def _send_lengths(self):
         """Write the lengths straight to the gripper."""
-        to_send = [_clip(length) for length in self._lengths]
+        max_lengths = (135, 135, 150, 150)
+        to_send = [_clip(length, high=max_length) for length, max_length in zip(self._lengths, max_lengths)]
+        # print(to_send)
         self._serial_connection.write("b{}\n".format(bytearray(to_send)))
 
     def spin(self):

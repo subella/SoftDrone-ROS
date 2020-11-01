@@ -42,10 +42,10 @@ class MissionRunResult:
         self.finished = finished
 
 
-class StateMachine:
+class StateMachine(object):
     """Class for tracking a trajectory."""
 
-    def __init__(self, mission_manager):
+    def __init__(self, mission_manager, initial_state=None):
         """Set everything up."""
         control_rate = rospy.get_param("~control_rate", 100)
         if control_rate < 20.0:
@@ -58,7 +58,12 @@ class StateMachine:
         self._register_transitions()
 
         self._mission_manager = mission_manager
-        self._state = DroneState.WAITING_FOR_HOME
+
+        if initial_state is None:
+            self._state = DroneState.WAITING_FOR_HOME
+        else:
+            self._state = initial_state
+
         self._is_armed = False
         self._current_position = None
         self._home_position = None
@@ -196,10 +201,13 @@ class StateMachine:
 
         self._target_pub.publish(msg)
 
-    def _send_lengths(self, lengths):
+    def _send_lengths(self, lengths, scale=True):
         """Set a length target to the gripper."""
         msg = std_msgs.msg.Int64MultiArray()
-        msg.data = [int(1000 * length) for length in lengths]
+        if scale:
+            msg.data = [int(1000 * length) for length in lengths]
+        else:
+            msg.data = [int(length) for length in lengths]
 
         msg_dim = std_msgs.msg.MultiArrayDimension()
         msg_dim.label = "data"
@@ -217,7 +225,7 @@ class StateMachine:
             rospy.signal_shutdown("unhandled state")
             return
 
-        rospy.logwarn_throttle(5.0, "Current state: {}".format(self._state))
+        rospy.logwarn_throttle(1.0, "Current state: {}".format(self._state))
         if self._state_handlers[self._state]():
             self._state = self._state_transitions[self._state]
 

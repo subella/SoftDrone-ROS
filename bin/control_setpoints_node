@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+"""Quick node to provide fake local position estimate."""
+import rospy
+import geometry_msgs.msg
+import mavros_msgs.msg
+import pymavlink.dialects.v20.common as mavlink
+import struct
+
+
+AttitudeTargetMessage = mavlink.MAVLink_attitude_target_message
+
+
+def handle_attitude(msg, pub):
+    """Parse attitude."""
+    if msg.msgid == AttitudeTargetMessage.id:
+        payload_bytes = struct.pack(len(msg.payload64) * "Q", *msg.payload64)[: msg.len]
+        needed_bytes = struct.calcsize(AttitudeTargetMessage.format)
+        payload_bytes += "\x00" * (needed_bytes - msg.len)
+        parsed = struct.unpack(AttitudeTargetMessage.format, payload_bytes)
+        msg_values = {
+            name: value
+            for name, value in zip(AttitudeTargetMessage.ordered_fieldnames, parsed)
+        }
+        print(msg_values)
+
+
+def main():
+    """Rospy node."""
+    rospy.init_node("fake_pub")
+    pub = rospy.Publisher(
+        "/mavros/vision_pose/pose", geometry_msgs.msg.PoseStamped, queue_size=10
+    )
+    sub = rospy.Subscriber(
+        "/mavlink/from",
+        mavros_msgs.msg.Mavlink,
+        lambda x: handle_attitude(x, pub),
+        queue_size=10,
+    )
+
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    main()

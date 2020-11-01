@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+"""Script that uses position control to fly waypoints."""
+import intel_aero_ros
+import rospy
+import numpy as np
+
+import importlib
+import pathlib
+import sys
+
+
+def get_trajectory_planner():
+    """Import the trajectory planner code."""
+    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
+    sys.path.append(str(soft_drone_pydir))
+    return importlib.import_module(
+        "soft_drone_python.find_trajectory"
+    ).find_trajectory_for_interp
+
+
+def main():
+    """Run everything."""
+    rospy.init_node("gain_tuner")
+
+    total_time = rospy.get_param("~total_time", 2.5)
+    intermediate_time = total_time * 3.0 / 4
+    num_frames = rospy.get_param("~num_frames", 2)
+    planner = get_trajectory_planner()
+
+    start_position = np.array(rospy.get_param("~start_position", [-1.0, 0.0, 2.0]))
+    tendon_target = np.array(rospy.get_param("~tendon_target", [2.0, 0.0, 1.0]))
+    end_position = tendon_target - np.array(rospy.get_param("~offset", [0, 0, -0.150]))
+    end_velocity = np.array(rospy.get_param("~end_velocity", [0.0, 0.0, 0.0]))
+
+    rospy.loginfo("Start: {}".format(start_position))
+    rospy.loginfo("End: {}".format(end_position))
+    rospy.loginfo("Tendon Target: {}".format(tendon_target))
+    polynomial, lengths = planner(
+        start_position,
+        end_position,
+        tendon_target,
+        end_velocity=end_velocity,
+        total_time=total_time,
+        num_frames=num_frames,
+        intermediate_time=intermediate_time,
+        intermediate_objective="area",
+    )
+
+    # Set up the things that will make this run
+    trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(polynomial, lengths)
+    state_machine = intel_aero_ros.GainTuningStateMachine(trajectory_tracker)  # NOQA
+
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    main()
