@@ -54,6 +54,12 @@ class GainTuningStateMachine(StateMachine):
         self._drop_offset = np.array(rospy.get_param("~drop_offset", [1.5, 0.5, 0.5]))
         self._drop_position = None
 
+        self._land_separate = rospy.get_param("~land_separate", False)
+        if self._land_seperate:
+            self._land_position = rospy.get_param("~land_position", [-2.0, -3.0, 0.0])
+        else:
+            self._land_position = None
+
         self._drop_start = None
         self._drop_duration = rospy.Duration(rospy.get_param("~drop_duration", 8.0))
         self._open_lengths = rospy.get_param("~open_lengths", [121, 121, 138, 138])
@@ -234,15 +240,26 @@ class GainTuningStateMachine(StateMachine):
 
         return rospy.Time.now() - self._drop_start > self._drop_duration
 
+    def _handle_moving_to_home(self):
+        """State handle for MOVING_TO_START."""
+        if self._land_position is None:
+            self._land_position = self._hover_position.copy()
+
+        self._send_target(self._land_position)
+        return self._check_pose(self._land_position)
+
     def _handle_land(self):
         """Use land command to descend safely."""
+        if self._land_position is None:
+            self._land_position = self._hover_position.copy()
+
         msg = mavros_msgs.msg.PositionTarget()
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
         msg.type_mask |= SetpointType.LAND
-        msg.position.x = self._hover_position[0]
-        msg.position.y = self._hover_position[1]
-        msg.position.z = self._home_position[2]
+        msg.position.x = self._land_position[0]
+        msg.position.y = self._land_position[1]
+        msg.position.z = self._land_position[2]
 
         self._target_pub.publish(msg)
         return False
