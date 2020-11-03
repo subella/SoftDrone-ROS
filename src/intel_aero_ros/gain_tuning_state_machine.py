@@ -54,6 +54,8 @@ class GainTuningStateMachine(StateMachine):
         self._drop_offset = np.array(rospy.get_param("~drop_offset", [1.5, 0.5, 0.5]))
         self._drop_position = None
 
+        self._start_times = {}
+
         self._land_separate = rospy.get_param("~land_separate", False)
         if self._land_separate:
             self._land_position = rospy.get_param("~land_position", [-2.5, -3.25, 2.0])
@@ -93,7 +95,9 @@ class GainTuningStateMachine(StateMachine):
             TuningDroneState(i): TuningDroneState(i + 1)
             for i in range(len(TuningDroneState) - 1)
         }
-        self._state_transitions[TuningDroneState.EXECUTING_MISSION] = TuningDroneState.MOVING_TO_HOME
+        self._state_transitions[
+            TuningDroneState.EXECUTING_MISSION
+        ] = TuningDroneState.MOVING_TO_HOME
         self._state_transitions[TuningDroneState.LAND] = TuningDroneState.LAND
 
     def _handle_waiting_for_arm(self):
@@ -125,6 +129,9 @@ class GainTuningStateMachine(StateMachine):
 
     def _handle_takeoff(self):
         """Use takeoff setpoint to command setpoint."""
+        if TuningDroneState.TAKEOFF not in self._start_times:
+            self._start_times[TuningDroneState.TAKEOFF] = rospy.Time.now()
+
         msg = mavros_msgs.msg.PositionTarget()
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
@@ -132,6 +139,10 @@ class GainTuningStateMachine(StateMachine):
         msg.position.z = self._hover_position[2]
 
         self._target_pub.publish(msg)
+
+        diff = rospy.Time.now() - self._start_times[TuningDroneState.TAKEOFF]
+        if diff > self._hover_duration:
+            return True
 
         diff = abs(self._hover_position[2] - self._current_position[2])
         return diff < self._dist_threshold
@@ -152,6 +163,26 @@ class GainTuningStateMachine(StateMachine):
         self._target_pub.publish(msg)
 
         return rospy.Time.now() - self._hover_start_time > self._hover_duration
+
+    def _handle_moving_to_start(self):
+        """State handle for MOVING_TO_START."""
+        start = self._mission_manager.get_start()
+        self._send_target(start)
+        if TuningDroneState.MOVING_TO_START not in self._start_times:
+            self._start_times[TuningDroneState.MOVING_TO_START] = rospy.Time.now()
+
+        diff = rospy.Time.now() - self._start_times[TuningDroneState.MOVING_TO_START]
+        if diff > self._hover_duration and self._settle_start_time is None:
+            self._settle_start_time = rospy.Time.now()
+
+        if self._check_pose(start) and self._settle_start_time is None:
+            self._settle_start_time = rospy.Time.now()
+
+        if self._settle_start_time is not None:
+            diff = rospy.Time.now() - self._settle_start_time
+            return diff > self._settle_duration
+
+        return False
 
     def _handle_hover_again(self):
         """Use loiter command to hang out at hover setpoint."""
@@ -247,6 +278,13 @@ class GainTuningStateMachine(StateMachine):
         """State handle for MOVING_TO_START."""
         if self._land_position is None:
             self._land_position = self._hover_position.copy()
+
+        if TuningDroneState.MOVING_TO_HOME not in self._start_times:
+            self._start_times[TuningDroneState.MOVING_TO_HOME] = rospy.Time.now()
+
+        diff = rospy.Time.now() - self._start_times[TuningDroneState.MOVING_TO_HOME]
+        if diff > self._hover_duration:
+            return True
 
         self._send_target(self._land_position)
         return self._check_pose(self._land_position)
