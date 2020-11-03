@@ -3,6 +3,8 @@
     <arg name="wait_for_arm" default="true"/>
     <arg name="use_gripper" default="false"/>
     <arg name="land_separate" default="false"/>
+    <arg name="record" default="false"/>
+    <arg if="$(arg record)" name="prefix"/>
 
     <node pkg="intel_aero_ros" type="gain_tuning_node" name="gain_tuning_node" output="screen">
         <remap from="state" to="/mavros/state"/>
@@ -14,11 +16,13 @@
         <param name="hover_duration" value="6.0"/>
         <param name="land_separate" value="$(arg land_separate)"/>
         <rosparam param="end_velocity">[0.5, 0.0, 0.05]</rosparam>
-        <rosparam param="land_position">[-2.0, -3.0, 0.0]</rosparam>
+        <rosparam param="land_position">[2.75, -3.6, 2.0]</rosparam>
     </node>
 
     <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">
         <remap from="lengths" to="/gripper/lengths"/>
     </node>
+
+    <node if="$(arg record)" pkg="rosbag" type="record" name="recorder" args="-a -o $(arg prefix)"/>
 
 </launch>

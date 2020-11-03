@@ -55,8 +55,8 @@ class GainTuningStateMachine(StateMachine):
         self._drop_position = None
 
         self._land_separate = rospy.get_param("~land_separate", False)
-        if self._land_seperate:
-            self._land_position = rospy.get_param("~land_position", [-2.0, -3.0, 0.0])
+        if self._land_separate:
+            self._land_position = rospy.get_param("~land_position", [-2.5, -3.25, 2.0])
         else:
             self._land_position = None
 
@@ -158,13 +158,16 @@ class GainTuningStateMachine(StateMachine):
         if self._hover2_start_time is None:
             self._hover2_start_time = rospy.Time.now()
 
+        if self._land_position is None:
+            self._land_position = self._hover_position.copy()
+
         msg = mavros_msgs.msg.PositionTarget()
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
         msg.type_mask |= SetpointType.LOITER
-        msg.position.x = self._hover_position[0]
-        msg.position.y = self._hover_position[1]
-        msg.position.z = self._hover_position[2]
+        msg.position.x = self._land_position[0]
+        msg.position.y = self._land_position[1]
+        msg.position.z = self._land_position[2]
 
         self._target_pub.publish(msg)
 
