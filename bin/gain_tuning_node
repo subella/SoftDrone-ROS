@@ -22,7 +22,7 @@ def main():
     """Run everything."""
     rospy.init_node("gain_tuner")
 
-    total_time = rospy.get_param("~total_time", 2.5)
+    total_time = rospy.get_param("~total_time", 2.0)
     intermediate_time = total_time * 3.0 / 4
     num_frames = rospy.get_param("~num_frames", 2)
     planner = get_trajectory_planner()

@@ -87,6 +87,7 @@ class GainTuningStateMachine(StateMachine):
             TuningDroneState(i): TuningDroneState(i + 1)
             for i in range(len(TuningDroneState) - 1)
         }
+        self._state_transitions[TuningDroneState.EXECUTING_MISSION] = TuningDroneState.MOVING_TO_HOME
         self._state_transitions[TuningDroneState.LAND] = TuningDroneState.LAND
 
     def _handle_waiting_for_arm(self):
@@ -239,8 +240,7 @@ class GainTuningStateMachine(StateMachine):
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
         msg.type_mask |= SetpointType.LAND
-        # TODO(nathan) added x offset to counteract weirdness with drone tuning
-        msg.position.x = self._hover_position[0] + 0.25
+        msg.position.x = self._hover_position[0]
         msg.position.y = self._hover_position[1]
         msg.position.z = self._home_position[2]
 
