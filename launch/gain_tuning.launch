@@ -15,8 +15,11 @@
         <param name="dist_threshold" value="0.3"/>
         <param name="hover_duration" value="6.0"/>
         <param name="land_separate" value="$(arg land_separate)"/>
-        <rosparam param="end_velocity">[0.5, 0.0, 0.05]</rosparam>
-        <rosparam param="land_position">[2.75, -3.6, 2.0]</rosparam>
+        <param name="start_settle_duration" value="5.0"/>
+        <rosparam param="start_position">[-1.0, -1.5, 2.5]</rosparam>
+        <rosparam param="tendon_target">[2.0, -2.5, 2.0]</rosparam>
+        <rosparam param="end_velocity">[0.0, 0.0, -0.1]</rosparam>
+        <rosparam param="land_position">[2.75, -3.6, 2.5]</rosparam>
     </node>
 
     <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">

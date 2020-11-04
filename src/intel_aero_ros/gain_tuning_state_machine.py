@@ -47,6 +47,7 @@ class GainTuningStateMachine(StateMachine):
         )
         self._wait_for_arm = rospy.get_param("~wait_for_arm", True)
         self._hover_duration = rospy.Duration(rospy.get_param("~hover_duration", 6.0))
+        self._mission_settle_time = rospy.Duration(rospy.get_param("~mission_settle_time", 1.0))
         self._hover_start_time = None
         self._hover2_start_time = None
         self._grasp_settle_start_time = None
@@ -95,9 +96,9 @@ class GainTuningStateMachine(StateMachine):
             TuningDroneState(i): TuningDroneState(i + 1)
             for i in range(len(TuningDroneState) - 1)
         }
-        self._state_transitions[
-            TuningDroneState.EXECUTING_MISSION
-        ] = TuningDroneState.MOVING_TO_HOME
+        # self._state_transitions[
+        #     TuningDroneState.EXECUTING_MISSION
+        # ] = TuningDroneState.MOVING_TO_HOME
         self._state_transitions[TuningDroneState.LAND] = TuningDroneState.LAND
 
     def _handle_waiting_for_arm(self):
@@ -216,17 +217,22 @@ class GainTuningStateMachine(StateMachine):
         msg = mavros_msgs.msg.PositionTarget()
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
-        msg.type_mask |= SetpointType.LOITER
+        msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PX
+        msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PY
+        msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PZ
         msg.position.x = settle_pos[0]
         msg.position.y = settle_pos[1]
         msg.position.z = settle_pos[2]
+        msg.velocity.x = 0.0
+        msg.velocity.y = 0.25
+        msg.velocity.z = 0.01
 
         self._target_pub.publish(msg)
 
         if self._grasp_settle_start_time is None:
             return False
 
-        return rospy.Time.now() - self._grasp_settle_start_time > self._hover_duration
+        return rospy.Time.now() - self._grasp_settle_start_time > self._mission_settle_time
 
     def _handle_rise(self):
         """Use loiter command to hang out at hover setpoint."""

@@ -36,10 +36,10 @@ def main():
     global tendon_target
     rospy.init_node("trajectory_tracking")
 
-    total_time = rospy.get_param("~total_time", 2.5)
+    total_time = rospy.get_param("~total_time", 3.0)
     intermediate_distance = rospy.get_param("~intermediate_distance", 0.1)
     learning_rate = rospy.get_param("~learning_rate", 5.0)
-    gripper_latency = rospy.get_param("~gripper_latency", 0.5)
+    gripper_latency = rospy.get_param("~gripper_latency", 0.0)
     start_gripper_early = rospy.get_param("~start_gripper_early", False)
 
     planner = get_trajectory_planner()
