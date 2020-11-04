@@ -59,12 +59,11 @@ class GripperNode:
         """Write the lengths straight to the gripper."""
         max_lengths = (130, 127, 150, 150)
         to_send = [_clip(length, high=max_length) for length, max_length in zip(self._lengths, max_lengths)]
-        #print(to_send)
         self._serial_connection.write("b{}\n".format(bytearray(to_send)))
 
     def spin(self):
         """Send lengths as long as ros is ok."""
-        rate = rospy.Rate(30.0)
+        rate = rospy.Rate(10.0)
         while not rospy.is_shutdown():
             while self._serial_connection.in_waiting:
                 rospy.logdebug(self._serial_connection.readline())
