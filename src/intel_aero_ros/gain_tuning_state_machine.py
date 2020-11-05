@@ -96,9 +96,6 @@ class GainTuningStateMachine(StateMachine):
             TuningDroneState(i): TuningDroneState(i + 1)
             for i in range(len(TuningDroneState) - 1)
         }
-        self._state_transitions[
-            TuningDroneState.EXECUTING_MISSION
-        ] = TuningDroneState.MOVING_TO_HOME
         self._state_transitions[TuningDroneState.LAND] = TuningDroneState.LAND
 
     def _handle_waiting_for_arm(self):
