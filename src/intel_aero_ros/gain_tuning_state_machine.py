@@ -221,8 +221,8 @@ class GainTuningStateMachine(StateMachine):
         msg.position.y = settle_pos[1]
         msg.position.z = settle_pos[2]
         msg.velocity.x = 0.0
-        msg.velocity.y = 0.25
-        msg.velocity.z = 0.01
+        msg.velocity.y = 0.5
+        msg.velocity.z = 0.0
 
         self._target_pub.publish(msg)
 

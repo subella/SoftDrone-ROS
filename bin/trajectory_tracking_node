@@ -40,7 +40,7 @@ def main():
     intermediate_distance = rospy.get_param("~intermediate_distance", 0.1)
     learning_rate = rospy.get_param("~learning_rate", 5.0)
     gripper_latency = rospy.get_param("~gripper_latency", 0.0)
-    start_gripper_early = rospy.get_param("~start_gripper_early", False)
+    trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
 
     planner = get_trajectory_planner()
 
@@ -79,7 +79,7 @@ def main():
         intermediate_distance=intermediate_distance,
         intermediate_objective="area",
         end_velocity=end_velocity,
-	    L_r=learning_rate,
+        L_r=learning_rate,
     )
 
     print(lengths)
@@ -89,7 +89,7 @@ def main():
         polynomial,
         lengths,
         gripper_latency=gripper_latency,
-        start_gripper_early=start_gripper_early,
+        settle_time=trajectory_settle_time,
     )
     state_machine = intel_aero_ros.GainTuningStateMachine(trajectory_tracker)  # NOQA
 
