@@ -31,6 +31,7 @@ def main():
     tendon_target = np.array(rospy.get_param("~tendon_target", [2.0, 0.0, 1.0]))
     end_position = tendon_target - np.array(rospy.get_param("~offset", [0, 0, -0.150]))
     end_velocity = np.array(rospy.get_param("~end_velocity", [0.0, 0.0, 0.0]))
+    trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 5.0)
 
     rospy.loginfo("Start: {}".format(start_position))
     rospy.loginfo("End: {}".format(end_position))
@@ -47,7 +48,9 @@ def main():
     )
 
     # Set up the things that will make this run
-    trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(polynomial, lengths)
+    trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(
+        polynomial, lengths, settle_time=trajectory_settle_time
+    )
     state_machine = intel_aero_ros.GainTuningStateMachine(trajectory_tracker)  # NOQA
 
     rospy.spin()
