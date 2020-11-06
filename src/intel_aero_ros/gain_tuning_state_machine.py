@@ -252,7 +252,7 @@ class GainTuningStateMachine(StateMachine):
 
         self._target_pub.publish(msg)
 
-        return rospy.Time.now() - self._rise_start_time > self._hover_duration
+        return rospy.Time.now() - self._rise_start_time > (2 * self._hover_duration)
 
     def _handle_moving_to_drop(self):
         """State handle for MOVING_TO_START."""

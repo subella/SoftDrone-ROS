@@ -3,6 +3,7 @@
     <arg name="use_gripper" default="false"/>
     <arg name="record" default="false"/>
     <arg if="$(arg record)" name="prefix"/>
+    <arg name="naive" default="false"/>
 
     <node pkg="intel_aero_ros" type="landing_node" name="landing_node" output="screen">
         <remap from="state" to="/mavros/state"/>
@@ -14,9 +15,10 @@
         <param name="hover_duration" value="6.0"/>
         <param name="start_settle_duration" value="10.0"/>
         <param name="land_duration" value="1.0"/>
-        <rosparam param="start_position">[-1.0, -1.5, 2.5]</rosparam>
-        <rosparam param="land_velocity">[0.0, 0.0, -0.1]</rosparam>
-        <rosparam param="lengths">[121, 121, 138, 138]</rosparam>
+        <rosparam param="start_position">[0.75, -3.25, 1.85]</rosparam>
+        <rosparam param="land_velocity">[0.0, -0.75, -0.75]</rosparam>
+        <rosparam if="$(arg naive)" param="lengths">[121, 121, 138, 138]</rosparam>
+        <rosparam unless="$(arg naive)" param="lengths">[122, 116, 116, 117]</rosparam>
     </node>
 
     <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">

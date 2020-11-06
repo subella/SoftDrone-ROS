@@ -179,8 +179,7 @@ class LandingStateMachine(StateMachine):
 
     def _handle_drop(self):
         """Agressive landing."""
-        # TODO(nathan) check this very carefully
         msg = mavros_msgs.msg.OverrideRCIn()
-        msg.channels = [1200] * 7 + [2000]
+        msg.channels = [1200] * 6 + [2000] + [1200]
         self._override_pub.publish(msg)
         return False
