@@ -6,7 +6,7 @@
         <remap from="lengths" to="/gripper/lengths"/>
         <param name="total_time" value="5.0"/>
         <rosparam param="start_position">[0.0, -1.0, 1.5]</rosparam>
-        <rosparam param="offset">[0, 0, -0.160]</rosparam>
+        <rosparam param="offset">[0, 0, -0.150]</rosparam>
         <rosparam param="end_velocity">[0, 0.5, -0.1]</rosparam>
     </node>
 
