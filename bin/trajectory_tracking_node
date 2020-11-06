@@ -82,6 +82,9 @@ def main():
         L_r=learning_rate,
     )
 
+    interped_start = polynomial.interp(0.0)[0]
+    print("Given: {} Solution: {}".format(np.squeeze(start_position), np.squeeze(interped_start)))
+    assert np.linalg.norm(interped_start - start_position) < 1.0e-3
     print(lengths)
 
     # Set up the things that will make this run

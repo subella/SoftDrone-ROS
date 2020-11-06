@@ -167,6 +167,7 @@ class GainTuningStateMachine(StateMachine):
         """State handle for MOVING_TO_START."""
         start = self._mission_manager.get_start()
         self._send_target(start)
+
         if TuningDroneState.MOVING_TO_START not in self._start_times:
             self._start_times[TuningDroneState.MOVING_TO_START] = rospy.Time.now()
 
