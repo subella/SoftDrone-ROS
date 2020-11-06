@@ -12,10 +12,10 @@
         <param name="dist_threshold" value="0.35"/>
         <param name="total_time" value="4.0"/>
         <param name="hover_duration" value="3.5"/>
-        <param name="start_settle_duration" value="3.5"/>
+        <param name="start_settle_duration" value="7.0"/>
         <param name="gripper_latency" value="0.6"/>
-        <rosparam param="mocap_offset">[0.11, 0.18, 0.05]</rosparam>
-        <rosparam param="start_position">[0.0, -2.0, 2.5]</rosparam>
+        <rosparam param="mocap_offset">[0.11, 0.18, 0.15]</rosparam>
+        <rosparam param="start_position">[0.0, -1.9, 2.3]</rosparam>
         <rosparam param="offset">[0, 0, -0.150]</rosparam>
         <rosparam param="end_velocity">[0, 0.5, -0.05]</rosparam>
     </node>

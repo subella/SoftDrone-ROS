@@ -56,6 +56,7 @@ class GainTuningStateMachine(StateMachine):
         self._drop_position = None
 
         self._start_times = {}
+        self._settle_velocity = rospy.get_param("~end_velocity", [0, 0.5, -0.05])
 
         self._land_separate = rospy.get_param("~land_separate", False)
         if self._land_separate:
@@ -220,9 +221,9 @@ class GainTuningStateMachine(StateMachine):
         msg.position.x = settle_pos[0]
         msg.position.y = settle_pos[1]
         msg.position.z = settle_pos[2]
-        msg.velocity.x = 0.0
-        msg.velocity.y = 0.5
-        msg.velocity.z = 0.0
+        msg.velocity.x = self._settle_velocity[0]
+        msg.velocity.y = self._settle_velocity[1]
+        msg.velocity.z = self._settle_velocity[2]
 
         self._target_pub.publish(msg)
 
