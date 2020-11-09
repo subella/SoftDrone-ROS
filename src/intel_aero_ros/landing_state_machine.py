@@ -103,10 +103,9 @@ class LandingStateMachine(StateMachine):
         if elapsed < self._offboard_wait:
             return False
 
-        # set_mode = rospy.ServiceProxy("mavros/set_mode", mavros_msgs.srv.SetMode)
-        # result = set_mode(0, "offboard")
-        # return result.mode_sent
-        return True
+        set_mode = rospy.ServiceProxy("mavros/set_mode", mavros_msgs.srv.SetMode)
+        result = set_mode(0, "offboard")
+        return result.mode_sent
 
     def _handle_takeoff(self):
         """Use takeoff setpoint to command setpoint."""
