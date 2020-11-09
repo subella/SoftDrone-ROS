@@ -14,11 +14,12 @@
         <param name="dist_threshold" value="0.3"/>
         <param name="hover_duration" value="6.0"/>
         <param name="start_settle_duration" value="10.0"/>
-        <param name="land_duration" value="3.0"/>
+        <param name="land_duration" value="2.4"/>
+        <!--<rosparam param="end_position">[0.75, -4.0, 1.05]</rosparam>-->
         <rosparam param="start_position">[0.75, -2.5, 2.55]</rosparam>
         <rosparam param="land_velocity">[0.0, -0.75, -0.75]</rosparam>
         <rosparam if="$(arg naive)" param="lengths">[121, 121, 138, 138]</rosparam>
-        <rosparam unless="$(arg naive)" param="lengths">[122, 116, 116, 117]</rosparam>
+        <rosparam unless="$(arg naive)" param="lengths">[122, 117, 116, 117]</rosparam>
     </node>
 
     <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">
