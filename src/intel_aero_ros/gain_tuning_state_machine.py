@@ -52,7 +52,7 @@ class GainTuningStateMachine(StateMachine):
         self._hover2_start_time = None
         self._grasp_settle_start_time = None
         self._rise_start_time = None
-        self._drop_offset = np.array(rospy.get_param("~drop_offset", [1.5, 0.5, 0.5]))
+        self._drop_offset = np.array(rospy.get_param("~drop_offset", [1.5, 1.0, 0.5]))
         self._drop_position = None
 
         self._start_times = {}

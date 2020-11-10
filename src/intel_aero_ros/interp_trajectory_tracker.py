@@ -36,20 +36,19 @@ class InterpTrajectoryTracker:
     def _run_normal(self, t):
         """Interpolate the trajectory."""
         if t > self._total_time:
-            return MissionRunResult(
-                self._polynomial.interp(self._total_time)[0],
-                lengths=self._lengths.interp(self._total_time),
-                finished=(t > self._final_time),
-            )
+            pos, vel, acc = self._polynomial.interp(self._total_time)
+            lengths = self._lengths.interp(self._total_time)
+        else:
+            pos, vel, acc = self._polynomial.interp(t)
+            lengths = self._lengths.interp(t + self._gripper_latency)
 
-        pos, vel, acc = self._polynomial.interp(t)
         return MissionRunResult(
             pos,
             yaw=0.0,
             velocity=vel,
             acceleration=acc,
-            lengths=self._lengths.interp(t + self._gripper_latency),
-            finished=False,
+            finished=(t > self._final_time),
+            lengths=lengths,
         )
 
     def run(self, current_position):
