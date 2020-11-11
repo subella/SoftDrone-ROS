@@ -10,16 +10,18 @@
         <remap from="tendon_target" to="/sparkgrasptar/world"/>
 
         <param name="dist_threshold" value="0.35"/>
-        <param name="total_time" value="4.0"/>
+        <param name="total_time" value="5.0"/>
         <param name="hover_duration" value="3.5"/>
         <param name="start_settle_duration" value="7.0"/>
-        <param name="mission_settle_time" value="0.5"/>
-        <param name="gripper_latency" value="0.0"/>
-        <rosparam param="mocap_offset">[0.11, 0.17, -0.01]</rosparam>
-        <!--<rosparam param="mocap_offset">[0.11, 0.17, 0.01]</rosparam>-->
-        <rosparam param="start_position">[0.0, -1.9, 2.4]</rosparam>
+        <param name="mission_settle_time" value="0.3"/>
+        <param name="gripper_latency" value="0.1"/>
+        <!--<rosparam param="mocap_offset">[0.11, 0.17, -0.01]</rosparam>-->
+
+        <rosparam param="tendon_target">[3.31778, -2.0248, 0.695855]</rosparam>
+        <rosparam param="mocap_offset">[0.14, 0.085, -0.135]</rosparam>
+        <rosparam param="start_position">[0.0, -1.7, 3.3]</rosparam>
         <rosparam param="offset">[0, 0, -0.150]</rosparam>
-        <rosparam param="end_velocity">[0, 0.5, -0.05]</rosparam>
+        <rosparam param="end_velocity">[0, 0.0, -0.07]</rosparam>
     </node>
 
     <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">
