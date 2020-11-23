@@ -67,7 +67,7 @@ def main():
     start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
     end_position = tendon_target - np.array(rospy.get_param("~offset", [0, 0, -0.150]))
     start_position[0] = end_position[0]  # force planar trajectory
-    start_position[1] = end_position[1]
+    # start_position[1] = end_position[1]
     end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
 
     rospy.loginfo("Start: {}".format(start_position))
