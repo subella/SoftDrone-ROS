@@ -22,7 +22,7 @@ class GripperNode:
         """Grab the device and start up."""
         self._port = rospy.get_param("~serial_port", "/dev/ttyACM0")
         self._baud_rate = rospy.get_param("~baud_rate", 57600)
-        self._lengths = [121, 121, 138, 138]
+        self._lengths = [150, 150, 167, 167]
         self._lengths_sub = rospy.Subscriber(
             "lengths",
             std_msgs.msg.Int64MultiArray,
@@ -46,7 +46,7 @@ class GripperNode:
 
     def _open_callback(self, req):
         """Handle an open request."""
-        self._lengths = [121, 121, 138, 138]
+        self._lengths = [150, 150, 167, 167]
         resp = std_srvs.srv.EmptyResponse()
         return resp
 

@@ -78,7 +78,7 @@ def main():
         t = (rospy.Time.now() - start_time).to_sec()
         if t > total_time:
             rospy.sleep(5)
-            send_lengths(pub, [.121, .121, .138, .138])
+            send_lengths(pub, [.150, .150, .167, .167])
             break
 
         send_lengths(pub, lengths.interp(t))
