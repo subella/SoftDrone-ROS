@@ -67,7 +67,6 @@ def main():
         intermediate_distance=intermediate_distance,
         intermediate_objective="area",
         end_velocity=end_velocity,
-	    L_r=5.0,
     )
     print(lengths)
 

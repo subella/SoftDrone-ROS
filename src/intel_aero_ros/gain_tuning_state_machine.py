@@ -236,7 +236,7 @@ class GainTuningStateMachine(StateMachine):
     def _handle_rise(self):
         """Use loiter command to hang out at hover setpoint."""
         settle_pos = self._mission_manager.get_end()
-        settle_pos[1] += 0.2
+        settle_pos[1] += 0.0
         settle_pos[2] += 1.0
 
         if self._rise_start_time is None:

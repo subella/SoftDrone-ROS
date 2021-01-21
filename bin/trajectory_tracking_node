@@ -22,13 +22,13 @@ def get_trajectory_planner():
 tendon_target = None
 
 
-# def pose_handler(msg):
-    # """Wait for start pose."""
-    # global tendon_target
-    # if tendon_target is None:
-        # tendon_target = np.array(
-            # [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
-        # )
+def pose_handler(msg):
+    """Wait for start pose."""
+    global tendon_target
+    if tendon_target is None:
+        tendon_target = np.array(
+            [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
+        )
 
 
 def main():
@@ -45,19 +45,19 @@ def main():
     planner = get_trajectory_planner()
 
     # TODO(nathan) make this cleaner
-#     rospy.logwarn("Waiting for target pose")
-    # target_sub = rospy.Subscriber(
-        # "tendon_target", geometry_msgs.msg.PoseStamped, pose_handler, queue_size=10
-    # )
+    rospy.logwarn("Waiting for target pose")
+    target_sub = rospy.Subscriber(
+        "tendon_target", geometry_msgs.msg.PoseStamped, pose_handler, queue_size=10
+    )
 
-    # while not rospy.is_shutdown() and tendon_target is None:
-        # rospy.sleep(rospy.Duration(0.1))
+    while not rospy.is_shutdown() and tendon_target is None:
+        rospy.sleep(rospy.Duration(0.1))
 
-    # if tendon_target is None:
-        # rospy.logwarn("ROS shutdown before planning ocurred.")
-        # return
+    if tendon_target is None:
+        rospy.logwarn("ROS shutdown before planning ocurred.")
+        return
 
-    tendon_target = np.array(rospy.get_param("~tendon_target", [2.9065, 0.0878, 0.6774]))
+    # tendon_target = np.array(rospy.get_param("~tendon_target", [2.9065, 0.0878, 0.6774]))
 
     rospy.loginfo("Tendon Target before: {}".format(tendon_target))
     mocap_offset = np.array(rospy.get_param("~mocap_offset", [0.25, 0, 0.0]))
@@ -82,7 +82,7 @@ def main():
         intermediate_distance=intermediate_distance,
         intermediate_objective="area",
         end_velocity=end_velocity,
-        L_r=learning_rate,
+        # L_r=learning_rate,
     )
 
     interped_start = polynomial.interp(0.0)[0]
