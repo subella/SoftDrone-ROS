@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+"""Script to get a positions/velocities/lengths trajectory."""
+import intel_aero_ros
+import rospy
+
+
+def main():
+    """Run everything."""
+    rospy.init_node("trajectory_tracking")
+
+    state_machine = intel_aero_ros.TakeoffStateMachine()  # NOQA
+
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    main()

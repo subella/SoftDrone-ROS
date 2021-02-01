@@ -17,11 +17,11 @@
         <param name="gripper_latency" value="0.3"/>
         <!--<rosparam param="mocap_offset">[0.11, 0.17, -0.01]</rosparam>-->
 
-        <rosparam param="tendon_target">[2.9, -2.0248, 0.695855]</rosparam>
-        <rosparam param="mocap_offset">[0.1, 0.09, -0.2]</rosparam>
+        <rosparam param="tendon_target">[2.49529, 0.4640, 0.8516]</rosparam>
+        <rosparam param="mocap_offset">[0.2, 0.0, 0.0]</rosparam>
         <rosparam param="start_position">[0.0, -1.7, 3]</rosparam>
         <rosparam param="offset">[0, 0, -0.150]</rosparam>
-        <rosparam param="end_velocity">[0, 0.0, 0.0]</rosparam>
+        <rosparam param="end_velocity">[0, 0.1, 0.0]</rosparam>
         <rosparam param="open_lengths">[150, 150, 167, 167]</rosparam>
     </node>
 
