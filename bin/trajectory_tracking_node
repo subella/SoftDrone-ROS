@@ -82,6 +82,7 @@ def main():
         intermediate_distance=intermediate_distance,
         intermediate_objective="area",
         end_velocity=end_velocity,
+        use_offline_lengths=True,
         # L_r=learning_rate,
     )
 
