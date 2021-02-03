@@ -22,7 +22,8 @@ class GripperNode:
         """Grab the device and start up."""
         self._port = rospy.get_param("~serial_port", "/dev/ttyACM0")
         self._baud_rate = rospy.get_param("~baud_rate", 57600)
-        self._lengths = [150, 150, 167, 167]
+        self._lengths = [190, 190, 208, 208]
+        self._initial_lengths = [190, 190, 208, 208]
         self._lengths_sub = rospy.Subscriber(
             "lengths",
             std_msgs.msg.Int64MultiArray,
@@ -46,7 +47,7 @@ class GripperNode:
 
     def _open_callback(self, req):
         """Handle an open request."""
-        self._lengths = [150, 150, 167, 167]
+        self._lengths = [190, 190, 208, 208]
         resp = std_srvs.srv.EmptyResponse()
         return resp
 
@@ -57,7 +58,7 @@ class GripperNode:
 
     def _send_lengths(self):
         """Write the lengths straight to the gripper."""
-        max_lengths = (175, 175, 192, 192)
+        max_lengths = [l + 25 for l in self._initial_lengths]
         to_send = [_clip(length, high=max_length) for length, max_length in zip(self._lengths, max_lengths)]
         self._serial_connection.write("b{}\n".format(bytearray(to_send)))
 
