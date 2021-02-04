@@ -72,7 +72,7 @@ def main():
     end_time = np.array(rospy.get_param("~end_time", 2))
     end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
     end_offset = np.array(rospy.get_param("~end_offset", [0, 0, 0]))
-    end_position = grasp_target + end_offset
+    end_position = grasp_position + end_offset
 
     rospy.loginfo("Start: {}".format(start_position))
     rospy.loginfo("Grasp Position: {}".format(grasp_position))
