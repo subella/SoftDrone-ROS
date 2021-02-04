@@ -59,7 +59,6 @@ def main():
 
     # grasp_target = np.array(rospy.get_param("~grasp_target", [2.9065, 0.0878, 0.6774]))
 
-    rospy.loginfo("Grasp Target before: {}".format(grasp_target))
     mocap_offset = np.array(rospy.get_param("~mocap_offset", [0.25, 0, 0.0]))
     rospy.loginfo("Mocap offset: {}".format(mocap_offset))
     grasp_target = grasp_target + mocap_offset
@@ -79,6 +78,7 @@ def main():
     rospy.loginfo("Grasp Position: {}".format(grasp_position))
     rospy.loginfo("Grasp Velocity: {}".format(grasp_velocity))
     rospy.loginfo("Grasp Target: {}".format(grasp_target))
+    rospy.loginfo("End Position: {}".format(end_position))
     polynomial, lengths = planner(
         start_position=start_position,
         grasp_axis=1,
@@ -95,9 +95,9 @@ def main():
     )
 
     interped_start = polynomial.interp(0.0)[0]
-    print("Given: {} Solution: {}".format(np.squeeze(start_position), np.squeeze(interped_start)))
+    print("Given start: {} Solution: {}".format(np.squeeze(start_position), np.squeeze(interped_start)))
     assert np.linalg.norm(interped_start - start_position) < 1.0e-3
-    print(lengths)
+    print("Initial, Open, Grasp lengths: {}".format(lengths))
 
     # Set up the things that will make this run
     trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(
