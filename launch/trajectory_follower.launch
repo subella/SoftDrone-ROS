@@ -1,5 +1,6 @@
 <launch>
 
+    <arg name="use_mocap_target" default="true"/>
     <arg name="use_gripper" default="false"/>
 
     <node pkg="intel_aero_ros" type="trajectory_tracking_node" name="trajectory_tracking_node" output="screen">
@@ -9,6 +10,7 @@
         <remap from="lengths" to="/gripper/lengths"/>
         <remap from="tendon_target" to="/sparkgrasptar/world"/>
 
+        <param name="use_mocap_target" value="$(arg use_mocap_target)"/>
         <param name="dist_threshold" value="0.35"/>
         <param name="total_time" value="5.0"/>
         <param name="hover_duration" value="3.5"/>
@@ -17,7 +19,7 @@
         <param name="gripper_latency" value="0.3"/>
         <!--<rosparam param="mocap_offset">[0.11, 0.17, -0.01]</rosparam>-->
 
-        <rosparam param="tendon_target">[2.49529, 0.4640, 0.8516]</rosparam>
+        <rosparam param="tendon_target">[2.467, 0.287, 0.727]</rosparam>
         <rosparam param="mocap_offset">[0.2, 0.0, 0.0]</rosparam>
         <rosparam param="start_position">[0.0, -1.7, 3]</rosparam>
         <rosparam param="offset">[0, 0, -0.150]</rosparam>
