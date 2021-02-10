@@ -12,33 +12,33 @@ import sys
 
 def get_trajectory_planner():
     """Import the trajectory planner code."""
-    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
+    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent/"python"
     sys.path.append(str(soft_drone_pydir))
     return importlib.import_module(
         "soft_drone_python.find_trajectory"
     ).find_trajectory_for_interp
 
 
-tendon_target = None
+grasp_target = None
 
 
 def pose_handler(msg):
     """Wait for start pose."""
-    global tendon_target
-    if tendon_target is None:
-        tendon_target = np.array(
+    global grasp_target
+    if grasp_target is None:
+        grasp_target = np.array(
             [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
         )
 
 
 def main():
     """Run everything."""
-    global tendon_target
+    global grasp_target
     rospy.init_node("trajectory_tracking")
 
     use_mocap_target = rospy.get_param("~use_mocap_target", True)
-    total_time = rospy.get_param("~total_time", 3.0)
-    intermediate_distance = rospy.get_param("~intermediate_distance", 0.1)
+    grasp_time = rospy.get_param("~grasp_time", 3.0)
+    open_distance = rospy.get_param("~open_distance", 0.1)
     learning_rate = rospy.get_param("~learning_rate", 5.0)
     gripper_latency = rospy.get_param("~gripper_latency", 0.0)
     trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
@@ -46,51 +46,59 @@ def main():
     planner = get_trajectory_planner()
 
     if use_mocap_target:
-        rospy.logwarn("Waiting for target pose")
+        rospy.logwarn("Waiting for grasp target")
         target_sub = rospy.Subscriber(
-           "tendon_target", geometry_msgs.msg.PoseStamped, pose_handler, queue_size=10
+            "grasp_target", geometry_msgs.msg.PoseStamped, pose_handler, queue_size=10
         )
 
-        while not rospy.is_shutdown() and tendon_target is None:
-           rospy.sleep(rospy.Duration(0.1))
+        while not rospy.is_shutdown() and grasp_target is None:
+            rospy.sleep(rospy.Duration(0.1))
 
-        if tendon_target is None:
-           rospy.logwarn("ROS shutdown before planning ocurred.")
-           return
+        if grasp_target is None:
+            rospy.logwarn("ROS shutdown before planning ocurred.")
+            return
     else:
-        rospy.logwarn("Getting target pose from rosparam")
-        tendon_target = np.array(rospy.get_param("~tendon_target", [2.9065, 0.0878, 0.6774]))
+        grasp_target = np.array(rospy.get_param("~grasp_target", [2.9065, 0.0878, 0.6774]))
 
-    rospy.loginfo("Tendon Target before: {}".format(tendon_target))
     mocap_offset = np.array(rospy.get_param("~mocap_offset", [0.25, 0, 0.0]))
     rospy.loginfo("Mocap offset: {}".format(mocap_offset))
-    tendon_target = tendon_target + mocap_offset
+    grasp_target = grasp_target + mocap_offset
 
     start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
-    end_position = tendon_target - np.array(rospy.get_param("~offset", [0, 0, -0.150]))
-    start_position[0] = end_position[0]  # force planar trajectory
-    # start_position[1] = end_position[1]
+    grasp_position = grasp_target - np.array(rospy.get_param("~offset", [0, 0, -0.20]))
+    start_position[0] = grasp_position[0]  # force planar trajectory
+    # start_position[1] = grasp_position[1]
+    grasp_velocity = np.array(rospy.get_param("~grasp_velocity", [0, 0, 0]))
+
+    end_time = np.array(rospy.get_param("~end_time", 2))
     end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
+    end_offset = np.array(rospy.get_param("~end_offset", [0, 0, 0]))
+    end_position = grasp_position + end_offset
 
     rospy.loginfo("Start: {}".format(start_position))
-    rospy.loginfo("End: {}".format(end_position))
-    rospy.loginfo("End Velocity: {}".format(end_velocity))
-    rospy.loginfo("Tendon Target: {}".format(tendon_target))
+    rospy.loginfo("Grasp Position: {}".format(grasp_position))
+    rospy.loginfo("Grasp Velocity: {}".format(grasp_velocity))
+    rospy.loginfo("Grasp Target: {}".format(grasp_target))
+    rospy.loginfo("End Position: {}".format(end_position))
     polynomial, lengths = planner(
-        start_position,
-        end_position,
-        tendon_target,
-        total_time=total_time,
-        intermediate_distance=intermediate_distance,
-        intermediate_objective="area",
-        end_velocity=end_velocity,
+        start_position=start_position,
+        grasp_axis=1,
+        grasp_position=grasp_position,
+        grasp_target=grasp_target,
+        grasp_time=grasp_time,
+        grasp_velocity=grasp_velocity,
+        open_distance=open_distance,
+        use_offline_lengths=True,
+        end_time=end_time,
+        end_position=end_position,
+        end_velocity=end_velocity
         # L_r=learning_rate,
     )
 
     interped_start = polynomial.interp(0.0)[0]
-    print("Given: {} Solution: {}".format(np.squeeze(start_position), np.squeeze(interped_start)))
+    print("Given start: {} Solution: {}".format(np.squeeze(start_position), np.squeeze(interped_start)))
     assert np.linalg.norm(interped_start - start_position) < 1.0e-3
-    print(lengths)
+    print("Initial, Open, Grasp lengths: {}".format(lengths))
 
     # Set up the things that will make this run
     trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(
