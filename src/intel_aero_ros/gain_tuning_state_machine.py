@@ -66,7 +66,7 @@ class GainTuningStateMachine(StateMachine):
 
         self._drop_start = None
         self._drop_duration = rospy.Duration(rospy.get_param("~drop_duration", 8.0))
-        self._open_lengths = rospy.get_param("~open_lengths", [121, 121, 138, 138])
+        self._open_lengths = rospy.get_param("~open_lengths", [190, 190, 208, 208])
 
         super(GainTuningStateMachine, self).__init__(
             mission_manager, initial_state=TuningDroneState.WAITING_FOR_HOME
