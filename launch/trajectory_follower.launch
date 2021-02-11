@@ -17,7 +17,7 @@
         <param name="mission_settle_time" value="2.0"/>
         <param name="gripper_latency" value="0.0"/>
 
-        <rosparam param="mocap_offset">[0.2, 0.0, 0.5]</rosparam>
+        <rosparam param="mocap_offset">[0.2, 0.0, 0.0]</rosparam>
 
         <param name="grasp_time" value="5.0"/>
         <rosparam param="grasp_target">[2.49529, 0.4640, 0.8516]</rosparam>
