@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+"""Listen to a mocap topic and set the offset on the drone."""
+import mavros_msgs.srv
+import geometry_msgs.msg
+import numpy as np
+import rospy
+
+
+grasp_target = None
+
+
+def pose_handler(msg):
+    """Wait for start pose."""
+    global grasp_target
+    if grasp_target is None:
+        grasp_target = np.array(
+            [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
+        )
+
+
+def main():
+    """Run everything."""
+    global grasp_target
+    rospy.init_node("ground_effect_offset_setter")
+
+    rospy.logwarn("Waiting for target pose")
+    target_sub = rospy.Subscriber(
+        "/sparkgrasptar/world", geometry_msgs.msg.PoseStamped, pose_handler, queue_size=10
+    )
+
+    while not rospy.is_shutdown() and grasp_target is None:
+        rospy.sleep(rospy.Duration(0.1))
+
+    if grasp_target is None:
+        rospy.logwarn("ROS shutdown before planning ocurred.")
+        return
+
+    rospy.loginfo("ENU offset: x={:6.3f}, y={:6.3f}, z={:6.3f}".format(grasp_target[0], grasp_target[1], grasp_target[2]))
+
+    rospy.logdebug("Connecting to mavros")
+    while not rospy.is_shutdown():
+        try:
+            rospy.wait_for_service("/mavros/param/get", timeout=0.5)
+            break
+        except rospy.ROSException as e:
+            rospy.loginfo_throttle(1.0, "waiting for mavros: {}".format(e))
+
+    rospy.logdebug("Making service proxies")
+    getter_proxy = rospy.ServiceProxy("/mavros/param/get", mavros_msgs.srv.ParamGet)
+    setter_proxy = rospy.ServiceProxy("/mavros/param/set", mavros_msgs.srv.ParamSet)
+
+    rospy.logdebug("Requesting old parameters")
+    prev_x = getter_proxy("AMPC_TO_X").value.real
+    prev_y = getter_proxy("AMPC_TO_Y").value.real
+    prev_z = getter_proxy("AMPC_TO_Z").value.real
+
+    rospy.loginfo("Previous offset: x={:6.3f}, y={:6.3f}, z={:6.3f}".format(prev_x, prev_y, prev_z))
+
+    def send_param(proxy, name, value):
+        param_value = mavros_msgs.msg.ParamValue()
+        param_value.integer = 0
+        param_value.real = float(value)
+        return setter_proxy(name, param_value).value.real
+
+    new_x = send_param(setter_proxy, "AMPC_TO_X", grasp_target[1])
+    new_y = send_param(setter_proxy, "AMPC_TO_Y", grasp_target[0])
+    new_z = send_param(setter_proxy, "AMPC_TO_Z", -grasp_target[2])
+
+    rospy.loginfo("New offset: x={:6.3f}, y={:6.3f}, z={:6.3f}".format(new_x, new_y, new_z))
+
+
+if __name__ == "__main__":
+    main()
