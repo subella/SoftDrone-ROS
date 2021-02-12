@@ -207,8 +207,6 @@ class GainTuningStateMachine(StateMachine):
     def _handle_settle(self):
         """Use loiter command to hang out at hover setpoint."""
         settle_pos = self._mission_manager.get_end()
-        settle_pos[1] += 0.1
-        settle_pos[2] += 0.0
 
         if self._grasp_settle_start_time is None:
             self._grasp_settle_start_time = rospy.Time.now()
@@ -216,9 +214,6 @@ class GainTuningStateMachine(StateMachine):
         msg = mavros_msgs.msg.PositionTarget()
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
-        msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PX
-        msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PY
-        msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PZ
         msg.position.x = settle_pos[0]
         msg.position.y = settle_pos[1]
         msg.position.z = settle_pos[2]
