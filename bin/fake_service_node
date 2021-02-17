@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+import rospy
+import mavros_msgs.srv
+
+
+def _handle_mode(req):
+    """Handle a mode change request."""
+    rospy.loginfo(
+        "Got mode request: base: {} custom: {}".format(req.base_mode, req.custom_mode)
+    )
+    return mavros_msgs.srv.SetModeResponse(True)
+
+
+def _handle_cmd(req):
+    """Handle a command request."""
+    rospy.loginfo("Got arming request: {}".format(req.value))
+    return mavros_msgs.srv.CommandBoolResponse(True, 0)
+
+
+def main():
+    """Fake some mavros services."""
+    rospy.init_node("mavros")
+
+    mode_server = rospy.Service(
+        "/mavros/set_mode", mavros_msgs.srv.SetMode, _handle_mode
+    )
+    arm_server = rospy.Service(
+        "/mavros/cmd/arming", mavros_msgs.srv.CommandBool, _handle_cmd
+    )
+
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    main()

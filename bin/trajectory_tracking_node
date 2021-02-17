@@ -12,7 +12,7 @@ import sys
 
 def get_trajectory_planner():
     """Import the trajectory planner code."""
-    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent/"python"
+    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
     sys.path.append(str(soft_drone_pydir))
     return importlib.import_module(
         "soft_drone_python.find_trajectory"
@@ -39,7 +39,6 @@ def main():
     use_mocap_target = rospy.get_param("~use_mocap_target", True)
     grasp_time = rospy.get_param("~grasp_time", 3.0)
     open_distance = rospy.get_param("~open_distance", 0.1)
-    learning_rate = rospy.get_param("~learning_rate", 5.0)
     gripper_latency = rospy.get_param("~gripper_latency", 0.0)
     trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
 
@@ -58,7 +57,9 @@ def main():
             rospy.logwarn("ROS shutdown before planning ocurred.")
             return
     else:
-        grasp_target = np.array(rospy.get_param("~grasp_target", [2.9065, 0.0878, 0.6774]))
+        grasp_target = np.array(
+            rospy.get_param("~grasp_target", [2.9065, 0.0878, 0.6774])
+        )
 
     mocap_offset = np.array(rospy.get_param("~mocap_offset", [0.25, 0, 0.0]))
     rospy.loginfo("Mocap offset: {}".format(mocap_offset))
@@ -91,12 +92,15 @@ def main():
         use_offline_lengths=True,
         end_time=end_time,
         end_position=end_position,
-        end_velocity=end_velocity
-        # L_r=learning_rate,
+        end_velocity=end_velocity,
     )
 
     interped_start = polynomial.interp(0.0)[0]
-    print("Given start: {} Solution: {}".format(np.squeeze(start_position), np.squeeze(interped_start)))
+    print(
+        "Given start: {} Solution: {}".format(
+            np.squeeze(start_position), np.squeeze(interped_start)
+        )
+    )
     assert np.linalg.norm(interped_start - start_position) < 1.0e-3
     print("Initial, Open, Grasp lengths: {}".format(lengths))
 
@@ -107,7 +111,7 @@ def main():
         gripper_latency=gripper_latency,
         settle_time=trajectory_settle_time,
     )
-    state_machine = intel_aero_ros.GainTuningStateMachine(trajectory_tracker)  # NOQA
+    state_machine = intel_aero_ros.GraspStateMachine(trajectory_tracker)  # NOQA
 
     rospy.spin()
 
