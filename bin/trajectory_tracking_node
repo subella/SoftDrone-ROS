@@ -67,8 +67,16 @@ def main():
 
     start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
     grasp_position = grasp_target - np.array(rospy.get_param("~offset", [0, 0, -0.20]))
-    start_position[0] = grasp_position[0]  # force planar trajectory
-    # start_position[1] = grasp_position[1]
+
+    trajectory_plane = rospy.get_param("~trajectory_plane", "yz")
+    if trajectory_plane == "yz":
+        start_position[0] = grasp_position[0]  # force planar trajectory
+    elif trajectory_plane == "xz":
+        start_position[1] = grasp_position[1]
+    else:
+        rospy.logwarn("Invalid plane: {} Defaulting to yz".format(trajectory_plane))
+        start_position[0] = grasp_position[0]  # force planar trajectory
+
     grasp_velocity = np.array(rospy.get_param("~grasp_velocity", [0, 0, 0]))
 
     end_time = np.array(rospy.get_param("~end_time", 2))

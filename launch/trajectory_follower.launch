@@ -29,6 +29,9 @@
         <rosparam param="end_velocity">[0.0, 0.0, 0.0]</rosparam>
         <param name="end_time" value="3.0"/>
 
+        <param name="desired_yaw" value="0.0"/>
+        <param name="trajectory_plane" value="yz"/>
+
         <rosparam param="initial_lengths">[190, 190, 208, 208]</rosparam>
     </node>
 
