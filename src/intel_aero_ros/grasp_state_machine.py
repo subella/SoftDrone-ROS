@@ -196,6 +196,7 @@ class GraspStateMachine:
             GraspDroneState(i): GraspDroneState(i + 1)
             for i in range(len(GraspDroneState) - 1)
         }
+        self._state_transitions[GraspDroneState.SETTLE_AFTER] = GraspDroneState.MOVING_TO_DROP
         self._state_transitions[GraspDroneState.HANDLE_DISARM] = None
 
     def _send_lengths(self, lengths, scale=True):
@@ -310,7 +311,7 @@ class GraspStateMachine:
             [0.0, 0.0, self._takeoff_offset]
         )
         start_position = self._mission_manager.get_start()
-        rise_position = self._mission_manager.get_end() + self._rise_offset
+        rise_position = self._mission_manager.get_end()
 
         package_dir = pathlib.Path(__file__).resolve().parent.parent.parent
         soft_drone_pydir = package_dir.parent / "python"

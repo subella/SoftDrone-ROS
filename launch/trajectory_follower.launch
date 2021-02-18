@@ -14,16 +14,17 @@
         <param name="dist_threshold" value="0.35"/>
         <param name="hover_duration" value="3.5"/>
         <param name="start_settle_duration" value="7.0"/>
-        <param name="mission_settle_time" value="2.0"/>
-        <param name="gripper_latency" value="0.0"/>
+        <param name="mission_settle_duration" value="6.0"/>
+        <param name="gripper_latency" value="0.2"/>
 
-        <rosparam param="mocap_offset">[0.0, 0.0, -0.05]</rosparam>
+        <rosparam param="mocap_offset">[-0.01, -0.06, -0.05]</rosparam>
 
         <param name="grasp_time" value="5.0"/>
         <rosparam param="grasp_target">[0.257, -3.463, 0.989]</rosparam>
         <rosparam param="start_position">[-2.0, 0.0, 2.0]</rosparam>
         <rosparam param="offset">[0, 0, -0.19]</rosparam>
-        <rosparam param="grasp_velocity">[0, 0.0, 0.0]</rosparam>
+        <param name="open_distance" value="0.2"/>
+        <rosparam param="grasp_velocity">[0.2, 0.0, -0.035]</rosparam>
 
         <rosparam param="end_offset">[1.0, 0.0, 0.25]</rosparam>
         <rosparam param="end_velocity">[0.0, 0.0, 0.0]</rosparam>
