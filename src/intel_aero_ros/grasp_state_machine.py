@@ -58,7 +58,7 @@ class SetpointType(enum.IntEnum):
 
 
 def get_polynomial(
-    polynomial_wrapper, planner, start, end, average_vel, safety_factor=1.5
+    polynomial_wrapper, planner, start, end, average_vel, safety_factor=1.4
 ):
     """Get the polynomial."""
     distance = np.linalg.norm(start - end)
@@ -89,6 +89,7 @@ class GraspStateMachine:
         self._takeoff_offset = rospy.get_param("~takeoff_offset", 1.0)
         self._rise_offset = np.array(rospy.get_param("~rise_offset", [0.0, 0.0, 1.0]))
         self._open_lengths = rospy.get_param("~open_lengths", [190, 190, 208, 208])
+        self._land_threshold = rospy.get_param("~dist_threshold", 0.001)
         self._dist_threshold = rospy.get_param("~dist_threshold", 0.2)
         self._average_polynomial_velocity = rospy.get_param(
             "~average_polynomial_velocity", 0.8
@@ -175,7 +176,12 @@ class GraspStateMachine:
                 continue
             if state == GraspDroneState.DROP:
                 self._state_durations[state] = rospy.Duration(
-                    rospy.get_param("~drop_duration", 8.0)
+                    rospy.get_param("~drop_duration", 4.0)
+                )
+                continue
+            if state == GraspDroneState.LAND:
+                self._state_durations[state] = rospy.Duration(
+                    rospy.get_param("~land_duration", 4.0)
                 )
                 continue
 
@@ -444,7 +450,7 @@ class GraspStateMachine:
         result = self._mission_manager.run(self._current_position)
         self._send_target(
             result.position,
-            yaw=result.yaw,
+            yaw=self._desired_yaw,  # TODO(nathan) we should move this upstream
             velocity=result.velocity,
             acceleration=result.acceleration,
             is_grasp=True,
@@ -516,8 +522,9 @@ class GraspStateMachine:
         msg.position.y = self._home_position[1]
         msg.position.z = self._home_position[2]  # this gets ignored
         self._target_pub.publish(msg)
-        diff = abs(self._home_position[2] - self._current_position[2])
-        return diff < self._dist_threshold or self._has_elapsed(GraspDroneState.LAND)
+        # diff = abs(self._home_position[2] - self._current_position[2])
+        # return diff < self._land_threshold or self._has_elapsed(GraspDroneState.LAND)
+        return self._has_elapsed(GraspDroneState.LAND)
 
     def _handle_idle(self):
         """Turn motors to idle to fully land."""

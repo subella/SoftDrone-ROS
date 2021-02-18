@@ -91,7 +91,7 @@ def main():
     rospy.loginfo("End Position: {}".format(end_position))
     polynomial, lengths = planner(
         start_position=start_position,
-        grasp_axis=1,
+        grasp_axis=(0 if trajectory_plane == "xz" else 2),
         grasp_position=grasp_position,
         grasp_target=grasp_target,
         grasp_time=grasp_time,
