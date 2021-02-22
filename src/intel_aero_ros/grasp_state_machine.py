@@ -55,6 +55,8 @@ class SetpointType(enum.IntEnum):
     FOLLOW_TARGET = 0x7000
     # identical to POSITION, but use of ground effect term is possible
     GRASP_TRAJECTORY = 0x8000
+    # identical to POSITION, but ground effect is disabled
+    GRASP_TRAJECTORY_NO_GE = 0x9000
 
 
 def get_polynomial(
@@ -217,7 +219,7 @@ class GraspStateMachine:
         self._lengths_pub.publish(msg)
 
     def _send_target(
-        self, position, yaw=0.0, velocity=None, acceleration=None, is_grasp=False
+        self, position, yaw=0.0, velocity=None, acceleration=None, is_grasp=False, use_ground_effect=True
     ):
         """Send a waypoint target to mavros."""
         msg = mavros_msgs.msg.PositionTarget()
@@ -225,7 +227,10 @@ class GraspStateMachine:
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
 
         if is_grasp:
-            msg.type_mask |= SetpointType.GRASP_TRAJECTORY
+            if use_ground_effect:
+                msg.type_mask |= SetpointType.GRASP_TRAJECTORY
+            else:
+                msg.type_mask |= SetpointType.GRASP_TRAJECTORY_NO_GE
 
         # TODO(nathan) should enable commanding yaw rate, but not important yet
         msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_YAW_RATE
@@ -448,6 +453,7 @@ class GraspStateMachine:
 
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
+        # elapsed = self._get_elapsed(GraspDroneState.EXECUTING_MISSION).to_sec()
         result = self._mission_manager.run(self._current_position)
         self._send_target(
             result.position,
@@ -455,6 +461,7 @@ class GraspStateMachine:
             velocity=result.velocity,
             acceleration=result.acceleration,
             is_grasp=True,
+            use_ground_effect=True
         )
 
         if result.lengths is not None:
