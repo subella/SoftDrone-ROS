@@ -44,28 +44,32 @@ def main():
     rospy.init_node("gripper_test_node")
     pub = rospy.Publisher("lengths", std_msgs.msg.Int64MultiArray, queue_size=10)
 
-    total_time = rospy.get_param("~total_time", 2.5)
     intermediate_distance = 0.1
     num_frames = rospy.get_param("~num_frames", 2)
     planner = get_trajectory_planner()
 
-    tendon_target = np.array([0.0, 2.0, 0.5])
+    grasp_position = np.array([2.0, 2.0, 0.5])
     start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
-    end_position = tendon_target - np.array(rospy.get_param("~offset", [0, 0, -0.160]))
-    end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
-    start_position[0] = end_position[0]  # force planar trajectory
+    grasp_target = grasp_position - np.array(rospy.get_param("~offset", [0, 0, -0.2]))
 
-    rospy.loginfo("Start: {}".format(start_position))
-    rospy.loginfo("End: {}".format(end_position))
-    rospy.loginfo("Tendon Target: {}".format(tendon_target))
+    end_time = np.array(rospy.get_param("~end_time", 2))
+    end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
+    end_offset = np.array(rospy.get_param("~end_offset", [0, 0, 0]))
+    end_position = grasp_position + end_offset
+
+    start_position[1] = grasp_target[1]  # force planar trajectory
+
     polynomial, lengths = planner(
-        start_position,
-        end_position,
-        tendon_target,
-        total_time=total_time,
-        num_frames=num_frames,
-        intermediate_distance=intermediate_distance,
-        intermediate_objective="area",
+        start_position=start_position,
+        grasp_axis=0,
+        grasp_position=grasp_position,
+        grasp_target=grasp_target,
+        grasp_time=5.0,
+        grasp_velocity=np.array([0.0, 0.0, 0.0]),
+        open_distance=0.1,
+        use_offline_lengths=True,
+        end_time=end_time,
+        end_position=end_position,
         end_velocity=end_velocity,
     )
     print(lengths)
@@ -75,7 +79,7 @@ def main():
     rate = rospy.Rate(50)  # the actual code runs at 100
     while not rospy.is_shutdown():
         t = (rospy.Time.now() - start_time).to_sec()
-        if t > total_time:
+        if t > polynomial._total_time:
             rospy.sleep(5)
             send_lengths(pub, [.190, .190, .208, .208])
             break
