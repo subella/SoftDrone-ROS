@@ -97,6 +97,7 @@ class GraspStateMachine:
             "~average_polynomial_velocity", 0.8
         )
         self._desired_yaw = rospy.get_param("~desired_yaw", 0.0)
+        self._ground_effect_stop_time = rospy.get_param("~ground_effect_stop_time", 10.0)
 
         self._state_sub = rospy.Subscriber(
             "state", mavros_msgs.msg.State, self._state_callback, queue_size=10
@@ -453,7 +454,7 @@ class GraspStateMachine:
 
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
-        # elapsed = self._get_elapsed(GraspDroneState.EXECUTING_MISSION).to_sec()
+        elapsed = self._get_elapsed(GraspDroneState.EXECUTING_MISSION).to_sec()
         result = self._mission_manager.run(self._current_position)
         self._send_target(
             result.position,
@@ -461,7 +462,7 @@ class GraspStateMachine:
             velocity=result.velocity,
             acceleration=result.acceleration,
             is_grasp=True,
-            use_ground_effect=True
+            use_ground_effect=elapsed < self._ground_effect_stop_time,
         )
 
         if result.lengths is not None:
