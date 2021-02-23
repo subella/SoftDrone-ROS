@@ -15,9 +15,9 @@
         <param name="hover_duration" value="3.5"/>
         <param name="start_settle_duration" value="7.0"/>
         <param name="mission_settle_duration" value="6.0"/>
-        <param name="gripper_latency" value="0.2"/>
+        <param name="gripper_latency" value="0.0"/>
 
-        <rosparam param="mocap_offset">[-0.01, -0.065, 0.0]</rosparam>
+        <rosparam param="mocap_offset">[0.02, -0.07, -0.03]</rosparam>
 
         <param name="grasp_time" value="5.0"/>
         <rosparam param="grasp_target">[0.257, -3.463, 0.989]</rosparam>
@@ -27,9 +27,9 @@
         <rosparam param="grasp_velocity">[0.2, 0.0, -0.035]</rosparam>
         <param name="ground_effect_stop_time" value="5.5"/>
 
-        <rosparam param="end_offset">[1.0, 0.0, 0.25]</rosparam>
+        <rosparam param="end_offset">[2.0, 0.0, 1.0]</rosparam>
         <rosparam param="end_velocity">[0.0, 0.0, 0.0]</rosparam>
-        <param name="end_time" value="3.0"/>
+        <param name="end_time" value="5.0"/>
 
         <param name="desired_yaw" value="-1.57"/>
         <param name="trajectory_plane" value="xz"/>
