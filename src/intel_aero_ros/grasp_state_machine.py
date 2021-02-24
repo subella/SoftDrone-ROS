@@ -375,6 +375,19 @@ class GraspStateMachine:
 
         return curr_time - self._start_times[state]
 
+    def _get_elapsed_ratio(self, state):
+        """Check if a state has finished by time."""
+        if state not in self._state_durations:
+            rospy.logerror("State {} should not check time elapsed!".format(state))
+            return False
+
+        curr_time = rospy.Time.now()
+        if state not in self._start_times:
+            self._start_times[state] = curr_time
+            return 0.0
+        elapsed = (curr_time - self._start_times[state]).to_sec()
+        return elapsed / self._state_durations[state].to_sec()
+
     def _has_elapsed(self, state):
         """Check if a state has finished by time."""
         if state not in self._state_durations:
@@ -432,6 +445,7 @@ class GraspStateMachine:
             self._home_position[0],
             self._home_position[1],
             self._home_position[2] + self._takeoff_offset,
+            yaw=self._desired_yaw * self._get_elapsed_ratio(GraspDroneState.HOVER)
         )
         return self._has_elapsed(GraspDroneState.HOVER)
 
@@ -517,7 +531,7 @@ class GraspStateMachine:
             self._home_position[0],
             self._home_position[1],
             self._home_position[2] + self._takeoff_offset,
-            yaw=0.0,
+            yaw=self._desired_yaw * (1.0 - self._get_elapsed_ratio(GraspDroneState.HOVER_BEFORE_LAND)),
         )
         return self._has_elapsed(GraspDroneState.HOVER_BEFORE_LAND)
 
