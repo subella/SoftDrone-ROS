@@ -527,11 +527,13 @@ class GraspStateMachine:
 
     def _handle_hover_before_land(self):
         """Use loiter command to hang out at hover setpoint."""
+        yaw_scale = 0.8 - self._get_elapsed_ratio(GraspDroneState.HOVER_BEFORE_LAND)
+        yaw_scale = 0.0 if yaw_scale < 0.0 else yaw_scale
         self._loiter_at_point(
             self._home_position[0],
             self._home_position[1],
             self._home_position[2] + self._takeoff_offset,
-            yaw=self._desired_yaw * (1.0 - self._get_elapsed_ratio(GraspDroneState.HOVER_BEFORE_LAND)),
+            yaw=self._desired_yaw * yaw_scale,
         )
         return self._has_elapsed(GraspDroneState.HOVER_BEFORE_LAND)
 
