@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>intel_aero_ros</name>
+  <name>softdrone_core</name>
   <version>0.0.0</version>
-  <description>Some quick utilities to work with the intel aero RTF drone</description>
+  <description>Core Softdrone control code</description>
 
-  <maintainer email="na26933@mit.edu">Nathan Hughes</maintainer>
+  <maintainer email="aaronray@mit.edu">Aaron Ray</maintainer>
   <license>TODO</license>
   <author email="na26933@mit.edu">Nathan Hughes</author>
+  <author email="aaronray@mit.edu">Aaron Ray</author>
 
   <buildtool_depend>catkin</buildtool_depend>
   <exec_depend>rospy</exec_depend>

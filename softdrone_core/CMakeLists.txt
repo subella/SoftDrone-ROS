@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(intel_aero_ros)
+project(softdrone_core)
 
 find_package(catkin REQUIRED)
 
