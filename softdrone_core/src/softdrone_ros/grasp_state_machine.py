@@ -14,6 +14,23 @@ import enum
 import sys
 
 
+class GraspParams():
+    """ Encapsulates parameters related to the grasp trajectory """
+    def __init__(self):
+        self.relative_start_position = None
+        self.relative_end_position = None
+        self.grasp_time = None
+        self.grasp_velocity = None
+        self.open_distance = None
+        self.use_offline_lengths = None
+        self.end_time = None
+        self.grasp_axis = None
+
+    def params_ok(self):
+        members = [attr for attr in dir(example) if not callable(getattr(example, attr)) and not attr.startswith("__")]
+        return not any([m is None for m in members]) 
+
+
 class GraspDroneState(enum.Enum):
     """Current state of the drone."""
 
@@ -129,6 +146,16 @@ class GraspStateMachine:
             rospy.Duration(1.0 / control_rate), self._timer_callback
         )
 
+    def _publish_polynomial_viz(self, poly, ns, ix, color):
+        times = np.linspace(0, poly._total_time, 50)
+        pos_list = [poly.interp(t)[0] for t in times]
+        pts = [Point() for _ in times]
+        for p, r in zip(pts, pos_list):
+            p.x = r[0]
+            p.y = r[1]
+            p.z = r[2]
+        self._publish_trajectory_viz(pts, ns, ix, color)
+
     def _publish_grasp_trajectory_viz(self):
         t_vals = np.linspace(0, self._mission_manager._total_time, 50)
         grasp_traj = [self._mission_manager._run_normal(t) for t in t_vals]
@@ -138,26 +165,29 @@ class GraspStateMachine:
             p.y = r.position[1]
             p.z = r.position[2]
 
+        self._publish_trajectory_viz(pts, 'grasp_trajectory', 0, (0,1,0))
+
+    def _publish_trajectory_viz(self, pts, ns, ix, color):
         strip_marker = Marker()
         strip_marker.header.frame_id = "map"
         strip_marker.header.stamp = rospy.Time.now()
-        strip_marker.ns = "grap_trajectory_line"
-        strip_marker.id = 0
+        strip_marker.ns = ns + '_line'
+        strip_marker.id = ix
         strip_marker.type = Marker.LINE_STRIP
         strip_marker.action = Marker.ADD
         strip_marker.pose.orientation.w = 1.0
         strip_marker.scale.x = 0.05
-        strip_marker.color.r = 0.0
-        strip_marker.color.g = 1.0
-        strip_marker.color.b = 0.0
         strip_marker.color.a = 1.0
+        strip_marker.color.r = color[0]
+        strip_marker.color.g = color[1]
+        strip_marker.color.b = color[2]
         strip_marker.points = pts
 
         sphere_marker = Marker()
         sphere_marker.header.frame_id = "map"
         sphere_marker.header.stamp = rospy.Time.now()
-        sphere_marker.ns = "grap_trajectory_pts"
-        sphere_marker.id = 1
+        sphere_marker.ns = ns + '_pts'
+        sphere_marker.id = ix + 1
         sphere_marker.type = Marker.SPHERE_LIST
         sphere_marker.action = Marker.ADD
         sphere_marker.pose.orientation.w = 1.0
@@ -165,9 +195,9 @@ class GraspStateMachine:
         sphere_marker.scale.y = 0.1
         sphere_marker.scale.z = 0.1
         sphere_marker.color.a = 1.0
-        sphere_marker.color.r = 0.0
-        sphere_marker.color.g = 1.0
-        sphere_marker.color.b = 0.0
+        sphere_marker.color.r = color[0]
+        sphere_marker.color.g = color[1]
+        sphere_marker.color.b = color[2]
         sphere_marker.points = pts
 
         ma = MarkerArray()
@@ -361,6 +391,7 @@ class GraspStateMachine:
 
         self._target_pub.publish(msg)
 
+
     def _setup_intermediate_waypoints(self):
         """Plan polynomial trajectories between states."""
         if self._home_position is None:
@@ -382,7 +413,7 @@ class GraspStateMachine:
                 start_position, self._average_polynomial_velocity)
         self._state_polynomials[GraspDroneState.MOVING_TO_START] = move_to_start_poly
 
-        #self._publish_polynomial_viz(move_to_start_poly, 'move_to_start', 'r')
+        self._publish_polynomial_viz(move_to_start_poly, 'move_to_start', 2, (1,0,0))
 
         rospy.loginfo(
             "Planing from grasp end ({}) to drop position ({})".format(
@@ -394,20 +425,23 @@ class GraspStateMachine:
                 start_position, self._average_polynomial_velocity)
         self._state_polynomials[GraspDroneState.MOVING_TO_DROP] = move_to_drop_poly
 
-        #self._publish_polynomial_viz(move_to_drop_poly, 'move_to_drop', 'b')
+        self._publish_polynomial_viz(move_to_drop_poly, 'move_to_drop', 4, (0,0,1))
 
         rospy.loginfo(
             "Planing from drop position ({}) to home ({})".format(
                 np.squeeze(start_position), np.squeeze(hover_position)
             )
         )
-        self._state_polynomials[GraspDroneState.MOVING_TO_HOME] = get_polynomial(
+
+        move_to_home_poly = get_polynomial(
             PolynomialInfo,
             find_polynomials,
             start_position,
             hover_position,
             self._average_polynomial_velocity,
         )
+        self._publish_polynomial_viz(move_to_home_poly, 'move_to_home', 6, (1,1,0))
+        self._state_polynomials[GraspDroneState.MOVING_TO_HOME] = move_to_home_poly
 
     def _get_elapsed(self, state):
         """Check if a state has finished by time."""

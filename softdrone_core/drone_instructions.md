@@ -23,10 +23,10 @@ On the drone:
 - Run tmux to avoid multiple ssh sessions (unless you really want to)
   - Quick tmux guide can be found [here](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/).
   - The drone tmux configuration uses `Ctrl-a` as the leader key for all commands instead of `Ctrl-b`.  You can get vim-like movement between panes with `Alt+[h,j,k,l]`.
-- First window is to edit any code on the drone (`roscd intel_aero_ros`)
+- First window is to edit any code on the drone (`roscd softdrone_ros`)
 - Second window is to flash the firmware (you can skip this if you want)
-- Third window is split into two panes: `roscore` and `roslaunch intel_aero_ros mocap_translation.launch gcs_ip:=YOUR_IP`
-- Fourth window tends to also be split into two panes: `roslaunch intel_aero_ros SOME_LAUNCH_FILE` and a debug shell into the firmware. At this point, I mainly use it to set parameters, which you can do from QGroundControl.
+- Third window is split into two panes: `roscore` and `roslaunch softdrone_ros mocap_translation.launch gcs_ip:=YOUR_IP`
+- Fourth window tends to also be split into two panes: `roslaunch softdrone_ros SOME_LAUNCH_FILE` and a debug shell into the firmware. At this point, I mainly use it to set parameters, which you can do from QGroundControl.
 - Fifth window is for copying logs: `cd /var/lib/mavlink-router`.  I tend to rsync logs to a directory, but whatever works.
 
 Other things to remember:
@@ -44,16 +44,16 @@ Once you want to stop the drone (either in an emergency or during normal operati
 
 ### Important code:
 
-Grasping: `roslaunch intel_aero_ros trajectory_follower.launch use_gripper:=true`
+Grasping: `roslaunch softdrone_ros trajectory_follower.launch use_gripper:=true`
 
-Involves (files relative to `intel_aero_ros`):
+Involves (files relative to `softdrone_ros`):
  - `launch/trajectory_follower.launch`
  - `bin/trajectory_tracking_node`
- - `src/intel_aero_ros/gain_tuning_state_machine.py`
+ - `src/softdrone_ros/gain_tuning_state_machine.py`
 
-Landing: `roslaunch intel_aero_ros landing_experiments.launch use_gripper:=true naive:=false`
+Landing: `roslaunch softdrone_ros landing_experiments.launch use_gripper:=true naive:=false`
 
-Involves (files relative to `intel_aero_ros`):
+Involves (files relative to `softdrone_ros`):
  - `launch/landing_experiments.launch`
  - `bin/landing_node`
- - `src/intel_aero_ros/landing_state_machine.py`
+ - `src/softdrone_ros/landing_state_machine.py`

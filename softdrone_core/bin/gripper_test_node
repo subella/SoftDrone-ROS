@@ -6,7 +6,7 @@ import numpy as np
 import std_msgs.msg
 
 from softdrone.python.control.find_trajectory import find_trajectory_for_interp
-import intel_aero_ros
+import softdrone_core
 
 
 def send_lengths(pub, lengths, scale=True):
