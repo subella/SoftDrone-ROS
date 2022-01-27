@@ -3,9 +3,11 @@ project(softdrone_core)
 
 find_package(catkin REQUIRED)
 
-catkin_python_setup()
 
 catkin_package()
+
+catkin_python_setup()
+#add_subdirectory(SoftDrone-TrajOpt)
 
 #############
 ## Install ##

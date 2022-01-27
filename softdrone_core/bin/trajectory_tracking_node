@@ -1,26 +1,16 @@
 #!/usr/bin/env python
 """Script to get a positions/velocities/lengths trajectory."""
-import intel_aero_ros
+import sys
+
 import rospy
 import numpy as np
 import geometry_msgs.msg
 
-import importlib
-import pathlib
-import sys
-
-
-def get_trajectory_planner():
-    """Import the trajectory planner code."""
-    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
-    sys.path.append(str(soft_drone_pydir))
-    return importlib.import_module(
-        "soft_drone_python.find_trajectory"
-    ).find_trajectory_for_interp
+import intel_aero_ros
+from softdrone.python.control.find_trajectory import find_trajectory_for_interp
 
 
 grasp_target = None
-
 
 def pose_handler(msg):
     """Wait for start pose."""
@@ -42,7 +32,7 @@ def main():
     gripper_latency = rospy.get_param("~gripper_latency", 0.0)
     trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
 
-    planner = get_trajectory_planner()
+    planner = find_trajectory_for_interp
 
     if use_mocap_target:
         rospy.logwarn("Waiting for grasp target")

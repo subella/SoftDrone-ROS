@@ -1,11 +1,14 @@
 """Custom state machine with slightly simplified logic."""
+from softdrone.python.control.find_trajectory import find_polynomials, PolynomialInfo
+from geometry_msgs.msg import Point
+from visualization_msgs.msg import Marker, MarkerArray
+
 import geometry_msgs.msg
 import mavros_msgs.msg
 import mavros_msgs.srv
 import std_msgs.msg
 import numpy as np
 import importlib
-import pathlib
 import rospy
 import enum
 import sys
@@ -112,6 +115,10 @@ class GraspStateMachine:
             "lengths", std_msgs.msg.Int64MultiArray, queue_size=10
         )
 
+        self._trajectory_viz_pub = rospy.Publisher("viz", MarkerArray, queue_size=1, latch=True)
+
+        self._publish_grasp_trajectory_viz()
+
         control_rate = rospy.get_param("~control_rate", 100)
         if control_rate < 20.0:
             rospy.logfatal("Invalid control rate, must be above 20 hz")
@@ -121,6 +128,52 @@ class GraspStateMachine:
         self._timer = rospy.Timer(
             rospy.Duration(1.0 / control_rate), self._timer_callback
         )
+
+    def _publish_grasp_trajectory_viz(self):
+        t_vals = np.linspace(0, self._mission_manager._total_time, 50)
+        grasp_traj = [self._mission_manager._run_normal(t) for t in t_vals]
+        pts = [Point() for _ in t_vals]
+        for p, r in zip(pts, grasp_traj):
+            p.x = r.position[0]
+            p.y = r.position[1]
+            p.z = r.position[2]
+
+        strip_marker = Marker()
+        strip_marker.header.frame_id = "map"
+        strip_marker.header.stamp = rospy.Time.now()
+        strip_marker.ns = "grap_trajectory_line"
+        strip_marker.id = 0
+        strip_marker.type = Marker.LINE_STRIP
+        strip_marker.action = Marker.ADD
+        strip_marker.pose.orientation.w = 1.0
+        strip_marker.scale.x = 0.05
+        strip_marker.color.r = 0.0
+        strip_marker.color.g = 1.0
+        strip_marker.color.b = 0.0
+        strip_marker.color.a = 1.0
+        strip_marker.points = pts
+
+        sphere_marker = Marker()
+        sphere_marker.header.frame_id = "map"
+        sphere_marker.header.stamp = rospy.Time.now()
+        sphere_marker.ns = "grap_trajectory_pts"
+        sphere_marker.id = 1
+        sphere_marker.type = Marker.SPHERE_LIST
+        sphere_marker.action = Marker.ADD
+        sphere_marker.pose.orientation.w = 1.0
+        sphere_marker.scale.x = 0.1
+        sphere_marker.scale.y = 0.1
+        sphere_marker.scale.z = 0.1
+        sphere_marker.color.a = 1.0
+        sphere_marker.color.r = 0.0
+        sphere_marker.color.g = 1.0
+        sphere_marker.color.b = 0.0
+        sphere_marker.points = pts
+
+        ma = MarkerArray()
+        ma.markers.append(strip_marker)
+        ma.markers.append(sphere_marker)
+        self._trajectory_viz_pub.publish(ma)
 
     def _register_handlers(self):
         """Register default handlers and replace with a couple new ones."""
@@ -319,48 +372,38 @@ class GraspStateMachine:
         start_position = self._mission_manager.get_start()
         rise_position = self._mission_manager.get_end()
 
-        package_dir = pathlib.Path(__file__).resolve().parent.parent.parent
-        soft_drone_pydir = package_dir.parent / "python"
-        sys.path.append(str(soft_drone_pydir))
-        planner = importlib.import_module(
-            "soft_drone_python.find_trajectory"
-        ).find_polynomials
-        polynomial_wrapper = importlib.import_module(
-            "soft_drone_python.find_trajectory"
-        ).PolynomialInfo
-
         rospy.loginfo(
             "Planing from home ({}) to grasp start ({})".format(
                 np.squeeze(hover_position), np.squeeze(start_position)
             )
         )
-        self._state_polynomials[GraspDroneState.MOVING_TO_START] = get_polynomial(
-            polynomial_wrapper,
-            planner,
-            hover_position,
-            start_position,
-            self._average_polynomial_velocity,
-        )
+        
+        move_to_start_poly = get_polynomial(PolynomialInfo, find_polynomials, hover_position, 
+                start_position, self._average_polynomial_velocity)
+        self._state_polynomials[GraspDroneState.MOVING_TO_START] = move_to_start_poly
+
+        #self._publish_polynomial_viz(move_to_start_poly, 'move_to_start', 'r')
+
         rospy.loginfo(
             "Planing from grasp end ({}) to drop position ({})".format(
                 np.squeeze(rise_position), np.squeeze(start_position)
             )
         )
-        self._state_polynomials[GraspDroneState.MOVING_TO_DROP] = get_polynomial(
-            polynomial_wrapper,
-            planner,
-            rise_position,
-            start_position,
-            self._average_polynomial_velocity,
-        )
+        
+        move_to_drop_poly = get_polynomial(PolynomialInfo, find_polynomials, rise_position,
+                start_position, self._average_polynomial_velocity)
+        self._state_polynomials[GraspDroneState.MOVING_TO_DROP] = move_to_drop_poly
+
+        #self._publish_polynomial_viz(move_to_drop_poly, 'move_to_drop', 'b')
+
         rospy.loginfo(
             "Planing from drop position ({}) to home ({})".format(
                 np.squeeze(start_position), np.squeeze(hover_position)
             )
         )
         self._state_polynomials[GraspDroneState.MOVING_TO_HOME] = get_polynomial(
-            polynomial_wrapper,
-            planner,
+            PolynomialInfo,
+            find_polynomials,
             start_position,
             hover_position,
             self._average_polynomial_velocity,
