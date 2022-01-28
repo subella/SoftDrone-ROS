@@ -6,7 +6,7 @@ import rospy
 import numpy as np
 import geometry_msgs.msg
 
-import softdrone_ros
+import softdrone_core
 from softdrone.python.control.find_trajectory import find_trajectory_for_interp
 
 
@@ -103,13 +103,13 @@ def main():
     print("Initial, Open, Grasp lengths: {}".format(lengths))
 
     # Set up the things that will make this run
-    trajectory_tracker = softdrone_ros.InterpTrajectoryTracker(
+    trajectory_tracker = softdrone_core.InterpTrajectoryTracker(
         polynomial,
         lengths,
         gripper_latency=gripper_latency,
         settle_time=trajectory_settle_time,
     )
-    state_machine = softdrone_ros.GraspStateMachine(trajectory_tracker)  # NOQA
+    state_machine = softdrone_core.GraspStateMachine(trajectory_tracker)  # NOQA
 
     rospy.spin()
 

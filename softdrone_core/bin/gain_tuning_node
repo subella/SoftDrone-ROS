@@ -4,7 +4,7 @@ import sys
 
 import rospy
 import numpy as np
-import softdrone_ros
+import softdrone_core
 
 from softdrone.python.control.find_trajectory import find_trajectory_for_interp
 
@@ -39,10 +39,10 @@ def main():
     )
 
     # Set up the things that will make this run
-    trajectory_tracker = softdrone_ros.InterpTrajectoryTracker(
+    trajectory_tracker = softdrone_core.InterpTrajectoryTracker(
         polynomial, lengths, settle_time=trajectory_settle_time
     )
-    state_machine = softdrone_ros.GainTuningStateMachine(trajectory_tracker)  # NOQA
+    state_machine = softdrone_core.GainTuningStateMachine(trajectory_tracker)  # NOQA
 
     rospy.spin()
 

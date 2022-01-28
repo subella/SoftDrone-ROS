@@ -1,5 +1,5 @@
 """Trajectory tracking node."""
-from softdrone_ros.state_machine import MissionRunResult
+from softdrone_core.state_machine import MissionRunResult
 import rospy
 import math
 

@@ -10,11 +10,14 @@
   <author email="aaronray@mit.edu">Aaron Ray</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>acl_msgs</exec_depend>
   <exec_depend>optitrack_motive_2_client</exec_depend>
   <exec_depend>mavros</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+
 
   <export>
   </export>

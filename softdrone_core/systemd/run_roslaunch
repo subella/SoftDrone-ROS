@@ -2,4 +2,4 @@
 source ~/vnav_ws/devel/setup.bash
 source /etc/ros/env.sh
 export ROS_HOME=$(echo ~)/.ros
-roslaunch softdrone_ros mocap_wrapper.launch
+roslaunch softdrone_core mocap_wrapper.launch

@@ -1,0 +1,201 @@
+#!/usr/bin/env python
+import rospy
+import tf 
+import time
+import numpy as np
+from geometry_msgs.msg import PoseStamped, TwistStamped, Point
+from nav_msgs.msg import Odometry
+from visualization_msgs.msg import Marker, MarkerArray
+from softdrone_core.msg import PolynomialTrajectory, LengthInfoMsg, GraspTrajectory
+from softdrone_core.utils import get_trajectory_viz_markers
+from softdrone_core import InterpTrajectoryTracker
+
+from softdrone.python.control.find_trajectory import find_coeffs, find_trajectory_for_interp, PolynomialInfo
+
+
+class PolynomialGenerator:
+
+    def __init__(self):
+
+        self.position = np.array([0,0,1])
+        self.yaw = 0
+        self.velocity = np.array([0,0,0])
+        self.angular_velocity = 0
+        self.waypoint_position = np.array([0,3,2])
+        self.waypoint_yaw = 0
+        self.target_position = np.array([3,3,0])
+        self.target_yaw = 0 # Note used yet. For dynamic grasp axis
+        self.target_velocity = np.array([0,0,0]) # Not used yet. Eventually for moving target
+
+
+        self.average_polynomial_velocity = rospy.get_param("~average_polynomial_velocity", 0.8)
+
+        self.grasp_time = rospy.get_param("~grasp_time", 3.0)
+        self.open_distance = rospy.get_param("~open_distance", 0.1)
+        self.gripper_latency = rospy.get_param("~gripper_latency", 0.0)
+        self.trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
+        self.start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
+        self.grasp_position = self.target_position - np.array(rospy.get_param("~offset", [0, 0, -0.20]))
+        self.trajectory_plane = rospy.get_param("~trajectory_plane", "yz")
+        self.grasp_velocity = np.array(rospy.get_param("~grasp_velocity", [0, 0, 0]))
+        self.end_time = np.array(rospy.get_param("~end_time", 2))
+        self.end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
+        self.end_offset = np.array(rospy.get_param("~end_offset", [2, 0, 1]))
+        self.grasp_lockout_distance = np.array(rospy.get_param("~grasp_lockout_distance", 1.0))
+
+        self.offset = rospy.get_param("~offset", [0, 0, -0.2])
+
+        rospy.Subscriber('pose', PoseStamped, self.set_pose_cb)
+        rospy.Subscriber('twist', TwistStamped, self.set_twist_cb)
+        rospy.Subscriber('waypoint', PoseStamped, self.set_waypoint_cb)
+        rospy.Subscriber('target_pose', PoseStamped, self.set_target_pose_cb)
+
+        self.waypoint_polynomial_publisher = rospy.Publisher('waypoint_polynomial', PolynomialTrajectory, queue_size=1) 
+        self.grasp_trajectory_publisher = rospy.Publisher('grasp_trajectory', GraspTrajectory, queue_size=1) 
+
+        self.trajectory_viz_pub = rospy.Publisher("viz", MarkerArray, queue_size=1, latch=True)
+
+
+    def set_target_pose_cb(self, msg):
+        self.target_position[0] = msg.position.x
+        self.target_position[1] = msg.position.y
+        self.target_position[2] = msg.position.z
+
+        quat = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
+        (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+        self.target_yaw = y
+
+    def get_coeffs(self, start, end, average_vel, safety_factor):
+        distance = np.linalg.norm(start - end)
+        total_time = distance / average_vel * safety_factor
+        coeffs = find_coeffs(start, end, time=total_time, start_velocity=self.velocity)
+        return (coeffs, total_time)
+
+    def set_pose_cb(self, msg):
+        pose = msg.pose
+        x = pose.position.x
+        y = pose.position.y
+        z = pose.position.z
+        self.position = np.array([x, y, z])
+
+        quat = [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]
+        (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+        self.yaw = y
+
+
+    def set_twist_cb(self, msg):
+        twist = msg.twist
+        vx = twist.linear.x
+        vy = twist.linear.y
+        vz = twist.linear.z
+        self.velocity = np.array([vx, vy, vz])
+
+        omega_x = twist.angular.x
+        omega_y = twist.angular.y
+        omega_z = twist.angular.z
+        self.angular_velocity = np.array([omega_x, omega_y, omega_z])
+
+
+    def set_waypoint_cb(self, msg):
+        pose = msg.pose
+        x = pose.position.x
+        y = pose.position.y
+        z = pose.position.z
+        self.waypoint_position = np.array([x, y, z])
+        quat = [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]
+        (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+        self.waypoint_yaw = y
+
+
+    def update_waypoint_trajectory(self):
+        t0 = time.time()
+        coeffs, total_time = self.get_coeffs(self.position, self.waypoint_position, self.average_polynomial_velocity, 1.4)
+        print('WP planning took %f seconds' % (time.time() - t0))
+        coeff_msg = PolynomialTrajectory()
+        coeff_msg.time_start = 0
+        coeff_msg.time_end = total_time
+        coeff_msg.coeffs_x = coeffs[0]
+        coeff_msg.coeffs_y = coeffs[1]
+        coeff_msg.coeffs_z = coeffs[2]
+        self.waypoint_polynomial_publisher.publish(coeff_msg)
+
+        poly_for_eval = [np.polynomial.polynomial.Polynomial(c) for c in coeffs]
+        poly_wrapper = PolynomialInfo(poly_for_eval, total_time)
+        times = np.linspace(0, total_time, 50)
+        pos_list = [poly_wrapper.interp(t)[0] for t in times]
+        pts = [Point() for _ in times]
+        for p, r in zip(pts, pos_list):
+            p.x = r[0]
+            p.y = r[1]
+            p.z = r[2]
+        ma = get_trajectory_viz_markers(pts, 'waypoint_trajectory', 0, (1,0,0))
+        self.trajectory_viz_pub.publish(ma)
+
+    def update_grasp_trajectory(self):
+        target_dist = np.linalg.norm(self.target_position - self.position)
+        if target_dist < self.grasp_lockout_distance:
+            # If we are close to the target, don't replan the trajectory
+            return
+        end_position = self.target_position + self.end_offset
+        polynomial, lengths = find_trajectory_for_interp(
+            start_position=self.position,
+            #grasp_axis=(0 if trajectory_plane == "xz" else 2),
+            grasp_axis=0,
+            grasp_position=self.target_position - self.offset,
+            grasp_target=self.target_position,
+            grasp_time=self.grasp_time,
+            grasp_velocity=self.grasp_velocity,
+            open_distance=self.open_distance,
+            use_offline_lengths=True,
+            end_time=self.end_time,
+            end_position=end_position,
+            end_velocity=self.end_velocity,
+            start_velocity=self.velocity)
+
+        coeffs = [p.coef for p in polynomial._polynomials]
+
+        coeff_msg = PolynomialTrajectory()
+        coeff_msg.coeffs_x = coeffs[0].tolist()
+        coeff_msg.coeffs_y = coeffs[1].tolist()
+        coeff_msg.coeffs_z = coeffs[2].tolist()
+        coeff_msg.time_start = 0
+        coeff_msg.time_end = polynomial._total_time
+
+
+        length_msg = LengthInfoMsg()
+        length_msg.init_lengths = np.array(lengths._init_lengths).flatten()
+        length_msg.open_lengths = np.array(lengths._open_lengths).flatten()
+        length_msg.grasp_lengths = np.array(lengths._grasp_lengths).flatten()
+        length_msg.open_time = lengths._open_time
+        length_msg.grasp_time = lengths._grasp_time
+        length_msg.gripper_latency = self.gripper_latency
+
+        traj_msg = GraspTrajectory()
+        traj_msg.polynomial = coeff_msg
+        traj_msg.lengths = length_msg
+        self.grasp_trajectory_publisher.publish(traj_msg)
+
+
+        t_vals = np.linspace(0, coeff_msg.time_end, 50)
+        poly_wrapper = InterpTrajectoryTracker(polynomial, lengths, self.gripper_latency, self.trajectory_settle_time)
+        grasp_traj = [poly_wrapper._run_normal(t) for t in t_vals]
+        pts = [Point() for _ in t_vals]
+        for p, r in zip(pts, grasp_traj):
+            p.x = r.position[0]
+            p.y = r.position[1]
+            p.z = r.position[2]
+        ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0))
+        self.trajectory_viz_pub.publish(ma)
+
+
+
+rospy.init_node('polynomial_generator')
+
+pg = PolynomialGenerator()
+
+rate = rospy.Rate(3)
+while not rospy.is_shutdown():
+    pg.update_waypoint_trajectory()
+    pg.update_grasp_trajectory()
+    rate.sleep()
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Script that uses position control to fly waypoints."""
-import softdrone_ros
+import softdrone_core
 import rospy
 import numpy as np
 
@@ -24,8 +24,8 @@ def main():
     positions = positions * num_repeats
 
     # Set up class that actually run things
-    waypoint_tracker = softdrone_ros.WaypointTracker(positions, distance_threshold)
-    state_machine = softdrone_ros.StateMachine(waypoint_tracker)  # NOQA
+    waypoint_tracker = softdrone_core.WaypointTracker(positions, distance_threshold)
+    state_machine = softdrone_core.StateMachine(waypoint_tracker)  # NOQA
 
     rospy.spin()
 

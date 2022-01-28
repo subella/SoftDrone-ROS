@@ -1,5 +1,5 @@
 """Custom state machine with slightly simplified logic."""
-from softdrone_ros.state_machine import StateMachine
+from softdrone_core.state_machine import StateMachine
 import mavros_msgs.msg
 import mavros_msgs.srv
 import numpy as np
