@@ -1,0 +1,20 @@
+<launch>
+    <arg name="param_file_name" default="fake_target_node.yaml" doc="Name of node's config file" />
+    <arg name="target_motion" default="circle"/>
+    <arg name="radius" default="1.0"/>
+    <arg name="speed" default="1.0"/>
+    <arg name="height" default="0.0"/>
+    <arg name="x" default="0.0"/>
+    <arg name="y" default="0.0"/>
+    <node pkg="softdrone_core" type="fake_target_node" name="fake_target_node" output="screen">
+
+        <!-- circle or stationary -->
+        <param name="target_motion" value="$(arg target_motion)"/>
+        <param name="radius" value="$(arg radius)"/>
+        <param name="speed" value="$(arg speed)"/>
+        <param name="height" value="$(arg height)"/>
+        <param name="x" value="$(arg x)"/>
+        <param name="y" value="$(arg y)"/>
+    </node>
+
+</launch>

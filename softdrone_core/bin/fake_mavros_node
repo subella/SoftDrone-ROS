@@ -2,6 +2,7 @@
 
 import numpy as np
 import rospy
+import tf
 from mavros_msgs.msg import State, PositionTarget
 from mavros_msgs.srv import SetMode, SetModeResponse, CommandBool, CommandBoolResponse
 from geometry_msgs.msg import PoseStamped, TwistStamped
@@ -23,8 +24,12 @@ def setpoint_cb(msg):
     ps.pose.position.x = msg.position.x
     ps.pose.position.y = msg.position.y
     ps.pose.position.z = msg.position.z
-    ## Note, for now the grasp state machine doesn't care about orientation so we won't update it
-    ps.pose.orientation.w = 1
+
+    q = tf.transformations.quaternion_from_euler(0, 0, msg.yaw)
+    ps.pose.orientation.x = q[0]
+    ps.pose.orientation.y = q[1]
+    ps.pose.orientation.z = q[2]
+    ps.pose.orientation.w = q[3]
     pose_pub.publish(ps)
 
     new_pos = np.array([msg.position.x, msg.position.y, msg.position.z])

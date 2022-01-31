@@ -10,6 +10,8 @@ start_position: [-2.0, 0.0, 2.0]
 offset: [0, 0, -0.2]
 open_distance: 0.2
 grasp_velocity: [0.2, 0.0, -0.035]
+grasp_speed_horz: 0.2
+grasp_speed_vert: -0.035
 ground_effect_stop_time: 5.5
 
 end_offset: [2.0, 0.0, 1.0]

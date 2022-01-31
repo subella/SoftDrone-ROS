@@ -9,6 +9,7 @@
         <remap from="target" to="/mavros/setpoint_raw/local"/>
         <remap from="lengths" to="/gripper/lengths"/>
         <remap from="grasp_target" to="/sparkgrasptar/world"/>
+        <remap from="waypoint" to="/polynomial_generator/waypoint"/>
 
         <param name="use_mocap_target" value="$(arg use_mocap_target)"/>
         <param name="dist_threshold" value="0.35"/>
@@ -16,6 +17,10 @@
         <param name="start_settle_duration" value="7.0"/>
         <param name="mission_settle_duration" value="6.0"/>
         <param name="gripper_latency" value="0.0"/>
+
+        <param name="target_grasp_angle" value="0.0"/>
+        <param name="grasp_start_horz_offset" value="2.0"/>
+        <param name="grasp_start_vert_offset" value="1.0"/>
 
         <rosparam param="mocap_offset">[0.01, -0.23, -0.03]</rosparam>
 
