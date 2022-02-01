@@ -75,7 +75,11 @@ syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs)
   }
 
   Belief7D b_agent = beliefFromPoseWCov(odom->pose);
+  //std::cout << "b_agent" << std::endl;
+  //std::cout << b_agent << std::endl;
   Belief7D b_target_rel = beliefFromPoseWCov(pwcs->pose);
+  //std::cout << "b_target_rel" << std::endl;
+  //std::cout << b_target_rel << std::endl;
 
   Belief7D b_target_meas = b_agent + b_target_rel;
   update(b_target_meas);
@@ -97,9 +101,15 @@ publishResults()
 TrackerROS::Belief7D TrackerROS::
 beliefFromPoseWCov(const PoseWCov &pwc)
 {
+  //std::cout << "pwc 6d" << std::endl;
+  //std::cout << pwc << std::endl;
   Pose6D p = getPose6DFromPoseWCov(pwc);
   CMat66 P = getCov6DFromPoseWCov(pwc);
   Belief6D b6D(p,P);
+  //std::cout << "Belief 6d" << std::endl;
+  //std::cout << b6D << std::endl;
+  //std::cout << "Belief 7d" << std::endl;
+  //std::cout << Belief7D(b6D) << std::endl<< std::endl<< std::endl<< std::endl;
   return Belief7D(b6D);
 };
 

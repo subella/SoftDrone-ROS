@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="softdrone_core" type="setpoint_cli_node" name="setpoint_cli_node" output="screen">
+    </node>
+
+</launch>

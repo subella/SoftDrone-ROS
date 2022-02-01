@@ -1,4 +1,4 @@
 tracker_params:
-  agent_topic: "dummy/agent/odom"
-  target_relative_topic: "dummy/target_relative/pose"
-  target_topic: "tracker/target/pose"
+  agent_topic: "/mavros/odometry/in"
+  target_relative_topic: "/perception/target_rel_estimate"
+  target_topic: "/tracker/target/pose"

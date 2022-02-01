@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(GTest REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
-find_package(MRPT 2.0 COMPONENTS poses)
+find_package(MRPT 2.0 COMPONENTS poses math)
 message(STATUS "MRPT_VERSION: ${MRPT_VERSION}")
 message(STATUS "MRPT_LIBRARIES: ${MRPT_LIBRARIES}")
 
@@ -27,6 +27,8 @@ catkin_package(
   roscpp 
   rospy 
   std_msgs
+  nav_msgs
+  geometry_msgs
 )
 
 include_directories(

@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="softdrone_core" type="fake_observation_node" name="fake_observation_node" output="screen">
+    </node>
+
+</launch>

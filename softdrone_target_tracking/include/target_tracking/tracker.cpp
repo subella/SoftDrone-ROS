@@ -45,9 +45,10 @@ update(const Belief7D &b_target_meas)
 
     Mat77 R, P;
     copyCovarianceToMat77(b_target_meas, R);
+    //std::cout << R <<std::endl;
     copyCovarianceToMat77(b_target_, P);
 
-    R = 0.1*Eigen::MatrixXd::Identity(7,7); //TODO: make parameter
+    R = 0.01*Eigen::MatrixXd::Identity(7,7); //TODO: make parameter
     Mat77 S = P + R;
     Mat77 K = P*S.inverse();
 
