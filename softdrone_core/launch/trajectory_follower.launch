@@ -8,7 +8,7 @@
         <remap from="pose" to="/mavros/local_position/pose"/>
         <remap from="target" to="/mavros/setpoint_raw/local"/>
         <remap from="lengths" to="/gripper/lengths"/>
-        <remap from="grasp_target" to="/sparkgrasptar/world"/>
+        <remap from="grasp_target" to="/sparkgrasptarget/world"/>
         <remap from="waypoint" to="/polynomial_generator/waypoint"/>
 
         <param name="use_mocap_target" value="$(arg use_mocap_target)"/>

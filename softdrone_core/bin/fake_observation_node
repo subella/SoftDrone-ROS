@@ -2,7 +2,10 @@
 import numpy as np
 import rospy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+
 import tf
+
+use_noise = True
 
 R_pos = 0.1
 R_rot = 0.1
@@ -48,7 +51,7 @@ def publish_relative_target_observation():
     target_rel_y_body = target_rel_global[1]*np.cos(drone_yaw) + target_rel_global[1]*np.sin(drone_yaw)
     target_rel_z_body = target_rel_global[2]
     target_rel_yaw_body = target_yaw - drone_yaw
-    q = tf.transformations.quaternion_from_euler(0,0,target_rel_yaw_body)
+    q = tf.transformations.quaternion_from_euler(0.0, 0.0, target_rel_yaw_body)
 
     msg = PoseWithCovarianceStamped()
     msg.header.stamp = rospy.Time.now()
