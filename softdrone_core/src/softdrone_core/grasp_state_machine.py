@@ -85,6 +85,7 @@ class GraspStateMachine:
         self._mission_manager = mission_manager
         self._state = GraspDroneState.WAITING_FOR_HOME
         self._is_armed = False
+        self._arm_time = None
         self._current_position = None
         self._home_position = None
 
@@ -409,6 +410,8 @@ class GraspStateMachine:
 
     def _state_callback(self, msg):
         """Handle state callback."""
+        if (not self.is_armed) and msg.armed:
+            self._arm_time = rospy.Time.now()
         self._is_armed = msg.armed
 
     def _pose_callback(self, msg):
@@ -479,7 +482,10 @@ class GraspStateMachine:
 
     def _handle_waiting_for_arm(self):
         """Wait for the drone to be armed."""
-        return self._is_armed
+        if self._arm_time is None:
+            return False
+        else:
+            return self._is_armed and (rospy.Time.now() - self._arm_time > rospy.Duration(5))
 
     def _handle_offboard(self):
         """Publish to offboard and switch to offboard mode."""
