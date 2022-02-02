@@ -121,8 +121,6 @@ void load_params(const ros::NodeHandle &nh)
 
 void getAgentTruth(Eigen::VectorXd &mu, Eigen::MatrixXd &cov)
 {
-
-
 	static double incr = 0;
 	double dx = 1*std::sin(incr);
 	double dy = 1*std::sin(incr);
@@ -224,9 +222,9 @@ void sampleData(PoseWCov &agent, PoseWCov &target_rel)
 	Eigen::VectorXd mu_target_rel(7,1);
 	Eigen::MatrixXd cov_target_rel(6,6);
 	getTargetRelativeTruth(mu_agent,
-		                   mu_target,
-		                   mu_target_rel,
-		                   cov_target_rel);
+		                     mu_target,
+		                     mu_target_rel,
+		                     cov_target_rel);
 
 	//sample
 	agent.pose = soft::TrackerROS::samplePose(mu_agent, cov_agent);
@@ -234,6 +232,15 @@ void sampleData(PoseWCov &agent, PoseWCov &target_rel)
 
 	//populate covariance
 	copyCov(cov_agent, agent);
+
+	//the covariance of measurement is used for R matrix, make
+	//covariance order of magnitue larger than the actual distribution
+	cov_target_rel(0,0) = cov_target_rel(0,0)*10.0;
+	cov_target_rel(1,1) = cov_target_rel(1,1)*10.0;
+	cov_target_rel(2,2) = cov_target_rel(2,2)*10.0;
+	cov_target_rel(3,3) = cov_target_rel(3,3)*10.0;
+	cov_target_rel(4,4) = cov_target_rel(4,4)*10.0;
+	cov_target_rel(5,5) = cov_target_rel(5,5)*10.0;
 	copyCov(cov_target_rel, target_rel);
 }
 

@@ -74,22 +74,24 @@ syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs)
     ROS_ERROR("Error: odom->child_frame_id != pwcs->header.frame_id");
   }
 
-  Belief7D b_agent = beliefFromPoseWCov(odom->pose);
-  //std::cout << "b_agent" << std::endl;
-  //std::cout << b_agent << std::endl;
-  Belief7D b_target_rel = beliefFromPoseWCov(pwcs->pose);
-  //std::cout << "b_target_rel" << std::endl;
-  //std::cout << b_target_rel << std::endl;
+  //don't use 7D, left/right multiplication by jacobian to convert
+  //covariance from 6D to 7D may cause singular covariance matrix
+  // Belief7D b_agent = belief7DFromPoseWCov(odom->pose);
+  // Belief7D b_target_rel = belief7DFromPoseWCov(pwcs->pose);
+  // Belief7D b_target_meas = b_agent + b_target_rel;
+  // update(b_target_meas);
+  // publishResults7D();
 
-  Belief7D b_target_meas = b_agent + b_target_rel;
+  //use 6D
+  Belief6D b_agent = belief6DFromPoseWCov(odom->pose);
+  Belief6D b_target_rel = belief6DFromPoseWCov(pwcs->pose);
+  Belief6D b_target_meas = b_agent + b_target_rel;
   update(b_target_meas);
-
-  publishResults();
+  publishResults6D();
 };
 
-//TODO
 void TrackerROS::
-publishResults()
+publishResults7D()
 {
   PoseWCovStamp pwcs;
   pwcs.header.stamp = time_stamp_;
@@ -98,19 +100,31 @@ publishResults()
   target_pub_.publish(pwcs);
 };
 
-TrackerROS::Belief7D TrackerROS::
-beliefFromPoseWCov(const PoseWCov &pwc)
+void TrackerROS::
+publishResults6D()
 {
-  //std::cout << "pwc 6d" << std::endl;
-  //std::cout << pwc << std::endl;
+  PoseWCovStamp pwcs;
+  pwcs.header.stamp = time_stamp_;
+  pwcs.header.frame_id = frame_id_;
+  pwcs.pose = poseWCovFromBelief(b_target_6D_);
+  target_pub_.publish(pwcs);
+};
+
+TrackerROS::Belief7D TrackerROS::
+belief7DFromPoseWCov(const PoseWCov &pwc)
+{
   Pose6D p = getPose6DFromPoseWCov(pwc);
   CMat66 P = getCov6DFromPoseWCov(pwc);
   Belief6D b6D(p,P);
-  //std::cout << "Belief 6d" << std::endl;
-  //std::cout << b6D << std::endl;
-  //std::cout << "Belief 7d" << std::endl;
-  //std::cout << Belief7D(b6D) << std::endl<< std::endl<< std::endl<< std::endl;
   return Belief7D(b6D);
+};
+
+TrackerROS::Belief6D TrackerROS::
+belief6DFromPoseWCov(const PoseWCov &pwc)
+{
+  Pose6D p = getPose6DFromPoseWCov(pwc);
+  CMat66 P = getCov6DFromPoseWCov(pwc);
+  return Belief6D(p,P);
 };
 
 TrackerROS::PoseWCov TrackerROS::

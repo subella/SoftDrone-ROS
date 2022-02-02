@@ -79,10 +79,12 @@ class TrackerROS : public Tracker {
     void syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs);
 
     /** \brief */
-    void publishResults();
+    void publishResults7D();
+    void publishResults6D();
 
     /** \brief */
-    static Belief7D beliefFromPoseWCov(const PoseWCov &pwc);
+    static Belief7D belief7DFromPoseWCov(const PoseWCov &pwc);
+    static Belief6D belief6DFromPoseWCov(const PoseWCov &pwc);
 
     /** \brief */
     static PoseWCov poseWCovFromBelief(const Belief7D &b);
