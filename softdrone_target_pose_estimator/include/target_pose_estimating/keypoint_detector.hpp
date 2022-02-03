@@ -41,7 +41,6 @@ class KeypointDetector {
 
     void init(const std::string& model_file_name);
 
-    /** \brief */
     bool DetectKeypoints(cv::Mat& img, torch::Tensor& keypoints);
 
     static c10::IValue GetTracingInputs(cv::Mat& img, c10::Device device);
@@ -50,7 +49,9 @@ class KeypointDetector {
 
     torch::Tensor ForwardPass(cv::Mat& preprocessed_img);
 
-    static torch::Tensor PostprocessKeypoints(torch::Tensor keypoints);
+    static torch::Tensor PostprocessKeypoints(torch::Tensor& keypoints);
+
+    static void DrawKeypoints(cv::Mat& img, torch::Tensor& keypoints);
 
 };
 

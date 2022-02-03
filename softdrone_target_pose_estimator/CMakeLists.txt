@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-set(CMAKE_PREFIX_PATH="/home/subella/catkin_ws/src/libtorch;/home/subella/catkin_ws/src/vision")
 find_package(Torch REQUIRED)
 find_package(TorchVision REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -60,17 +59,19 @@ target_link_libraries(keypoint_detector_ros
   ${OpenCV_LIBRARIES}
   ${TORCH_LIBRARIES}
   TorchVision::TorchVision
+  keypoint_detector
 )
 
 # EXECUTABLES
 
-# add_executable(keypoint_detector_node src/keypoint_detector_node.cpp)
+add_executable(keypoint_detector_node src/keypoint_detector_node.cpp)
 
-# add_dependencies(keypoint_detector_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(keypoint_detector_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-# target_link_libraries(keypoint_detector_node
-#    ${catkin_LIBRARIES}
-#    ${OpenCV_LIBRARIES}
-#    ${TORCH_LIBRARIES}
-#    TorchVision::TorchVision
-#  )
+target_link_libraries(keypoint_detector_node
+   ${catkin_LIBRARIES}
+   ${OpenCV_LIBRARIES}
+   ${TORCH_LIBRARIES}
+   TorchVision::TorchVision
+   keypoint_detector_ros
+ )
