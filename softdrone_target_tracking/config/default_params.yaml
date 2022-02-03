@@ -1,4 +1,4 @@
 tracker_params:
-  agent_topic: "/mavros/odometry/in"
-  target_relative_topic: "/perception/target_rel_estimate"
-  target_topic: "/tracker/target/pose"
+  agent_topic: "agent_odom"
+  target_relative_topic: "relative_pose_observation"
+  target_topic: "target_pose_output"

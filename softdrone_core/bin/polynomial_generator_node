@@ -24,7 +24,7 @@ class PolynomialGenerator:
         self.waypoint_position = np.array([0.,3.,2.])
         self.waypoint_yaw = 0.
         self.target_position = np.array([3.,3.,0.])
-        self.target_yaw = 0. # Note used yet. For dynamic grasp axis
+        self.target_yaw = 0.
         self.target_velocity = np.array([0.,0.,0.]) # Not used yet. Eventually for moving target
 
 
@@ -214,7 +214,6 @@ class PolynomialGenerator:
             p.z = r.position[2]
         ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0))
         self.trajectory_viz_pub.publish(ma)
-
 
 
 rospy.init_node('polynomial_generator')

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Whether to launch the "grasp state machine" control logic -->
+    <arg name="use_grasp_state_machine" default="true" doc="Use grasp state machine control logic?"/>
+    <!-- Whether to try connecting to the gripper -->
+    <arg name="use_gripper" default="false" doc="Connect to gripper?"/>
+
+    <arg name="use_tracker" default="true" doc="Use EKF target tracker?" />
+
+    <arg name="use_rviz" default="true" doc="Launch rviz?" />
+
+    <!-- Parameters to control launching the ROS simulation apparatus (i.e. no Unity) -->
+    <arg name="simulation_ros" default="false" doc="Use ros simulation?"/>
+    <arg name="simulate_mavros" default="$(simulation_ros)" doc="Mock mavros?"/>
+    <arg name="simulate_perception" default="$(simulation_ros)" doc="Mock perception?"/>
+    <arg name="simulate_target" default="$(simulate_perception)" doc="Simulate target?"/>
+
+
+    <!-- Parameters for simulated target. Used if simulate_perception is true -->
+    <arg name="target_motion" default="stationary" doc="Simulated target motion type: {stationary, circle, rotating}"/>
+    <arg name="target_x" default="2" doc="Simulated target x center"/>
+    <arg name="target_y" default="2" doc="Simulated target y center"/>
+    <arg name="target_radius" default="1" doc="Simulated target circle radius"/>
+    <arg name="target_speed" default="0.1" doc="Simulated target speed"/>
+
+
+    <!-- Launch the core grasp state machine logic -->
+    <include if="$(arg use_grasp_state_machine)" file="$(find softdrone_core)/launch/run_grasp_task.launch">
+        <arg name="use_gripper" value="$(arg use_gripper)"/>
+    </include>
+
+    <!-- Launch the simulated perception logic -->
+    <include if="$(simulate_perception)" file="$(find softdrone_core)/launch/sim_perception_node.launch"/>
+
+    <!-- Launch the simulated target node -->
+    <include if="$(simulate_target)" file="$(find softdrone_core)/launch/sim_target_node.launch">
+        <arg name="x" value="$(target_x)"/>
+        <arg name="y" value="$(target_y)"/>
+        <arg name="radius" value="$(target_radius)"/>
+        <arg name="speed" value="$(target_speed)"/>
+        <arg name="target_motion" value="$(target_motion)"/>
+    </include>
+
+    <include if="$(simulate_mavros)" file="$(find softdrone_core)/launch/fake_mavros.launch"/>
+
+    <!-- Launch the EKF estimator that updates estimate of target's state -->
+    <group if="$(use_tracker)">
+        <remap from="agent_odom" to="/mavros/odometry/in"/>
+        <remap from="relative_pose_observation" to="/perception/target_rel_estimate"/>
+        <remap from="target_pose_output" to="/tracker/target/pose"/>
+        <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
+    </group>
+
+    <include if="$(use_rviz)" file="$(find softdrone_core)/launch/rviz.launch"/>
+
+</launch>
