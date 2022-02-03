@@ -41,9 +41,8 @@ DetectKeypoints(cv::Mat& img, torch::Tensor& keypoints)
 
     cv::Mat preprocessed_image = PreprocessImage(img);
     torch::Tensor preprocessed_keypoints = ForwardPass(preprocessed_image);
-    if (!keypoints.numel())
+    if (!preprocessed_keypoints.numel())
     {
-        std::cout << "No keypoints found!";
         return 0;
     }
 
@@ -85,24 +84,26 @@ ForwardPass(cv::Mat& img)
     if (device.is_cuda())
         c10::cuda::getCurrentCUDAStream().synchronize();
 
-    // if (!keypoints.numel())
-    // {
-    //     std::cout << "No keypoints found!";
-    //     return 0;
-    // }
-    // else
-    // {
-        return keypoints;
-    // }
-
+    return keypoints;
 }
 
 torch::Tensor KeypointDetector::
-PostprocessKeypoints(torch::Tensor keypoints)
+PostprocessKeypoints(torch::Tensor& keypoints)
 {
     // TODO: Port python code.
     return keypoints;
 }
 
+void KeypointDetector::
+DrawKeypoints(cv::Mat& img, torch::Tensor& keypoints)
+{
+    for (int i = 0; i < keypoints.sizes()[1]; ++i)
+    {
+        double px = keypoints[0][i][0].item<int>();
+        double py = keypoints[0][i][1].item<int>();
+        cv::Point pt = cv::Point(px, py);
+        cv::circle(img, pt, 3, cv::Scalar(0, 0, 255), cv::FILLED, cv::LINE_AA);
+    }
+}
 
 }

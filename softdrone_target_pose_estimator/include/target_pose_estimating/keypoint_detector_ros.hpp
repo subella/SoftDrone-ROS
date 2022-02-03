@@ -30,16 +30,22 @@ class KeypointDetectorROS : public KeypointDetector {
     KeypointDetectorROS(const ros::NodeHandle &nh);
 
     KeypointDetectorROS(const ros::NodeHandle &nh,
-                        const std::string     &rgb_image_topic,
+                        const std::string     &rgb_img_topic,
+                        const std::string     &model_file_name,
+                        const bool            should_publish_annotated_img,
                         const std::string     &keypoints_topic,
-                        const std::string     &model_file_name);
+                        const std::string     &annotated_img_topic);
 
     ~KeypointDetectorROS() = default;
 
 
   private:
 
+    bool should_publish_annotated_img_;
+
     ros::NodeHandle nh_;
+
+    image_transport::ImageTransport it_;
 
     ros::Time time_stamp_;
 
@@ -47,9 +53,11 @@ class KeypointDetectorROS : public KeypointDetector {
 
     ros::Publisher keypoints_pub_;
 
-    void rgbImageCallback(const ImageMsg& rgb_image);
+    image_transport::Publisher annotated_img_pub_;
 
-    static Keypoints formatKeypoints(torch::Tensor tensor_kpts);
+    void rgbImageCallback(const ImageMsg& rgb_img);
+
+    static Keypoints formatKeypoints(torch::Tensor& tensor_kpts);
     
 };
 

@@ -13,31 +13,39 @@ namespace softdrone
 
 KeypointDetectorROS::
 KeypointDetectorROS(const ros::NodeHandle& nh)
-  : nh_(nh)
+  : nh_(nh),
+    it_(nh)
 {
   is_initialized_ = false;
 };
 
 KeypointDetectorROS::
 KeypointDetectorROS(const ros::NodeHandle& nh,
-                    const std::string&     rgb_image_topic,
+                    const std::string&     rgb_img_topic,
+                    const std::string&     model_file_name,
+                    const bool             should_publish_annotated_img,
                     const std::string&     keypoints_topic,
-                    const std::string&     model_file_name)
+                    const std::string&     annotated_img_topic)
   : nh_(nh),
+    it_(nh),
     KeypointDetector(model_file_name)
 {
-  image_transport::ImageTransport it(nh);
-  rgb_image_sub_ = it.subscribe(rgb_image_topic, 1, &KeypointDetectorROS::rgbImageCallback, this);
+
+  rgb_image_sub_ = it_.subscribe(rgb_img_topic, 1, &KeypointDetectorROS::rgbImageCallback, this);
+
+  should_publish_annotated_img_ = should_publish_annotated_img;
   keypoints_pub_ = nh_.advertise<Keypoints>(keypoints_topic,  1);
+  annotated_img_pub_ = it_.advertise(annotated_img_topic,  1);
 };
 
 void KeypointDetectorROS::
 rgbImageCallback(const ImageMsg& rgb_image_msg)
 {
-  cv::Mat input_img;
+
+  cv_bridge::CvImagePtr cv_ptr;
   try
   {
-    input_img = cv_bridge::toCvCopy(rgb_image_msg, "bgr8")->image;
+    cv_ptr = cv_bridge::toCvCopy(rgb_image_msg, sensor_msgs::image_encodings::BGR8);
   }
   catch (cv_bridge::Exception& e)
   {
@@ -46,21 +54,27 @@ rgbImageCallback(const ImageMsg& rgb_image_msg)
   }
 
   torch::Tensor tensor_kpts;
-  bool success = DetectKeypoints(input_img, tensor_kpts);
+  bool success = DetectKeypoints(cv_ptr->image, tensor_kpts);
 
   if(!success)
   {
-    ROS_ERROR("Keypoint detection failed!");
+    ROS_WARNING("Keypoint detection failed!");
     return;
   }
 
   Keypoints kpts = formatKeypoints(tensor_kpts);
   keypoints_pub_.publish(kpts);
 
+  if(should_publish_annotated_img_)
+  {
+    DrawKeypoints(cv_ptr->image, tensor_kpts);
+    annotated_img_pub_.publish(cv_ptr->toImageMsg());
+  }
+
 };
 
 softdrone_target_pose_estimator::Keypoints KeypointDetectorROS::
-formatKeypoints(torch::Tensor tensor_kpts)
+formatKeypoints(torch::Tensor& tensor_kpts)
 {
   softdrone_target_pose_estimator::Keypoints kpts;
   for (int i = 0; i < tensor_kpts.sizes()[1]; ++i)
