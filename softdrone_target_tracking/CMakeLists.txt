@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
 )
 
-find_package(GTest REQUIRED)
+#find_package(GTest REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
 find_package(MRPT 2.0 COMPONENTS poses math)
 message(STATUS "MRPT_VERSION: ${MRPT_VERSION}")
@@ -82,7 +82,8 @@ target_link_libraries(dummy_node
 )
 
 #TESTS
-add_executable(test_rbt tests/test_rbt.cpp)
+#add_executable(test_rbt tests/test_rbt.cpp)
+catkin_add_gtest(test_rbt tests/test_rbt.cpp)
 target_link_libraries(test_rbt 
   ${GTEST_LIBRARIES} 
   pthread 
