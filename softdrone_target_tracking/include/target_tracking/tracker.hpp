@@ -23,7 +23,7 @@
 
 #include <iostream>
 
-namespace soft
+namespace sdrone
 {
 
 class Tracker {
@@ -77,6 +77,6 @@ class Tracker {
     void setBelief(const Mat61 &mu, const Mat66 &cov);
 };
 
-}; //namespace soft
+}; //namespace sdrone
 
 #endif // Tracker_HPP

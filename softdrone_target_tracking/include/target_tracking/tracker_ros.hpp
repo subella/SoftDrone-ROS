@@ -23,7 +23,7 @@
 
 #include <target_tracking/tracker.hpp>
 
-namespace soft
+namespace sdrone
 {
 
 class TrackerROS : public Tracker {
@@ -105,6 +105,6 @@ class TrackerROS : public Tracker {
     
 };
 
-}; //namespace soft
+}; //namespace sdrone
 
 #endif // Tracker_ROS_HPP

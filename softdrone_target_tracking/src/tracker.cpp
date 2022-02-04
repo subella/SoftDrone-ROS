@@ -8,7 +8,7 @@
 
 #include <target_tracking/tracker.hpp>
 
-namespace soft
+namespace sdrone
 {
 
 Tracker::
@@ -178,4 +178,4 @@ setBelief(const Mat61 &mu,
   b_target_6D_ = Belief6D(p, CMat66(cov));
 }
 
-}; //namespace soft
+}; //namespace sdrone

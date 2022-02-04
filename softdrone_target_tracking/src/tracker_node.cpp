@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	ROS_INFO("tracker_node running...");
 
 	load_params(nh);
-	soft::TrackerROS tracker(nh, agent_topic_, target_rel_topic_, target_topic_);
+	sdrone::TrackerROS tracker(nh, agent_topic_, target_rel_topic_, target_topic_);
 	ros::spin();
 
 	return 0;

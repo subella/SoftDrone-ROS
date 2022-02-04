@@ -40,21 +40,21 @@ include_directories(
 
 #LIBRARIES
 #TODO: rbt can be separated from ROS
-add_library(rbt include/target_tracking/rbt.cpp)
+add_library(rbt src/rbt.cpp)
 target_link_libraries(rbt 
   ${catkin_LIBRARIES}
   Eigen3::Eigen
 )
 
 #TODO: tracker can be separate from ROS
-add_library(tracker include/target_tracking/tracker.cpp)
+add_library(tracker src/tracker.cpp)
 target_link_libraries(tracker 
   ${catkin_LIBRARIES}
   ${MRPT_LIBRARIES}
   Eigen3::Eigen
 )
 
-add_library(tracker_ros include/target_tracking/tracker_ros.cpp)
+add_library(tracker_ros src/tracker_ros.cpp)
 target_link_libraries(tracker_ros 
   ${catkin_LIBRARIES}
   Eigen3::Eigen

@@ -227,8 +227,8 @@ void sampleData(PoseWCov &agent, PoseWCov &target_rel)
 		                     cov_target_rel);
 
 	//sample
-	agent.pose = soft::TrackerROS::samplePose(mu_agent, cov_agent);
-	target_rel.pose = soft::TrackerROS::samplePose(mu_target_rel, cov_target_rel);
+	agent.pose = sdrone::TrackerROS::samplePose(mu_agent, cov_agent);
+	target_rel.pose = sdrone::TrackerROS::samplePose(mu_target_rel, cov_target_rel);
 
 	//populate covariance
 	copyCov(cov_agent, agent);

@@ -8,7 +8,7 @@
 
 #include <target_tracking/tracker_ros.hpp>
 
-namespace soft
+namespace sdrone
 {
 
 TrackerROS::
@@ -242,4 +242,4 @@ getPoseFromPose7D(const Pose7D &pose)
   return p;
 };
 
-}; //namespace soft
+}; //namespace sdrone
