@@ -12,11 +12,17 @@
 
     <arg name="use_polynomial_planner" default="true" doc="Launch polynomial planner node?"/>
 
+
+
     <!-- Parameters to control launching the ROS simulation apparatus (i.e. no Unity) -->
     <arg name="simulation_ros" default="false" doc="Use ros simulation?"/>
     <arg name="simulate_mavros" default="$(arg simulation_ros)" doc="Mock mavros?"/>
     <arg name="simulate_perception" default="$(arg simulation_ros)" doc="Mock perception?"/>
     <arg name="simulate_target" default="$(arg simulate_perception)" doc="Simulate target?"/>
+
+    <arg name="use_real_mavros" default="$(eval not arg('simulate_mavros'))" doc="Launch mavros"/>
+    <arg name="use_t265" default="$(arg use_real_mavros)" doc="Launch t265 node"/>
+    <arg name="publish_static_transforms" default="$(arg use_real_mavros)" doc="Publish static transformations for camera and drone"/>
 
 
     <!-- Parameters for simulated target. Used if simulate_perception is true -->
@@ -47,7 +53,26 @@
         <arg name="target_motion" value="$(arg target_motion)"/>
     </include>
 
+    <!-- Simulate mavros -->
     <include if="$(arg simulate_mavros)" file="$(find softdrone_core)/launch/fake_mavros.launch"/>
+
+    <!-- Launch (actual) mavros -->
+    <include if="$(arg use_real_mavros)" file="$(find softdrone_core)/launch/mavros.launch">
+        <arg name="sitl" default="false"/>
+        <arg name="gcs_ip" default=""/>
+    </include>
+
+
+    <group if="$(arg use_t265)">
+        <remap from="/camera/odom/sample" to="/mavros/odometry/out"/>
+        <include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
+    </group>
+
+    <group if="$(arg publish_static_transforms)">
+        <node name="tf_camera_pose_frame_to_base_link" pkg="tf" type="static_transform_publisher" args="0 0 0 0 -0.785 0 camera_pose_frame base_link 1000"/>
+        <node name="tf_odom_frame_to_camera_odom_frame" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 odom camera_odom_frame 1000"/>
+    </group>
+
 
     <!-- Launch the EKF estimator that updates estimate of target's state -->
     <group if="$(arg use_tracker)">

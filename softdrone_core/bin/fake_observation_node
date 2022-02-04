@@ -63,7 +63,7 @@ def publish_relative_target_observation():
 
     msg = PoseWithCovarianceStamped()
     msg.header.stamp = rospy.Time.now()
-    msg.header.frame_id = 'drone'
+    msg.header.frame_id = 'base_link'
     msg.pose.pose.position.x = target_rel_x_body
     msg.pose.pose.position.y = target_rel_y_body
     msg.pose.pose.position.z = target_rel_z_body
