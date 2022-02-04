@@ -10,9 +10,9 @@ use_noise = True
 R_pos = 0.1
 R_rot = 0.1
 drone_pos = np.zeros(3)
-drone_yaw = 0
+drone_yaw = 0.0
 target_pos = np.zeros(3)
-target_yaw = 0
+target_yaw = 0.0
 
 def drone_cb(msg):
     global drone_pos, drone_yaw
@@ -44,11 +44,19 @@ def target_cb(msg):
     r,p,y = tf.transformations.euler_from_quaternion([qx, qy, qz, qw])
     target_yaw = y
 
+    pwcs = PoseWithCovarianceStamped()
+    pwcs.pose.pose = msg.pose
+    pwcs.pose.covariance = np.eye(6)*.0001
+    pwcs.header.stamp = rospy.Time.now()
+    pwcs.header.frame_id = 'map'
+    target_global_pub.publish(pwcs)
+
 def publish_relative_target_observation():
 
     target_rel_global = target_pos - drone_pos
-    target_rel_x_body = target_rel_global[0]*np.cos(drone_yaw) - target_rel_global[1]*np.sin(drone_yaw)
-    target_rel_y_body = target_rel_global[1]*np.cos(drone_yaw) + target_rel_global[1]*np.sin(drone_yaw)
+    theta = -drone_yaw
+    target_rel_x_body = target_rel_global[0]*np.cos(theta) - target_rel_global[1]*np.sin(theta)
+    target_rel_y_body = target_rel_global[1]*np.cos(theta) + target_rel_global[1]*np.sin(theta)
     target_rel_z_body = target_rel_global[2]
     target_rel_yaw_body = target_yaw - drone_yaw
     q = tf.transformations.quaternion_from_euler(0.0, 0.0, target_rel_yaw_body)
@@ -71,8 +79,9 @@ target_pos_sub = rospy.Subscriber('/sparkgrasptar/world', PoseStamped, target_cb
 drone_pos_sub = rospy.Subscriber('/mavros/local_position/pose', PoseStamped, drone_cb, queue_size=1)
 
 target_rel_pub = rospy.Publisher('/perception/target_rel_estimate', PoseWithCovarianceStamped, queue_size=1)
+target_global_pub = rospy.Publisher('/perception/target_global_truth', PoseWithCovarianceStamped, queue_size=1)
 
-rate = rospy.Rate(10)
+rate = rospy.Rate(50)
 while not rospy.is_shutdown():
     publish_relative_target_observation()
     rate.sleep()

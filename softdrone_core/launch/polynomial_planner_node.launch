@@ -1,13 +1,3 @@
 <launch>
-
-    <arg name="param_file_name" default="polynomial_generator_node.yaml" doc="Name of node's config file" />
-    <node pkg="softdrone_core" type="polynomial_generator_node" name="polynomial_generator_node" output="screen">
-        <remap from="pose" to="/mavros/local_position/pose"/>
-        <remap from="twist" to="/mavros/local_position/twist"/>
-        <remap from="target_pose" to="/sparkgrasptar/world"/>
-
-        <rosparam command="load" file="$(find softdrone_core)/config/$(arg param_file_name)"/>
-
-    </node>
-
+    <node name="polynomial_planner_node" pkg="softdrone_core" type="polynomial_planner_node"/>
 </launch>

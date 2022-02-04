@@ -3,7 +3,7 @@ import rospy
 import tf 
 import time
 import numpy as np
-from geometry_msgs.msg import PoseStamped, TwistStamped, Point
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, TwistStamped, Point
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from softdrone_core.msg import PolynomialTrajectory, LengthInfoMsg, GraspTrajectory
@@ -52,7 +52,7 @@ class PolynomialGenerator:
         rospy.Subscriber('pose', PoseStamped, self.set_pose_cb)
         rospy.Subscriber('twist', TwistStamped, self.set_twist_cb)
         rospy.Subscriber('waypoint', PoseStamped, self.set_waypoint_cb)
-        rospy.Subscriber('target_pose', PoseStamped, self.set_target_pose_cb)
+        rospy.Subscriber('target_pose', PoseWithCovarianceStamped, self.set_target_pose_cb)
 
         self.waypoint_polynomial_publisher = rospy.Publisher('waypoint_polynomial', PolynomialTrajectory, queue_size=1) 
         self.grasp_trajectory_publisher = rospy.Publisher('grasp_trajectory', GraspTrajectory, queue_size=1) 
@@ -61,6 +61,7 @@ class PolynomialGenerator:
 
 
     def set_target_pose_cb(self, msg):
+        msg = msg.pose
         self.target_position[0] = msg.pose.position.x
         self.target_position[1] = msg.pose.position.y
         self.target_position[2] = msg.pose.position.z

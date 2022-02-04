@@ -14,6 +14,7 @@ grasp_target = None
 
 def pose_handler(msg):
     """Wait for start pose."""
+    msg = msg.pose
     global grasp_target
     if grasp_target is None:
         grasp_target = np.array(
@@ -37,7 +38,7 @@ def main():
     if use_mocap_target:
         rospy.logwarn("Waiting for grasp target")
         target_sub = rospy.Subscriber(
-            "grasp_target", geometry_msgs.msg.PoseStamped, pose_handler, queue_size=10
+            "grasp_target", geometry_msgs.msg.PoseWithCovarianceStamped, pose_handler, queue_size=10
         )
 
         while not rospy.is_shutdown() and grasp_target is None:

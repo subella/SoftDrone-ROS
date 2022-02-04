@@ -1,5 +1,7 @@
 <launch>
+    <arg name="send_to_mavros" default="false"/>
     <node pkg="softdrone_core" type="setpoint_cli_node" name="setpoint_cli_node" output="screen">
+        <param name="send_to_mavros" value="$(arg send_to_mavros)"/>
     </node>
 
 </launch>
