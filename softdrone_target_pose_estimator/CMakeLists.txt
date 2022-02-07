@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Torch REQUIRED)
 find_package(TorchVision REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(teaserpp REQUIRED)
 
 
 add_message_files(
@@ -61,6 +63,29 @@ target_link_libraries(keypoint_detector_ros
   TorchVision::TorchVision
   keypoint_detector
 )
+
+add_library(keypoints_3D include/target_pose_estimating/keypoints_3D.cpp)
+target_link_libraries(keypoints_3D
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+)
+
+add_library(pose_estimator include/target_pose_estimating/pose_estimator.cpp)
+target_link_libraries(pose_estimator
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+  teaserpp::teaser_registration
+  teaserpp::teaser_io
+)
+
+# add_library(pose_estimator_ros include/target_pose_estimating/pose_estimator_ros.cpp)
+# target_link_libraries(pose_estimator_ros
+#   ${catkin_LIBRARIES}
+#   Eigen3::Eigen
+#   teaserpp::teaser_registration
+#   teaserpp::teaser_io
+#   pose_estimator
+# )
 
 # EXECUTABLES
 
