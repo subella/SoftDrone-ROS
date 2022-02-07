@@ -58,7 +58,7 @@ rgbImageCallback(const ImageMsg& rgb_image_msg)
 
   if(!success)
   {
-    ROS_WARNING("Keypoint detection failed!");
+    ROS_WARN("Keypoint detection failed!");
     return;
   }
 
