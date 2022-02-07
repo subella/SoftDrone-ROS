@@ -38,12 +38,6 @@ class TrackerROS : public Tracker {
     /** \brief */
     TrackerROS(const ros::NodeHandle &nh);
 
-    /** \brief */
-    TrackerROS(const ros::NodeHandle &nh,
-               const std::string     &agent_topic,
-               const std::string     &target_rel_topic,
-               const std::string     &target_topic);
-
     /** \brief  */
     ~TrackerROS() = default;
 

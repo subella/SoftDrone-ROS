@@ -4,6 +4,4 @@
           type="tracker_node"
           output="screen">
     </node>
-
-    <rosparam command="load" file="$(find softdrone_target_tracking)/config/default_params.yaml"/>
 </launch>

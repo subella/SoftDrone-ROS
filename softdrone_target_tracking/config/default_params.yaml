@@ -1,4 +1,0 @@
-tracker_params:
-  agent_topic: "agent_odom"
-  target_relative_topic: "relative_pose_observation"
-  target_topic: "target_pose_output"

@@ -14,25 +14,12 @@ namespace sdrone
 TrackerROS::
 TrackerROS(const ros::NodeHandle &nh)
   : nh_(nh), 
-    agent_sub_(nh_, "", 1),
-    target_rel_sub_(nh_, "", 1),
+    agent_sub_(nh_, "agent_odom", 1),
+    target_rel_sub_(nh_, "relative_pose_observation", 1),
     sync_(SyncPolicy(10), agent_sub_, target_rel_sub_)
 {
   is_initialized_ = false;
-};
-
-TrackerROS::
-TrackerROS(const ros::NodeHandle &nh,
-           const std::string     &agent_topic,
-           const std::string     &target_rel_topic,
-           const std::string     &target_topic)
-  : nh_(nh), 
-    agent_sub_(nh_, agent_topic, 1),
-    target_rel_sub_(nh_, target_rel_topic, 1),
-    sync_(SyncPolicy(10), agent_sub_, target_rel_sub_)
-{
-  is_initialized_ = false;
-  target_pub_ = nh_.advertise<PoseWCovStamp>(target_topic,  1);
+  target_pub_ = nh_.advertise<PoseWCovStamp>("target_global_pose_estimate",  1);
   sync_.registerCallback(boost::bind(&TrackerROS::syncCallback, this, _1, _2));
 };
 

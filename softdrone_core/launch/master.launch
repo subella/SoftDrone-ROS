@@ -77,7 +77,7 @@
     <group if="$(arg use_tracker)">
         <remap from="agent_odom" to="/mavros/odometry/in"/>
         <remap from="relative_pose_observation" to="/perception/target_rel_estimate"/>
-        <remap from="target_pose_output" to="/tracker/target/pose"/>
+        <remap from="target_global_pose_estimate" to="/tracker/target/pose"/>
         <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
     </group>
 
