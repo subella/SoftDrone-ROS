@@ -63,7 +63,7 @@ def publish_current_pose(event):
     odom_msg = Odometry()
     odom_msg.header.stamp = rospy.Time.now()
     odom_msg.header.frame_id = 'map'
-    odom_msg.child_frame_id = 'drone'
+    odom_msg.child_frame_id = 'base_link'
     odom_msg.pose.pose = ps.pose
     odom_msg.pose.covariance = (R_pose * np.eye(6)).flatten().tolist()
     odom_msg.twist.twist = twist_msg.twist
@@ -128,7 +128,7 @@ twist_msg.twist.linear.z = 0
 odom_msg = Odometry()
 odom_msg.header.stamp = rospy.Time.now()
 odom_msg.header.frame_id = 'map'
-odom_msg.child_frame_id = 'drone'
+odom_msg.child_frame_id = 'base_link'
 odom_msg.pose.pose = ps.pose
 odom_msg.pose.covariance = (R_pose * np.eye(6)).flatten().tolist()
 odom_msg.twist.twist = twist_msg.twist
