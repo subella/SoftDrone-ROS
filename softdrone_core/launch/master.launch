@@ -8,6 +8,8 @@
 
     <arg name="use_tracker" default="true" doc="Use EKF target tracker?" />
 
+    <arg name="sim_target_as_tracker_output" default="$(eval not arg('use_tracker'))" doc="Map the simulated target pose to the tracker output topic"/>
+
     <arg name="use_rviz" default="true" doc="Launch rviz?" />
 
     <arg name="use_polynomial_planner" default="true" doc="Launch polynomial planner node?"/>
@@ -41,13 +43,16 @@
 
 
     <!-- Launch the simulated target node -->
-    <include if="$(arg simulate_target)" file="$(find softdrone_core)/launch/sim_target_node.launch">
-        <arg name="x" value="$(arg target_x)"/>
-        <arg name="y" value="$(arg target_y)"/>
-        <arg name="radius" value="$(arg target_radius)"/>
-        <arg name="speed" value="$(arg target_speed)"/>
-        <arg name="target_motion" value="$(arg target_motion)"/>
-    </include>
+    <group if="$(arg simulate_target)">
+        <remap if="$(arg sim_target_as_tracker_output)" from="/sparkgrasptar/world" to="/tracker/target/pose"/>
+        <include file="$(find softdrone_core)/launch/sim_target_node.launch">
+            <arg name="x" value="$(arg target_x)"/>
+            <arg name="y" value="$(arg target_y)"/>
+            <arg name="radius" value="$(arg target_radius)"/>
+            <arg name="speed" value="$(arg target_speed)"/>
+            <arg name="target_motion" value="$(arg target_motion)"/>
+        </include>
+    </group>
 
 
     <!-- Launch the core grasp state machine logic -->

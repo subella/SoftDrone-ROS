@@ -31,6 +31,7 @@ def drone_cb(msg):
 
 def target_cb(msg):
     global target_pos, target_yaw
+    msg = msg.pose
     x = msg.pose.position.x
     y = msg.pose.position.y
     z = msg.pose.position.z
@@ -75,7 +76,7 @@ def publish_relative_target_observation():
     target_rel_pub.publish(msg)
 
 rospy.init_node('fake_observation_node')
-target_pos_sub = rospy.Subscriber('/sparkgrasptar/world', PoseStamped, target_cb, queue_size=1)
+target_pos_sub = rospy.Subscriber('/sparkgrasptar/world', PoseWithCovarianceStamped, target_cb, queue_size=1)
 drone_pos_sub = rospy.Subscriber('/mavros/local_position/pose', PoseStamped, drone_cb, queue_size=1)
 
 target_rel_pub = rospy.Publisher('/perception/target_rel_estimate', PoseWithCovarianceStamped, queue_size=1)
