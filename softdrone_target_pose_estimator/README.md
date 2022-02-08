@@ -1,22 +1,34 @@
-# SoftDrone-Target-Tracking
-Package for target tracking
+# SoftDrone-Target-Pose-Estimator
+Package for target pose estimating
 
 ## Requirements
-Tested in Ubuntu 18.04 with [ROS Melodic](http://wiki.ros.org/melodic). Requires [Eigen3](https://eigen.tuxfamily.org/index.php?title=Main_Page), [MRPT](https://docs.mrpt.org/reference/latest/download-mrpt.html), and [GoogleTest](https://github.com/google/googletest). The ROS packages for MRPT are not needed.
+Tested in Ubuntu 18.04 with [ROS Melodic](http://wiki.ros.org/melodic).
 
-## Usage
-The tracker takes as input the agent pose in the global frame and the target pose in the agent frame (i.e., target relative to agent). The tracker outputs the target pose in the global frame by fusing the observations of the target relative to the agent using an EKF.
+Requires [CUDA](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html) >10.1.
 
-The topics for the inputs/outputs are defined by a .yaml. For the agent pose, the expected message is nav_msgs/Odometry, and for the target pose, the expected message is geometry_msgs/PoseWithCovarianceStamped. In the .yaml file defining the topics for the inputs/outputs, do not use a leading "/" for the topics to be published in the namespace of the tracker. 
+Requires [cuDNN](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html).
 
-## Notes:
-To run the tracker with simulated data:
+Requires libtorch, torchvision:
 ```
-roslaunch target_tracking dummy_tracker.launch
-``` 
-
-To view the inputs/outputs:
+# Need to upgrade cmake
+pip install cmake
+# Refresh terminal
+source ~/.bashrc 
+# Need to change cu111 to match cuda version, probably
+pip install --user torch==1.10 -f https://download.pytorch.org/whl/cu111/torch_stable.html
+export TORCH_CUDA_ARCH_LIST="Kepler;Kepler+Tesla;Maxwell;Maxwell+Tegra;Pascal;Volta;Turing"
+export CMAKE_PREFIX_PATH=$HOME/.local/lib/python3.6/site-packages/torch/
+git clone --branch v0.11.1 https://github.com/pytorch/vision/
+mkdir vision/build && cd vision/build && \
+	cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_BUILD_TYPE=Release -DWITH_CUDA=on -DTORCH_CUDA_ARCH_LIST=$TORCH_CUDA_ARCH_LIST && \
+	make -j && make install
 ```
-roscd target_tracking
-rviz -d rviz/dummy_tracker.rviz
+
+Requires [TEASER++](https://github.com/MIT-SPARK/TEASER-plusplus)
+
+
+## Building:
+```
+export Torch_DIR=$HOME/.local/lib/python3.6/site-packages/torch/
+catkin build
 ```
