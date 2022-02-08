@@ -36,8 +36,6 @@ class PolynomialGenerator:
         self.trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
         self.start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
         self.grasp_position = self.target_position - np.array(rospy.get_param("~offset", [0, 0, -0.20]))
-        self.trajectory_plane = rospy.get_param("~trajectory_plane", "yz")
-        self.grasp_velocity = np.array(rospy.get_param("~grasp_velocity", [0, 0, 0]))
         self.grasp_speed_horz = rospy.get_param("~grasp_speed_horz", 0.2)
         self.grasp_speed_vert = rospy.get_param("~grasp_speed_vert", -0.035)
         self.end_time = np.array(rospy.get_param("~end_time", 2))
@@ -149,7 +147,8 @@ class PolynomialGenerator:
 
         r_drone_to_target = self.target_position - self.position
         r_displacement_plane = r_drone_to_target[:2]
-        u_disp = r_displacement_plane / np.linalg.norm(r_displacement_plane)
+        dist_plane = np.linalg.norm(r_displacement_plane)
+        u_disp = r_displacement_plane / dist_plane
         offset = np.zeros(3)
         offset[0] = self.end_offset_horz * u_disp[0]
         offset[1] = self.end_offset_horz * u_disp[1]
@@ -160,18 +159,22 @@ class PolynomialGenerator:
         grasp_velocity[:2] = self.grasp_speed_horz * u_disp
         grasp_velocity[2] = self.grasp_speed_vert
 
+        current_grasp_time = np.linalg.norm(r_drone_to_target) / 1.0 # time = distance / speed
+        #current_end_time = self.end_offset_horz / self.average_polynomial_velocity
+        #print('Current end time: ', current_end_time)
+        current_end_time = 2
+        print('Total time: ', current_grasp_time + current_end_time)
         try:
             polynomial, lengths = find_trajectory_for_interp(
                 start_position=self.position,
-                #grasp_axis=(0 if trajectory_plane == "xz" else 2),
-                grasp_axis=2,
+                grasp_axis=2, # TODO: Remove
                 grasp_position=self.target_position - self.offset,
                 grasp_target=self.target_position,
-                grasp_time=self.grasp_time,
+                grasp_time=current_grasp_time,
                 grasp_velocity=grasp_velocity,
                 open_distance=self.open_distance,
                 use_offline_lengths=True,
-                end_time=self.end_time,
+                end_time=current_end_time,
                 end_position=end_position,
                 end_velocity=self.end_velocity,
                 start_velocity=self.velocity)
@@ -179,7 +182,6 @@ class PolynomialGenerator:
             print('Error optimizing grasp trajectory!')
             print(ex)
             return
-        print('Planned grasp')
 
         coeffs = [p.coef for p in polynomial._polynomials]
 

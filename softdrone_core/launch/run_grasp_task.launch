@@ -24,7 +24,6 @@
         <rosparam param="start_position">[-2.0, 0.0, 2.0]</rosparam>
         <rosparam param="offset">[0, 0, -0.2]</rosparam>
         <param name="open_distance" value="0.2"/>
-        <rosparam param="grasp_velocity">[0.2, 0.0, -0.035]</rosparam>
         <param name="ground_effect_stop_time" value="5.5"/>
 
         <rosparam param="end_offset">[2.0, 0.0, 1.0]</rosparam>
