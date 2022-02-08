@@ -15,7 +15,7 @@ pip install cmake
 # Refresh terminal
 source ~/.bashrc 
 # Need to change cu111 to match cuda version, probably
-pip install --user torch==1.10 -f https://download.pytorch.org/whl/cu111/torch_stable.html
+pip3 install --user torch==1.10 -f https://download.pytorch.org/whl/cu111/torch_stable.html
 export TORCH_CUDA_ARCH_LIST="Kepler;Kepler+Tesla;Maxwell;Maxwell+Tegra;Pascal;Volta;Turing"
 export CMAKE_PREFIX_PATH=$HOME/.local/lib/python3.6/site-packages/torch/
 git clone --branch v0.11.1 https://github.com/pytorch/vision/
