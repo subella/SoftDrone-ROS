@@ -36,14 +36,13 @@ class PolynomialGenerator:
         self.trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
         self.start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
         self.grasp_position = self.target_position - np.array(rospy.get_param("~offset", [0, 0, -0.20]))
-        self.grasp_speed_horz = rospy.get_param("~grasp_speed_horz", 0.2)
-        self.grasp_speed_vert = rospy.get_param("~grasp_speed_vert", -0.035)
+        self.grasp_speed_horz = rospy.get_param("~grasp_speed_horz", 0.0)
+        self.grasp_speed_vert = rospy.get_param("~grasp_speed_vert", -0.0)
         self.end_time = np.array(rospy.get_param("~end_time", 2))
         self.end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
-        #self.end_offset = np.array(rospy.get_param("~end_offset", [2, 0, 1]))
         self.end_offset_horz = rospy.get_param("~end_offset_horz", 2.0)
         self.end_offset_vert = rospy.get_param("~end_offset_vert", 1.0)
-        self.grasp_lockout_distance = np.array(rospy.get_param("~grasp_lockout_distance", 1.0))
+        self.grasp_lockout_distance = np.array(rospy.get_param("~grasp_lockout_distance", 0.7))
 
         self.offset = rospy.get_param("~offset", [0, 0, -0.2])
 
@@ -159,11 +158,9 @@ class PolynomialGenerator:
         grasp_velocity[:2] = self.grasp_speed_horz * u_disp
         grasp_velocity[2] = self.grasp_speed_vert
 
-        current_grasp_time = np.linalg.norm(r_drone_to_target) / 1.0 # time = distance / speed
-        #current_end_time = self.end_offset_horz / self.average_polynomial_velocity
-        #print('Current end time: ', current_end_time)
-        current_end_time = 2
-        print('Total time: ', current_grasp_time + current_end_time)
+        current_grasp_time = np.linalg.norm(r_drone_to_target) / 0.5 # time = distance / speed
+        current_end_time = np.linalg.norm([self.end_offset_horz, self.end_offset_vert]) / 0.5
+
         try:
             polynomial, lengths = find_trajectory_for_interp(
                 start_position=self.position,
@@ -172,6 +169,7 @@ class PolynomialGenerator:
                 grasp_target=self.target_position,
                 grasp_time=current_grasp_time,
                 grasp_velocity=grasp_velocity,
+                grasp_acceleration=np.array([0.,0.,0.]),
                 open_distance=self.open_distance,
                 use_offline_lengths=True,
                 end_time=current_end_time,
@@ -191,7 +189,6 @@ class PolynomialGenerator:
         coeff_msg.coeffs_z = coeffs[2].tolist()
         coeff_msg.time_start = 0
         coeff_msg.time_end = polynomial._total_time
-
 
         length_msg = LengthInfoMsg()
         length_msg.init_lengths = np.array(lengths._init_lengths).flatten()
@@ -223,7 +220,7 @@ rospy.init_node('polynomial_generator')
 
 pg = PolynomialGenerator()
 
-rate = rospy.Rate(3)
+rate = rospy.Rate(2)
 while not rospy.is_shutdown():
     pg.update_waypoint_trajectory()
     pg.update_grasp_trajectory()
