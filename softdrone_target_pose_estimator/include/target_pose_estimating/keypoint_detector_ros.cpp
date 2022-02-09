@@ -30,7 +30,6 @@ KeypointDetectorROS(const ros::NodeHandle& nh,
     it_(nh),
     KeypointDetector(model_file_name)
 {
-
   rgb_image_sub_ = it_.subscribe(rgb_img_topic, 1, &KeypointDetectorROS::rgbImageCallback, this);
 
   should_publish_annotated_img_ = should_publish_annotated_img;

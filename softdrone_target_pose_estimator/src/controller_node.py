@@ -13,34 +13,11 @@ import tf
 import tf2_ros
 from std_msgs.msg import Header, String
 from sensor_msgs.msg import Image as ImageMsg
-from sensor_msgs.msg import Imu, CameraInfo
-from sensor_msgs.msg import LaserScan
-from nav_msgs.msg import Odometry
-from mav_msgs.msg import Actuators
+from sensor_msgs.msg import CameraInfo
 
-from geometry_msgs.msg import (
-    Pose,
-    PoseStamped,
-    Point,
-    PointStamped,
-    TransformStamped,
-    Quaternion,
-    Twist,
-    PoseWithCovarianceStamped,
-    Vector3Stamped,
-    Wrench
-)
-from ackermann_msgs.msg import AckermannDriveStamped
-from rosgraph_msgs.msg import Clock
 from cv_bridge import CvBridge, CvBridgeError
 
 
-from scipy.spatial.transform import Rotation
-from math import sin, cos, pi
-
-
-from scipy.spatial.transform import Rotation
-from scipy.linalg import block_diag
 from image_processing import preprocess_input, postprocess_output
 from softdrone_target_pose_estimator.msg import Keypoints
 # from pose_detection import make_transformation_matrix, transform_kpts, estimate_pose
