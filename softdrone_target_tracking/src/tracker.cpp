@@ -95,8 +95,8 @@ update(const Belief6D &b_target_meas)
     copyCovarianceToMat66(b_target_meas, R);
     copyCovarianceToMat66(b_target_6D_, P);
 
-    // R = 0.1*Eigen::MatrixXd::Identity(6,6);
-    Mat66 S = P + R;
+    Mat66 W = 0.01*Eigen::MatrixXd::Identity(6,6);
+    Mat66 S = P + R + W;
     Mat66 K = P*S.inverse();
 
     Mat61 y = z - x;
