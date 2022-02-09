@@ -21,7 +21,7 @@ std::string keypoints_topic_;
 
 void load_params(const ros::NodeHandle& nh)
 {
-  nh.getParam("keypoint_detector_params/rgb_image_topic", rgb_img_topic_);
+  nh.getParam("keypoint_detector_params/rgb_img_topic", rgb_img_topic_);
   nh.getParam("keypoint_detector_params/model_file_name", model_file_name_);
   nh.getParam("keypoint_detector_params/should_publish_annotated_img", should_publish_annotated_img_);
   nh.getParam("keypoint_detector_params/keypoints_topic", keypoints_topic_);
