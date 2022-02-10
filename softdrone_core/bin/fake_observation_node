@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+import numpy as np
+import rospy
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+
+import tf
+
+use_noise = True
+
+R_pos = 0.1
+R_rot = 0.05
+drone_pos = np.zeros(3)
+drone_yaw = 0.0
+target_pos = np.zeros(3)
+target_yaw = 0.0
+
+def drone_cb(msg):
+    global drone_pos, drone_yaw
+    x = msg.pose.position.x
+    y = msg.pose.position.y
+    z = msg.pose.position.z
+    drone_pos = np.array([x,y,z])
+
+    qx = msg.pose.orientation.x
+    qy = msg.pose.orientation.y
+    qz = msg.pose.orientation.z
+    qw = msg.pose.orientation.w
+
+    r,p,y = tf.transformations.euler_from_quaternion([qx, qy, qz, qw])
+    drone_yaw = y
+
+def target_cb(msg):
+    global target_pos, target_yaw
+    msg = msg.pose
+    x = msg.pose.position.x
+    y = msg.pose.position.y
+    z = msg.pose.position.z
+    target_pos = np.array([x,y,z])
+
+    qx = msg.pose.orientation.x
+    qy = msg.pose.orientation.y
+    qz = msg.pose.orientation.z
+    qw = msg.pose.orientation.w
+
+    r,p,y = tf.transformations.euler_from_quaternion([qx, qy, qz, qw])
+    target_yaw = y
+
+    pwcs = PoseWithCovarianceStamped()
+    pwcs.pose.pose = msg.pose
+    pwcs.pose.covariance = np.eye(6)*.0001
+    pwcs.header.stamp = rospy.Time.now()
+    pwcs.header.frame_id = 'map'
+    target_global_pub.publish(pwcs)
+
+def publish_relative_target_observation():
+
+    target_rel_global = target_pos - drone_pos
+    theta = -drone_yaw
+    target_rel_x_body = target_rel_global[0]*np.cos(theta) - target_rel_global[1]*np.sin(theta)
+    target_rel_y_body = target_rel_global[1]*np.cos(theta) + target_rel_global[1]*np.sin(theta)
+    target_rel_z_body = target_rel_global[2]
+    target_rel_yaw_body = target_yaw - drone_yaw
+    q = tf.transformations.quaternion_from_euler(0.0, 0.0, target_rel_yaw_body)
+
+    eps_pos = np.sqrt(R_pos)
+    eps_pos = 0
+    eps_rot = np.sqrt(R_rot)
+    eulers_noisy = np.array([0.,0., target_rel_yaw_body]) + eps_rot*np.random.randn(3)
+    q = tf.transformations.quaternion_from_euler(*eulers_noisy)
+
+    msg = PoseWithCovarianceStamped()
+    msg.header.stamp = rospy.Time.now()
+    msg.header.frame_id = 'base_link'
+    msg.pose.pose.position.x = target_rel_x_body + np.random.randn()*eps_pos
+    msg.pose.pose.position.y = target_rel_y_body + np.random.randn()*eps_pos
+    msg.pose.pose.position.z = target_rel_z_body + np.random.randn()*eps_pos
+    msg.pose.pose.orientation.x = q[0]
+    msg.pose.pose.orientation.y = q[1]
+    msg.pose.pose.orientation.z = q[2]
+    msg.pose.pose.orientation.w = q[3]
+    msg.pose.covariance = np.diag([R_pos, R_pos, R_pos, R_rot, R_rot, R_rot]).flatten()
+    target_rel_pub.publish(msg)
+
+rospy.init_node('fake_observation_node')
+target_pos_sub = rospy.Subscriber('/sparkgrasptar/world', PoseWithCovarianceStamped, target_cb, queue_size=1)
+drone_pos_sub = rospy.Subscriber('/mavros/local_position/pose', PoseStamped, drone_cb, queue_size=1)
+
+target_rel_pub = rospy.Publisher('/perception/target_rel_estimate', PoseWithCovarianceStamped, queue_size=1)
+target_global_pub = rospy.Publisher('/perception/target_global_truth', PoseWithCovarianceStamped, queue_size=1)
+
+rate = rospy.Rate(50)
+while not rospy.is_shutdown():
+    publish_relative_target_observation()
+    rate.sleep()
+

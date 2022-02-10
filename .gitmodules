@@ -1,0 +1,3 @@
+[submodule "SoftDrone-TrajOpt"]
+	path = SoftDrone-TrajOpt
+	url = git@github.mit.edu:SPARK/SoftDrone-TrajOpt

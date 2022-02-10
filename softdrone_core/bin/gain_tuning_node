@@ -1,21 +1,12 @@
 #!/usr/bin/env python
 """Script that uses position control to fly waypoints."""
-import intel_aero_ros
-import rospy
-import numpy as np
-
-import importlib
-import pathlib
 import sys
 
+import rospy
+import numpy as np
+import softdrone_core
 
-def get_trajectory_planner():
-    """Import the trajectory planner code."""
-    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
-    sys.path.append(str(soft_drone_pydir))
-    return importlib.import_module(
-        "soft_drone_python.find_trajectory"
-    ).find_trajectory_for_interp
+from softdrone.python.control.find_trajectory import find_trajectory_for_interp
 
 
 def main():
@@ -25,7 +16,7 @@ def main():
     total_time = rospy.get_param("~total_time", 2.75)
     intermediate_time = total_time * 3.0 / 4
     num_frames = rospy.get_param("~num_frames", 2)
-    planner = get_trajectory_planner()
+    planner = find_trajectory_for_interp
 
     start_position = np.array(rospy.get_param("~start_position", [-1.0, 0.0, 2.0]))
     tendon_target = np.array(rospy.get_param("~tendon_target", [2.0, 0.0, 1.0]))
@@ -48,10 +39,10 @@ def main():
     )
 
     # Set up the things that will make this run
-    trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(
+    trajectory_tracker = softdrone_core.InterpTrajectoryTracker(
         polynomial, lengths, settle_time=trajectory_settle_time
     )
-    state_machine = intel_aero_ros.GainTuningStateMachine(trajectory_tracker)  # NOQA
+    state_machine = softdrone_core.GainTuningStateMachine(trajectory_tracker)  # NOQA
 
     rospy.spin()
 

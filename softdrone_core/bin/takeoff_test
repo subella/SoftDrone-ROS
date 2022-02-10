@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Script to get a positions/velocities/lengths trajectory."""
-import intel_aero_ros
+import softdrone_core
 import rospy
 
 
@@ -8,7 +8,7 @@ def main():
     """Run everything."""
     rospy.init_node("trajectory_tracking")
 
-    state_machine = intel_aero_ros.TakeoffStateMachine()  # NOQA
+    state_machine = softdrone_core.TakeoffStateMachine()  # NOQA
 
     rospy.spin()
 

@@ -5,14 +5,14 @@
     <arg name="gcs_ip" default=""/>
     <arg name="rigid_body_name" default="sparksdrone"/>
 
-    <node name="mocap_wrapper" pkg="intel_aero_ros" type="mocap_wrapper" output="screen">
+    <node name="mocap_wrapper" pkg="softdrone_core" type="mocap_wrapper" output="screen">
         <param name="mocap_ip" value="$(arg mocap_ip)"/>
         <param name="publish_rate" value="50.0"/>
         <remap from="vicon" to="/$(arg rigid_body_name)/world"/>
         <remap from="pose" to="/mavros/vision_pose/pose"/>
     </node>
 
-    <include file="$(find intel_aero_ros)/launch/mavros.launch">
+    <include file="$(find softdrone_core)/launch/mavros.launch">
         <arg name="gcs_ip" value="$(arg gcs_ip)"/>
         <arg name="sitl" value="$(arg sitl)"/>
     </include>

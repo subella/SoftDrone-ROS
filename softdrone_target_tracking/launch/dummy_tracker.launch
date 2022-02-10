@@ -1,0 +1,19 @@
+<launch>
+  <group ns="soft_drone">
+    <node pkg="softdrone_target_tracking"
+          name="dummy_node"
+          type="dummy_node"
+          output="screen">
+    </node>
+
+    <node pkg="softdrone_target_tracking"
+          name="tracker_node"
+          type="tracker_node"
+          output="screen">
+    </node>
+
+    <rosparam command="load" file="$(find softdrone_target_tracking)/config/dummy_tracker_params.yaml"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="static_transform_odom_to_map" args="0 0 0 0 0 0 odom map 100" />
+  </group>
+</launch>

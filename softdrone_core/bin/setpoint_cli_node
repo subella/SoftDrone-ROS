@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+import numpy as np
+import rospy
+from mavros_msgs.msg import PositionTarget
+from geometry_msgs.msg import PoseStamped
+from mavros_msgs.srv import CommandBool
+import tf
+
+# setpoint params
+x = 0
+y = 0
+z = 0
+yaw = 0
+
+# circle params
+xc = 0
+yc = 0
+zc = 0
+radius = 0
+speed = 0
+
+def circle_cmd_cb(event):
+    global x,y,z,yaw
+    t = rospy.Time.now().to_sec()
+    x = xc + radius * np.cos(2.*np.pi*speed*t)
+    y = yc + radius * np.sin(2.*np.pi*speed*t)
+    z = zc
+    yaw = t * 0.1 % (2.0*np.pi)
+    mavros_cmd_cb(None)
+
+
+def mavros_cmd_cb(event):
+    global x,y,z,yaw
+    msg = PositionTarget()
+    msg.header.stamp = rospy.Time.now()
+    msg.coordinate_frame = PositionTarget.FRAME_LOCAL_NED
+    msg.position.x = x
+    msg.position.y = y
+    msg.position.z = z
+    msg.yaw = yaw
+
+    msg.type_mask |= PositionTarget.IGNORE_VX
+    msg.type_mask |= PositionTarget.IGNORE_VY
+    msg.type_mask |= PositionTarget.IGNORE_VZ
+    msg.type_mask |= PositionTarget.IGNORE_AFX
+    msg.type_mask |= PositionTarget.IGNORE_AFY
+    msg.type_mask |= PositionTarget.IGNORE_AFZ
+
+    setpoint_pub.publish(msg)
+
+def timer_cb(event):
+    global x,y,z,yaw
+    msg = PoseStamped()
+    msg.header.stamp = rospy.Time.now()
+    msg.header.frame_id = 'map'
+    msg.pose.position.x = x
+    msg.pose.position.y = y
+    msg.pose.position.z = z
+    q = tf.transformations.quaternion_from_euler(0,0,yaw)
+    msg.pose.orientation.x = q[0]
+    msg.pose.orientation.y = q[1]
+    msg.pose.orientation.z = q[2]
+    msg.pose.orientation.w = q[3]
+    waypoint_pub.publish(msg)
+
+rospy.init_node('setpoint_cli_node')
+
+setpoint_pub = rospy.Publisher('/mavros/setpoint_raw/local', PositionTarget, queue_size=1)
+waypoint_pub = rospy.Publisher('waypoint', PoseStamped, queue_size=1)
+
+
+have_sent_waypoint = False
+sending_stationary_waypoint = False
+sending_circle_waypoint = False
+
+send_to_mavros = rospy.get_param('~send_to_mavros', False)
+
+
+while not rospy.is_shutdown():
+    inp = raw_input('x,y,z,yaw | ARM | DISARM | circle: ')
+    if inp == 'ARM':
+        set_arm_state = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
+        set_arm_state(True)
+    elif inp == 'DISARM':
+        set_arm_state = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
+        set_arm_state(False)
+    elif inp == 'circle':
+        inp = raw_input('xc,yc,zc,r,s: ')
+        toks = [float(t) for t in inp.split(',')]
+        if len(toks) != 5:
+            print('Please use input of the form xc,yc,zc,r,s')
+            continue
+        xc,yc,zc,radius,speed = toks
+        if not have_sent_waypoint:
+            have_sent_waypoint = True
+            rospy.Timer(rospy.Duration(0.1), circle_cmd_cb, oneshot=False)
+    else:
+        toks = [float(t) for t in inp.split(',')]
+        if len(toks) != 4:
+            print('Please use input of the form x,y,z,yaw')
+            continue
+        x,y,z,yaw = toks
+
+        if not have_sent_waypoint:
+            have_sent_waypoint = True
+            rospy.Timer(rospy.Duration(0.1), timer_cb, oneshot=False) 
+            if send_to_mavros:
+                rospy.Timer(rospy.Duration(0.03), mavros_cmd_cb, oneshot=False)
+

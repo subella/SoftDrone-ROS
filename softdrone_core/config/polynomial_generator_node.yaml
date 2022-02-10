@@ -1,0 +1,27 @@
+dist_threshold: 0.35
+hover_duration: 3.5
+start_settle_duration: 7.0
+mission_settle_duration: 6.0
+gripper_latency: 0.0
+
+grasp_time: 5.0
+grasp_target: [0.257, -3.463, 0.989]
+start_position: [-2.0, 0.0, 2.0]
+offset: [0, 0, -0.2]
+open_distance: 0.2
+grasp_velocity: [0.2, 0.0, -0.035]
+grasp_speed_horz: 0.2
+grasp_speed_vert: -0.035
+ground_effect_stop_time: 5.5
+
+end_offset: [2.0, 0.0, 1.0]
+end_velocity: [0.0, 0.0, 0.0]
+end_time: 5.0
+
+desired_yaw: -1.57
+trajectory_plane: "xz"
+
+grasp_lockout_distance: 1.0
+
+initial_lengths: [190, 190, 208, 208]
+

@@ -1,0 +1,3 @@
+<launch>
+    <node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find softdrone_core)/rviz/default.rviz" />
+</launch>

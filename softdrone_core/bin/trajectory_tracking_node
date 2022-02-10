@@ -1,29 +1,20 @@
 #!/usr/bin/env python
 """Script to get a positions/velocities/lengths trajectory."""
-import intel_aero_ros
+import sys
+
 import rospy
 import numpy as np
 import geometry_msgs.msg
 
-import importlib
-import pathlib
-import sys
-
-
-def get_trajectory_planner():
-    """Import the trajectory planner code."""
-    soft_drone_pydir = pathlib.Path(__file__).resolve().parent.parent.parent / "python"
-    sys.path.append(str(soft_drone_pydir))
-    return importlib.import_module(
-        "soft_drone_python.find_trajectory"
-    ).find_trajectory_for_interp
+import softdrone_core
+from softdrone.python.control.find_trajectory import find_trajectory_for_interp
 
 
 grasp_target = None
 
-
 def pose_handler(msg):
     """Wait for start pose."""
+    msg = msg.pose
     global grasp_target
     if grasp_target is None:
         grasp_target = np.array(
@@ -42,12 +33,12 @@ def main():
     gripper_latency = rospy.get_param("~gripper_latency", 0.0)
     trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
 
-    planner = get_trajectory_planner()
+    planner = find_trajectory_for_interp
 
     if use_mocap_target:
         rospy.logwarn("Waiting for grasp target")
         target_sub = rospy.Subscriber(
-            "grasp_target", geometry_msgs.msg.PoseStamped, pose_handler, queue_size=10
+            "grasp_target", geometry_msgs.msg.PoseWithCovarianceStamped, pose_handler, queue_size=10
         )
 
         while not rospy.is_shutdown() and grasp_target is None:
@@ -89,40 +80,10 @@ def main():
     rospy.loginfo("Grasp Velocity: {}".format(grasp_velocity))
     rospy.loginfo("Grasp Target: {}".format(grasp_target))
     rospy.loginfo("End Position: {}".format(end_position))
-    polynomial, lengths = planner(
-        start_position=start_position,
-        grasp_axis=(0 if trajectory_plane == "xz" else 2),
-        grasp_position=grasp_position,
-        grasp_target=grasp_target,
-        grasp_time=grasp_time,
-        grasp_velocity=grasp_velocity,
-        open_distance=open_distance,
-        use_offline_lengths=True,
-        end_time=end_time,
-        end_position=end_position,
-        end_velocity=end_velocity,
-    )
 
-    interped_start = polynomial.interp(0.0)[0]
-    print(
-        "Given start: {} Solution: {}".format(
-            np.squeeze(start_position), np.squeeze(interped_start)
-        )
-    )
-    assert np.linalg.norm(interped_start - start_position) < 1.0e-3
-    print("Initial, Open, Grasp lengths: {}".format(lengths))
-
-    # Set up the things that will make this run
-    trajectory_tracker = intel_aero_ros.InterpTrajectoryTracker(
-        polynomial,
-        lengths,
-        gripper_latency=gripper_latency,
-        settle_time=trajectory_settle_time,
-    )
-    state_machine = intel_aero_ros.GraspStateMachine(trajectory_tracker)  # NOQA
+    state_machine = softdrone_core.GraspStateMachine(None)  # NOQA
 
     rospy.spin()
-
 
 if __name__ == "__main__":
     main()

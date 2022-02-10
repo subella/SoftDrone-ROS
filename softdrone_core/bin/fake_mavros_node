@@ -1,0 +1,152 @@
+#!/usr/bin/env python
+
+import numpy as np
+import rospy
+import tf
+from std_msgs.msg import Bool
+from mavros_msgs.msg import State, PositionTarget
+from mavros_msgs.srv import SetMode, SetModeResponse, CommandBool, CommandBoolResponse
+from geometry_msgs.msg import PoseStamped, TwistStamped
+from nav_msgs.msg import Odometry
+
+R_position = 0.1
+R_orientation = 0.01
+R_twist = 0.1
+
+x = 0
+y = 0
+z = 0
+yaw = 0
+vx = 0
+vy = 0
+vz = 0
+
+def publish_armed_state(event):
+    state = State()
+    state.armed = armed
+    state_pub.publish(state)
+
+def handle_arming(req):
+    global armed
+    armed = req.value
+    print("Arming: " + str(req.value))
+    return CommandBoolResponse(True, 0)
+
+def handle_set_mode(req):
+    print("setting mode to: " + str(req.base_mode))
+    return SetModeResponse(True)
+
+def publish_current_pose(event):
+    global x,y,z,yaw,vx,vy,vz
+
+    ps = PoseStamped()
+    ps.header.stamp = rospy.Time.now()
+    ps.header.frame_id = 'map'
+    ps.pose.position.x = x
+    ps.pose.position.y = y
+    ps.pose.position.z = z
+
+    q = tf.transformations.quaternion_from_euler(0, 0, yaw)
+    ps.pose.orientation.x = q[0]
+    ps.pose.orientation.y = q[1]
+    ps.pose.orientation.z = q[2]
+    ps.pose.orientation.w = q[3]
+    pose_pub.publish(ps)
+
+    twist_msg = TwistStamped()
+    twist_msg.header.stamp = rospy.Time.now()
+    twist_msg.header.frame_id = 'map'
+    twist_msg.twist.linear.x = vx
+    twist_msg.twist.linear.y = vy
+    twist_msg.twist.linear.z = vz
+    twist_pub.publish(twist_msg)
+
+    odom_msg = Odometry()
+    odom_msg.header.stamp = rospy.Time.now()
+    odom_msg.header.frame_id = 'map'
+    odom_msg.child_frame_id = 'base_link'
+    odom_msg.pose.pose = ps.pose
+    cov_pose = np.zeros((6,6))
+    cov_pose[0,0] = R_position
+    cov_pose[1,1] = R_position
+    cov_pose[2,2] = R_position
+    cov_pose[3,3] = R_orientation
+    cov_pose[4,4] = R_orientation
+    cov_pose[5,5] = R_orientation
+    odom_msg.pose.covariance = cov_pose.flatten().tolist()
+    odom_msg.twist.twist = twist_msg.twist
+    odom_msg.twist.covariance = (R_twist * np.eye(6)).flatten().tolist()
+    odom_pub.publish(odom_msg)
+
+    br.sendTransform((x, y, z), q, rospy.Time.now(), 'base_link', 'map')
+
+def setpoint_cb(msg):
+    global x,y,z,yaw,vx,vy,vz,time_last, position_last
+
+    x = msg.position.x
+    y = msg.position.y
+    z = msg.position.z
+    yaw = msg.yaw
+
+    new_pos = np.array([msg.position.x, msg.position.y, msg.position.z])
+    if position_last is not None:
+        dx = new_pos - position_last
+        dt = (rospy.Time.now() - time_last).to_sec()
+        v = dx / dt
+        # TODO: Also compute angular velocity
+        vx = v[0]
+        vy = v[1]
+        vz = v[2]
+
+    position_last = new_pos
+    time_last = rospy.Time.now()
+
+armed = False
+rospy.init_node('sim_start_node')
+rospy.Service('/mavros/set_mode', SetMode, handle_set_mode)
+rospy.Service('/mavros/cmd/arming', CommandBool, handle_arming)
+
+pose_pub = rospy.Publisher('/mavros/local_position/pose', PoseStamped, queue_size=1, latch=True)
+twist_pub = rospy.Publisher('/mavros/local_position/twist', TwistStamped, queue_size=1, latch=True)
+odom_pub = rospy.Publisher('/mavros/odometry/in', Odometry, queue_size=1, latch=True)
+state_pub = rospy.Publisher('/mavros/state', State, queue_size=1, latch=True)
+rospy.Subscriber('/mavros/setpoint_raw/local', PositionTarget, setpoint_cb)
+
+time_last = rospy.Time.now()
+position_last = None
+
+# 1) send initial pose
+initial_pose = [0, 0, 0]
+ps = PoseStamped()
+ps.header.stamp = rospy.Time.now()
+ps.header.frame_id = 'map'
+ps.pose.position.x = initial_pose[0]
+ps.pose.position.y = initial_pose[1]
+ps.pose.position.z = initial_pose[2]
+ps.pose.orientation.w = 1
+pose_pub.publish(ps)
+
+# 2) Send initial odom
+twist_msg = TwistStamped()
+twist_msg.header.stamp = rospy.Time.now()
+twist_msg.header.frame_id = 'map'
+twist_msg.twist.linear.x = 0
+twist_msg.twist.linear.y = 0
+twist_msg.twist.linear.z = 0
+
+odom_msg = Odometry()
+odom_msg.header.stamp = rospy.Time.now()
+odom_msg.header.frame_id = 'map'
+odom_msg.child_frame_id = 'base_link'
+odom_msg.pose.pose = ps.pose
+odom_msg.pose.covariance = (R_position*np.eye(6)).flatten().tolist()
+odom_msg.twist.twist = twist_msg.twist
+odom_msg.twist.covariance = (R_twist * np.eye(6)).flatten().tolist()
+odom_pub.publish(odom_msg)
+
+br = tf.TransformBroadcaster()
+
+rospy.Timer(rospy.Duration(1.0), publish_armed_state, oneshot=False)
+rospy.Timer(rospy.Duration(0.03), publish_current_pose, oneshot=False)
+rospy.spin()
+

@@ -2,7 +2,7 @@
 
     <arg name="use_gripper" default="false"/>
 
-    <node pkg="intel_aero_ros" type="takeoff_test" name="takeoff_test_node" output="screen">
+    <node pkg="softdrone_core" type="takeoff_test" name="takeoff_test_node" output="screen">
         <remap from="state" to="/mavros/state"/>
         <remap from="pose" to="/mavros/local_position/pose"/>
         <remap from="target" to="/mavros/setpoint_raw/local"/>
@@ -15,7 +15,7 @@
         <rosparam param="open_lengths">[125, 125, 184, 184]</rosparam>
     </node>
 
-    <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">
+    <node if="$(arg use_gripper)" pkg="softdrone_core" type="gripper_node" name="gripper" output="screen">
         <remap from="lengths" to="/gripper/lengths"/>
     </node>
 

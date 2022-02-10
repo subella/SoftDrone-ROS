@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Script that uses position control to fly waypoints."""
-import intel_aero_ros
+import softdrone_core
 import rospy
 
 
@@ -8,7 +8,7 @@ def main():
     """Run everything."""
     rospy.init_node("landing_node")
 
-    state_machine = intel_aero_ros.LandingStateMachine()  # NOQA
+    state_machine = softdrone_core.LandingStateMachine()  # NOQA
 
     rospy.spin()
 

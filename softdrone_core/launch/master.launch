@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Whether to launch the "grasp state machine" control logic -->
+    <arg name="use_grasp_state_machine" default="true" doc="Use grasp state machine control logic?"/>
+    <!-- Whether to try connecting to the gripper -->
+    <arg name="use_gripper" default="false" doc="Connect to gripper?"/>
+
+    <arg name="use_tracker" default="true" doc="Use EKF target tracker?" />
+
+    <arg name="sim_target_as_tracker_output" default="$(eval not arg('use_tracker'))" doc="Map the simulated target pose to the tracker output topic"/>
+
+    <arg name="use_rviz" default="true" doc="Launch rviz?" />
+
+    <arg name="use_polynomial_planner" default="true" doc="Launch polynomial planner node?"/>
+
+    <!-- Parameters to control launching the ROS simulation apparatus (i.e. no Unity) -->
+    <arg name="simulation_ros" default="false" doc="Use ros simulation?"/>
+    <arg name="simulate_mavros" default="$(arg simulation_ros)" doc="Mock mavros?"/>
+    <arg name="simulate_perception" default="$(arg simulation_ros)" doc="Mock perception?"/>
+    <arg name="simulate_target" default="$(arg simulate_perception)" doc="Simulate target?"/>
+
+    <arg name="use_real_mavros" default="$(eval not arg('simulate_mavros'))" doc="Launch mavros"/>
+    <arg name="use_t265" default="$(arg use_real_mavros)" doc="Launch t265 node"/>
+    <arg name="publish_static_transforms" default="$(arg use_real_mavros)" doc="Publish static transformations for camera and drone"/>
+
+
+    <!-- Parameters for simulated target. Used if simulate_perception is true -->
+    <arg name="target_motion" default="stationary" doc="Simulated target motion type: {stationary, circle, rotating}"/>
+    <arg name="target_x" default="2" doc="Simulated target x center"/>
+    <arg name="target_y" default="2" doc="Simulated target y center"/>
+    <arg name="target_radius" default="1" doc="Simulated target circle radius"/>
+    <arg name="target_speed" default="0.1" doc="Simulated target speed"/>
+
+    <!-- Simulate mavros -->
+    <include if="$(arg simulate_mavros)" file="$(find softdrone_core)/launch/fake_mavros.launch"/>
+
+    <!-- Launch (actual) mavros -->
+    <include if="$(arg use_real_mavros)" file="$(find softdrone_core)/launch/mavros.launch">
+        <arg name="sitl" default="false"/>
+        <arg name="gcs_ip" default=""/>
+    </include>
+
+
+    <!-- Launch the simulated target node -->
+    <group if="$(arg simulate_target)">
+        <remap if="$(arg sim_target_as_tracker_output)" from="/sparkgrasptar/world" to="/tracker/target/pose"/>
+        <include file="$(find softdrone_core)/launch/sim_target_node.launch">
+            <arg name="x" value="$(arg target_x)"/>
+            <arg name="y" value="$(arg target_y)"/>
+            <arg name="radius" value="$(arg target_radius)"/>
+            <arg name="speed" value="$(arg target_speed)"/>
+            <arg name="target_motion" value="$(arg target_motion)"/>
+        </include>
+    </group>
+
+
+    <!-- Launch the core grasp state machine logic -->
+    <group if="$(arg use_grasp_state_machine)">
+        <remap from="/sparkgrasptar/world" to="/tracker/target/pose"/>
+        <include file="$(find softdrone_core)/launch/run_grasp_task.launch">
+            <arg name="use_gripper" value="$(arg use_gripper)"/>
+        </include>
+    </group>
+
+    <!-- Launch the simulated perception logic -->
+    <include if="$(arg simulate_perception)" file="$(find softdrone_core)/launch/sim_perception_node.launch"/>
+
+
+    <group if="$(arg use_t265)">
+        <remap from="/camera/odom/sample" to="/mavros/odometry/out"/>
+        <include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
+    </group>
+
+    <group if="$(arg publish_static_transforms)">
+        <node name="tf_camera_pose_frame_to_base_link" pkg="tf" type="static_transform_publisher" args="0 0 0 0 -0.785 0 camera_pose_frame base_link 1000"/>
+        <node name="tf_odom_frame_to_camera_odom_frame" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 odom camera_odom_frame 1000"/>
+    </group>
+
+
+    <!-- Launch the EKF estimator that updates estimate of target's state -->
+    <group if="$(arg use_tracker)">
+        <remap from="agent_odom" to="/mavros/odometry/in"/>
+        <remap from="relative_pose_observation" to="/perception/target_rel_estimate"/>
+        <remap from="target_global_pose_estimate" to="/tracker/target/pose"/>
+        <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
+    </group>
+
+    <!-- Launch the trajectory planner. -->
+    <group if="$(arg use_polynomial_planner)">
+        <remap from="pose" to="/mavros/local_position/pose"/>
+        <remap from="twist" to="/mavros/local_position/twist"/>
+        <!--remap from="waypoint" to=""/-->
+        <remap from="target_pose" to="/tracker/target/pose"/>
+        <include file="$(find softdrone_core)/launch/polynomial_planner_node.launch" />
+    </group>
+
+    <!-- Launch visualization -->
+    <include if="$(arg use_rviz)" file="$(find softdrone_core)/launch/rviz.launch"/>
+
+</launch>

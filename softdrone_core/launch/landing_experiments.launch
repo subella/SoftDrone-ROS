@@ -5,7 +5,7 @@
     <arg if="$(arg record)" name="prefix"/>
     <arg name="naive" default="false"/>
 
-    <node pkg="intel_aero_ros" type="landing_node" name="landing_node" output="screen">
+    <node pkg="softdrone_core" type="landing_node" name="landing_node" output="screen">
         <remap from="state" to="/mavros/state"/>
         <remap from="pose" to="/mavros/local_position/pose"/>
         <remap from="target" to="/mavros/setpoint_raw/local"/>
@@ -22,7 +22,7 @@
         <rosparam unless="$(arg naive)" param="lengths">[122, 117, 116, 117]</rosparam>
     </node>
 
-    <node if="$(arg use_gripper)" pkg="intel_aero_ros" type="gripper_node" name="gripper" output="screen">
+    <node if="$(arg use_gripper)" pkg="softdrone_core" type="gripper_node" name="gripper" output="screen">
         <remap from="lengths" to="/gripper/lengths"/>
     </node>
 
