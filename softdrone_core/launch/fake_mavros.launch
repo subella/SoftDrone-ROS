@@ -1,3 +1,6 @@
 <launch>
-    <node pkg="softdrone_core" type="fake_mavros_node" name="fake_mavros_node" output="screen"/>
+    <arg name="camera_odom_passthrough" default="false" doc="Whether to output the camera odometry as if it came from mavros" />
+    <node pkg="softdrone_core" type="fake_mavros_node" name="fake_mavros_node" output="screen">
+        <param name="camera_odom_passthrough" value="$(arg camera_odom_passthrough)"/>
+    </node>
 </launch>

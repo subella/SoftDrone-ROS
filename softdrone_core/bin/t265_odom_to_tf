@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+import rospy
+import tf2_ros
+from tf import transformations as ts
+from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
+
+
+def odom_cb(msg):
+
+    p = msg.pose.pose.position
+    q = msg.pose.pose.orientation
+    trans = [p.x, p.y, p.z]
+    rot = [q.x, q.y, q.z, q.w]
+    transform = ts.concatenate_matrices(ts.translation_matrix(trans), ts.quaternion_matrix(rot))
+    inversed_transform = ts.inverse_matrix(transform)
+    new_trans = ts.translation_from_matrix(inversed_transform)
+    new_rot = ts.quaternion_from_matrix(inversed_transform)
+
+    static_transformStamped = TransformStamped()
+
+    static_transformStamped.header.stamp = rospy.Time.now()
+    static_transformStamped.header.frame_id = 'camera_pose_frame'
+    static_transformStamped.child_frame_id = 'camera_odom_frame'
+
+    static_transformStamped.transform.translation.x = new_trans[0]
+    static_transformStamped.transform.translation.y = new_trans[1]
+    static_transformStamped.transform.translation.z = new_trans[2]
+
+    static_transformStamped.transform.rotation.x = new_rot[0]
+    static_transformStamped.transform.rotation.y = new_rot[1]
+    static_transformStamped.transform.rotation.z = new_rot[2]
+    static_transformStamped.transform.rotation.w = new_rot[3]
+
+    broadcaster.sendTransform(static_transformStamped)
+
+
+if __name__ == '__main__':
+
+    rospy.init_node('camera_odom_tf_translator')
+    broadcaster = tf2_ros.StaticTransformBroadcaster()
+    rospy.Subscriber('camera_odom', Odometry, odom_cb)
+    rospy.spin()
+

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Parameters for simulated target. Used if simulate_perception is true -->
+    <arg name="target_motion" default="stationary" doc="Simulated target motion type: {stationary, circle, rotating}"/>
+    <arg name="target_x" default="2" doc="Simulated target x center"/>
+    <arg name="target_y" default="2" doc="Simulated target y center"/>
+    <arg name="target_radius" default="1" doc="Simulated target circle radius"/>
+    <arg name="target_speed" default="0.1" doc="Simulated target speed"/>
+
+    <include file="$(find softdrone_core)/launch/master.launch">
+        <arg name="use_grasp_state_machine" value="true"/>
+        <arg name="use_gripper" value="false"/>
+        <arg name="use_tracker" value="true"/>
+        <arg name="sim_target_as_tracker_output" value="false"/>
+        <arg name="use_rviz" value="true"/>
+        <arg name="use_polynomial_planner" value="true"/>
+
+        <arg name="simulation_ros" value="true"/>
+        <arg name="simulate_mavros" value="true"/>
+        <arg name="simulate_perception" value="true"/>
+        <arg name="simulate_target" value="true"/>
+        <arg name="camera_odom_passthrough" value="true"/>
+
+        <arg name="use_real_mavros" value="false"/>
+        <arg name="use_t265" value="true"/>
+        <arg name="publish_static_transforms" value="true"/>
+
+        <arg name="target_motion" value="$(arg target_motion)"/>
+        <arg name="target_x" value="$(arg target_x)"/>
+        <arg name="target_y" value="$(arg target_y)"/>
+        <arg name="target_radius" value="$(arg target_radius)"/>
+        <arg name="target_speed" value="$(arg target_speed)"/>
+
+    </include>
+
+</launch>

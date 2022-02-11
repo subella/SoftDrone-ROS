@@ -8,6 +8,8 @@
 
     <arg name="use_tracker" default="true" doc="Use EKF target tracker?" />
 
+    <arg name="use_robot_state_publisher" default="true" doc="Use robot state publisher to get static transform + mesh?"/>
+
     <arg name="sim_target_as_tracker_output" default="$(eval not arg('use_tracker'))" doc="Map the simulated target pose to the tracker output topic"/>
 
     <arg name="use_rviz" default="true" doc="Launch rviz?" />
@@ -19,6 +21,8 @@
     <arg name="simulate_mavros" default="$(arg simulation_ros)" doc="Mock mavros?"/>
     <arg name="simulate_perception" default="$(arg simulation_ros)" doc="Mock perception?"/>
     <arg name="simulate_target" default="$(arg simulate_perception)" doc="Simulate target?"/>
+
+    <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
 
     <arg name="use_real_mavros" default="$(eval not arg('simulate_mavros'))" doc="Launch mavros"/>
     <arg name="use_t265" default="$(arg use_real_mavros)" doc="Launch t265 node"/>
@@ -33,7 +37,9 @@
     <arg name="target_speed" default="0.1" doc="Simulated target speed"/>
 
     <!-- Simulate mavros -->
-    <include if="$(arg simulate_mavros)" file="$(find softdrone_core)/launch/fake_mavros.launch"/>
+    <include if="$(arg simulate_mavros)" file="$(find softdrone_core)/launch/fake_mavros.launch">
+        <arg name="camera_odom_passthrough" value="$(arg camera_odom_passthrough)"/>
+    </include>
 
     <!-- Launch (actual) mavros -->
     <include if="$(arg use_real_mavros)" file="$(find softdrone_core)/launch/mavros.launch">
@@ -69,12 +75,14 @@
 
     <group if="$(arg use_t265)">
         <remap from="/camera/odom/sample" to="/mavros/odometry/out"/>
-        <include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
+        <include file="$(find realsense2_camera)/launch/rs_t265.launch">
+            <arg name="publish_odom_tf" value="false"/>
+        </include>
     </group>
 
     <group if="$(arg publish_static_transforms)">
-        <node name="tf_camera_pose_frame_to_base_link" pkg="tf" type="static_transform_publisher" args="0 0 0 0 -0.785 0 camera_pose_frame base_link 1000"/>
-        <node name="tf_odom_frame_to_camera_odom_frame" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 odom camera_odom_frame 1000"/>
+        <remap from="camera_odom" to="/mavros/odometry/out"/>
+        <include file="$(find softdrone_core)/launch/t265_odom_to_tf.launch"/>
     </group>
 
 
@@ -97,5 +105,8 @@
 
     <!-- Launch visualization -->
     <include if="$(arg use_rviz)" file="$(find softdrone_core)/launch/rviz.launch"/>
+
+    <!-- Launch robot state publisher -->
+    <include if="$(arg use_robot_state_publisher)" file="$(find softdrone_core)/launch/robot_state_publisher.launch"/>
 
 </launch>
