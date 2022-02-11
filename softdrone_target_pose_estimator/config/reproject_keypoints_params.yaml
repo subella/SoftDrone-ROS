@@ -1,0 +1,5 @@
+reproject_keypoints_params:
+  keypoints_2D_topic: "/keypoints_2D"
+  keypoints_3D_topic: "/keypoints_3D"
+  rgb_cam_info_topic: "/camera/color/camera_info"
+  depth_img_topic: "/camera/aligned_depth_to_color/image_raw"

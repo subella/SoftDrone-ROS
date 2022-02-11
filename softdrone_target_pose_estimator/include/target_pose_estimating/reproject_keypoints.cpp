@@ -6,32 +6,31 @@
  */
 //-----------------------------------------------------------------------------
 
-#include <target_pose_estimating/keypoints_3D.hpp>
+#include <target_pose_estimating/reproject_keypoints.hpp>
 
-namespace softdrone
+namespace sdrone
 {
 
-Keypoints3D::
-Keypoints3D()
+ReprojectKeypoints::
+ReprojectKeypoints()
 {
   is_initialized_ = false;
 };
 
-Keypoints3D::
-Keypoints3D(Matrix4d& camera_intrinsics)
+ReprojectKeypoints::
+ReprojectKeypoints(Eigen::Matrix4d& camera_intrinsics)
 {
-  is_initialized_ = false;
   init(camera_intrinsics);
-
 };
 
-void Keypoints3D::
-init(Matrix4d& camera_intrinsics)
+void ReprojectKeypoints::
+init(Eigen::Matrix4d& camera_intrinsics)
 {
     camera_intrinsics_ = camera_intrinsics;
+    is_initialized_ = true;
 };
 
-void Keypoints3D::
+void ReprojectKeypoints::
 reprojectTo3D(double px, double py, double z, Eigen::Vector3d& point_3D)
 {
     double fx = camera_intrinsics_(0,0);
@@ -43,10 +42,10 @@ reprojectTo3D(double px, double py, double z, Eigen::Vector3d& point_3D)
     point_3D << x, y, z;
 }
 
-void reprojectKeypoints(Eigen::ArrayXXd& keypoints_2D, Eigen::ArrayXXd& keypoints_3D)
+void ReprojectKeypoints::
+reprojectKeypoints(Eigen::MatrixX2d& keypoints_2D, Eigen::MatrixX3d& keypoints_3D)
 {
-    for(auto row : keypoints_2D.rowwise())
-        std::cout << row;
 
 }
+
 }

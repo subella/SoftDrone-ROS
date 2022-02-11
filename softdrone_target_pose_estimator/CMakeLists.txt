@@ -20,8 +20,10 @@ find_package(teaserpp REQUIRED)
 
 add_message_files(
   FILES
-  Keypoint.msg
-  Keypoints.msg
+  Keypoint2D.msg
+  Keypoints2D.msg
+  Keypoint3D.msg
+  Keypoints3D.msg
 )
 
 generate_messages(
@@ -64,28 +66,35 @@ target_link_libraries(keypoint_detector_ros
   keypoint_detector
 )
 
-#add_library(keypoints_3D include/target_pose_estimating/keypoints_3D.cpp)
-#target_link_libraries(keypoints_3D
-#  ${catkin_LIBRARIES}
-#  Eigen3::Eigen
-#)
-#
-#add_library(pose_estimator include/target_pose_estimating/pose_estimator.cpp)
-#target_link_libraries(pose_estimator
-#  ${catkin_LIBRARIES}
-#  Eigen3::Eigen
-#  teaserpp::teaser_registration
-#  teaserpp::teaser_io
-#)
+add_library(reproject_keypoints include/target_pose_estimating/reproject_keypoints.cpp)
+target_link_libraries(reproject_keypoints
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+)
 
-# add_library(pose_estimator_ros include/target_pose_estimating/pose_estimator_ros.cpp)
-# target_link_libraries(pose_estimator_ros
-#   ${catkin_LIBRARIES}
-#   Eigen3::Eigen
-#   teaserpp::teaser_registration
-#   teaserpp::teaser_io
-#   pose_estimator
-# )
+add_library(reproject_keypoints_ros include/target_pose_estimating/reproject_keypoints_ros.cpp)
+target_link_libraries(reproject_keypoints_ros
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+  reproject_keypoints
+)
+
+add_library(pose_estimator include/target_pose_estimating/pose_estimator.cpp)
+target_link_libraries(pose_estimator
+ ${catkin_LIBRARIES}
+ Eigen3::Eigen
+ teaserpp::teaser_registration
+ teaserpp::teaser_io
+)
+
+add_library(pose_estimator_ros include/target_pose_estimating/pose_estimator_ros.cpp)
+target_link_libraries(pose_estimator_ros
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+  teaserpp::teaser_registration
+  teaserpp::teaser_io
+  pose_estimator
+)
 
 # EXECUTABLES
 
@@ -99,4 +108,26 @@ target_link_libraries(keypoint_detector_node
    ${TORCH_LIBRARIES}
    TorchVision::TorchVision
    keypoint_detector_ros
+ )
+
+add_executable(reproject_keypoints_node src/reproject_keypoints_node.cpp)
+
+add_dependencies(reproject_keypoints_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(reproject_keypoints_node
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+  reproject_keypoints_ros
+ )
+
+add_executable(pose_estimator_node src/pose_estimator_node.cpp)
+
+add_dependencies(pose_estimator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(pose_estimator_node
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+  teaserpp::teaser_registration
+  teaserpp::teaser_io
+  pose_estimator_ros
  )

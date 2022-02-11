@@ -33,7 +33,7 @@ KeypointDetectorROS(const ros::NodeHandle& nh,
   rgb_image_sub_ = it_.subscribe(rgb_img_topic, 1, &KeypointDetectorROS::rgbImageCallback, this);
 
   should_publish_annotated_img_ = should_publish_annotated_img;
-  keypoints_pub_ = nh_.advertise<Keypoints>(keypoints_topic,  1);
+  keypoints_pub_ = nh_.advertise<Keypoints2D>(keypoints_topic,  1);
   annotated_img_pub_ = it_.advertise(annotated_img_topic,  1);
 };
 
@@ -61,7 +61,7 @@ rgbImageCallback(const ImageMsg& rgb_image_msg)
     return;
   }
 
-  Keypoints kpts = formatKeypoints(tensor_kpts);
+  Keypoints2D kpts = tensorToKeypoints2D(tensor_kpts);
   keypoints_pub_.publish(kpts);
 
   if(should_publish_annotated_img_)
@@ -72,18 +72,19 @@ rgbImageCallback(const ImageMsg& rgb_image_msg)
 
 };
 
-softdrone_target_pose_estimator::Keypoints KeypointDetectorROS::
-formatKeypoints(torch::Tensor& tensor_kpts)
+softdrone_target_pose_estimator::Keypoints2D KeypointDetectorROS::
+tensorToKeypoints2D(torch::Tensor& tensor_kpts)
 {
-  softdrone_target_pose_estimator::Keypoints kpts;
+  Keypoints2D kpts;
+  kpts.header.stamp = ros::Time::now();
   for (int i = 0; i < tensor_kpts.sizes()[1]; ++i)
     {
-      softdrone_target_pose_estimator::Keypoint kpt;
+      Keypoint2D kpt;
       kpt.x = tensor_kpts[0][i][0].item<int>();
       kpt.y = tensor_kpts[0][i][1].item<int>();
-      kpts.keypoints[i] = kpt;
+      kpts.keypoints_2D.push_back(kpt);
     }
   return kpts;
 }
 
-}; //namespace softdrone
+}; //namespace sdrone

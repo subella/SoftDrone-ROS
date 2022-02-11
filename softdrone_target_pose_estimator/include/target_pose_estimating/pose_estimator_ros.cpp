@@ -8,44 +8,56 @@
 
 #include <target_pose_estimating/pose_estimator_ros.hpp>
 
-namespace softdrone
+namespace sdrone
 {
 
 PoseEstimatorROS::
 PoseEstimatorROS(const ros::NodeHandle &nh)
-  : nh_(nh), 
-    it_(nh_),
-    depth_img_sub_(it_, "", 1),
-    keypoints_sub_(nh_, "", 1),
-    sync_(SyncPolicy(10), depth_img_sub_, keypoints_sub_)
+  : nh_(nh),
+    PoseEstimator()
 {
-  is_initialized_ = false;
 };
 
 PoseEstimatorROS::
 PoseEstimatorROS(const ros::NodeHandle& nh,
-              const std::string&     depth_img_topic,
-              const std::string&     keypoint_topic,
-              const std::string&     pose_topic)
-  : nh_(nh), 
-    it_(nh_),
-    depth_img_sub_(it_, depth_img_topic, 1),
-    keypoints_sub_(nh_, keypoint_topic, 1),
-    sync_(SyncPolicy(10), depth_img_sub_, keypoints_sub_)
+                 const std::string&     keypoints_3D_topic,
+                 const std::string&     pose_topic,
+                 const std::string&     cad_frame_file_name,
+                 const TeaserParams&    params)
+  : nh_(nh),
+    PoseEstimator(cad_frame_file_name, params)
 {
-  is_initialized_ = false;
-
+  keypoints_sub_ = nh_.subscribe(keypoints_3D_topic, 1, &PoseEstimatorROS::keypoints3DCallback, this);
   pose_pub_ = nh_.advertise<PoseWCov>(pose_topic,  1);
-  sync_.registerCallback(boost::bind(&PoseEstimatorROS::syncCallback, this, _1, _2));
 };
-
 
 void PoseEstimatorROS::
-syncCallback(const ImageMsg::ConstPtr& depth_img, const Keypoints::ConstPtr& keypoints)
+keypoints3DCallback(const Keypoints3D& keypoints_3D)
 {
-  ROS_INFO_STREAM("Callback called.");
 
-};
+  Eigen::Matrix3Xd keypoints_3D_mat;
+  keypoints3DToEigen(keypoints_3D, keypoints_3D_mat);
 
+  Eigen::Matrix3d R;
+  Eigen::Vector3d t;
+  solveTransformation(keypoints_3D_mat, R, t);
+
+  PoseWCov pose;
+  eigenToPoseWCov(R, t, pose);
+
+  pose_pub_.publish(pose);
+}
+
+void PoseEstimatorROS::
+keypoints3DToEigen(const Keypoints3D& keypoints_3D, Eigen::Matrix3Xd& keypoints_3D_mat)
+{
+
+}
+
+void PoseEstimatorROS::
+eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& pose)
+{
+
+}
 
 }; //namespace soft

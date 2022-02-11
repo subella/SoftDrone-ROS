@@ -19,7 +19,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 
 from image_processing import preprocess_input, postprocess_output
-from softdrone_target_pose_estimator.msg import Keypoints
+from softdrone_target_pose_estimator.msg import Keypoints2D
 # from pose_detection import make_transformation_matrix, transform_kpts, estimate_pose
 import message_filters
 
@@ -38,7 +38,7 @@ class SoftDroneInterface():
         rgb_camera_info_sub = message_filters.Subscriber("/camera/color/camera_info", CameraInfo)
         depth_camera_sub = message_filters.Subscriber("/camera/aligned_depth_to_color/image_raw", ImageMsg)
         depth_camera_info_sub = message_filters.Subscriber("/camera/depth/camera_info", CameraInfo)
-        keypoints_sub = rospy.Subscriber("/tesse/keypoints", Keypoints, self.keypoints_cb)
+        # keypoints_sub = rospy.Subscriber("/tesse/keypoints", Keypoints2D, self.keypoints_cb)
 
         ts = message_filters.TimeSynchronizer([rgb_camera_sub, rgb_camera_info_sub,
                                                depth_camera_sub, depth_camera_info_sub], 10)
@@ -79,7 +79,7 @@ class SoftDroneInterface():
         if not self.is_ready:
             return
 
-        num_kpts = len(msg.keypoints)
+        num_kpts = len(msg.keypoints_2D)
         kpts_np = np.zeros((num_kpts, 2))
         # TODO change keypoint message so for loop is not needed.
         for i in range(num_kpts):

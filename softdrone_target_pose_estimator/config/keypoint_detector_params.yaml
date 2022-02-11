@@ -2,5 +2,5 @@ keypoint_detector_params:
   rgb_img_topic: "/tesse/preproc_img"
   model_file_name: "$(env HOME)/KeypointDetectorModels/model_hardware_jitted"
   should_publish_annotated_img: true
-  keypoints_topic: "/tesse/keypoints"
+  keypoints_topic: "/keypoints_2D"
   annotated_img_topic: "/keypoints_image"

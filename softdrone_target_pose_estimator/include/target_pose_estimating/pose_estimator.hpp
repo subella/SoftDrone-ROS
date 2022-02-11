@@ -16,28 +16,37 @@
 #define Pose_Estimator_HPP
 
 
-namespace softdrone
+namespace sdrone
 {
 
+typedef teaser::RobustRegistrationSolver::Params TeaserParams;
+typedef teaser::RobustRegistrationSolver TeaserSolver;
+
 class PoseEstimator {
+
   public:
 
     PoseEstimator();
 
-    PoseEstimator(const std::string& cad_frame_file_name);
+    PoseEstimator(const std::string&  cad_frame_file_name,
+                  const TeaserParams& params);
 
   protected:
 
     bool is_initialized_;
 
-    teaser::RobustRegistrationSolver::Params params;
+    Eigen::Matrix3Xd cad_frame_keypoints_;
 
-    teaser::RobustRegistrationSolver solver;
+    teaser::RobustRegistrationSolver solver_;
 
     void init(const std::string& cad_frame_file_name);
 
+    void initCadFrame(const std::string& cad_frame_file_name);
+
+    void solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t);
+
 };
 
-}; //namespace soft
+}; //namespace sdron
 
-#endif // Tracker_HPP
+#endif // Pose_Estimator_HPP
