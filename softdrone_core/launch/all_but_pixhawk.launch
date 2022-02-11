@@ -21,6 +21,7 @@
         <arg name="simulate_perception" value="true"/>
         <arg name="simulate_target" value="true"/>
         <arg name="camera_odom_passthrough" value="true"/>
+        <arg name="use_d455" value="true"/>
 
         <arg name="use_real_mavros" value="false"/>
         <arg name="use_t265" value="true"/>

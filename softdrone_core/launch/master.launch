@@ -25,7 +25,8 @@
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
 
     <arg name="use_real_mavros" default="$(eval not arg('simulate_mavros'))" doc="Launch mavros"/>
-    <arg name="use_t265" default="$(arg use_real_mavros)" doc="Launch t265 node"/>
+    <arg name="use_t265" default="$(arg use_real_mavros)" doc="Launch t265 realsense node"/>
+    <arg name="use_d455" default="$(eval not arg('simulate_perception'))" doc="Launch d455 realsense node"/>
     <arg name="publish_static_transforms" default="$(arg use_real_mavros)" doc="Publish static transformations for camera and drone"/>
 
 
@@ -73,10 +74,19 @@
     <include if="$(arg simulate_perception)" file="$(find softdrone_core)/launch/sim_perception_node.launch"/>
 
 
+
+    <group if="$(arg use_d455)">
+        <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+            <arg name="camera" value="target_cam"/>
+            <arg name="device_type" value="d455"/>
+        </include>
+    </group>
+
     <group if="$(arg use_t265)">
-        <remap from="/camera/odom/sample" to="/mavros/odometry/out"/>
+        <remap from="/nav_cam/odom/sample" to="/mavros/odometry/out"/>
         <include file="$(find realsense2_camera)/launch/rs_t265.launch">
             <arg name="publish_odom_tf" value="false"/>
+            <arg name="camera" value="nav_cam"/>
         </include>
     </group>
 

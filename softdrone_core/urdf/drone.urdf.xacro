@@ -2,41 +2,30 @@
 <!-- Kinematic model, simplified visual, no collisions -->
 <robot name="softdrone" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:property name="PI" value="3.1415926535897931" />
-  <xacro:property name="camera_offset_len" value="0.1" />
-  <xacro:property name="camera_offset_ver" value="0.0" />
-  <!-- +- 35 degrees -->
-  <!--
-  <xacro:property name="pan_range" value="0.6108652381980153" />
-  <xacro:property name="pan_vel" value="2.0" />
-  -->
-  <!-- +- 35 degrees -->
-  <!--
-  <xacro:property name="tilt_range" value="0.6108652381980153" />
-  <xacro:property name="tilt_vel" value="2.0" />
-  <xacro:property name="joint_effort" value="50" />
-  -->
-
-  <!--link name="root_link"></link-->
-
 
     <link name="base_link">
      <visual>
-        <origin xyz="0 0 0" rpy="0 0 ${PI}" />
+        <origin xyz="0.275 0.12 0.05" rpy="0 0 ${PI}" />
         <geometry>
           <mesh scale=".001 .001 .001" filename="package://softdrone_core/meshes/drone_mesh_v27.stl"/>
         </geometry>
      </visual>
     </link>
 
-    <link name="camera_pose_frame"></link>
+    <link name="nav_cam_pose_frame"></link>
+    <link name="target_cam_link"></link>
   
-    <joint name="base_link_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0.785 0" />
+    <joint name="base_link_to_nav_cam" type="fixed">
+      <origin xyz="-0.08 0 0" rpy="0 0.785 ${PI}" />
       <parent link="base_link"/>
-      <child link="camera_pose_frame" />
+      <child link="nav_cam_pose_frame" />
+    </joint>
+
+
+    <joint name="base_link_to_target_cam" type="fixed">
+      <origin xyz="0.08 0 0" rpy="0 0.785 0" />
+      <parent link="base_link"/>
+      <child link="target_cam_link" />
     </joint>
   
-  <!-- [nice to have] -->
-  <!-- xacro:include filename="bebop.gazebo" /-->
-
 </robot>
