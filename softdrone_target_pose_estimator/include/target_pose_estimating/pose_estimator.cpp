@@ -59,13 +59,21 @@ initCadFrame(const std::string& cad_frame_file_name)
     cad_frame_keypoints_ = matrix.transpose();
 }
 
-void PoseEstimator::
+int PoseEstimator::
 solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t)
 {
-    solver_.solve(cad_frame_keypoints_, keypoints_3D);
-    auto solution = solver_.getSolution();
-    R = solution.rotation;
-    t = solution.translation;
+    try
+    {
+        solver_.solve(cad_frame_keypoints_, keypoints_3D);
+        auto solution = solver_.getSolution();
+        R = solution.rotation;
+        t = solution.translation;
+        return 1;
+    }
+    catch (...)
+    {
+        return 0;
+    }
 }
 
 }

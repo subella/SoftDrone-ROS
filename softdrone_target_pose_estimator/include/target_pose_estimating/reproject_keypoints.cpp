@@ -18,34 +18,52 @@ ReprojectKeypoints()
 };
 
 ReprojectKeypoints::
-ReprojectKeypoints(Eigen::Matrix4d& camera_intrinsics)
+ReprojectKeypoints(Eigen::Matrix3d& camera_intrinsics)
 {
   init(camera_intrinsics);
 };
 
 void ReprojectKeypoints::
-init(Eigen::Matrix4d& camera_intrinsics)
+init(Eigen::Matrix3d& camera_intrinsics)
 {
     camera_intrinsics_ = camera_intrinsics;
     is_initialized_ = true;
 };
 
-void ReprojectKeypoints::
-reprojectTo3D(double px, double py, double z, Eigen::Vector3d& point_3D)
+int ReprojectKeypoints::
+reprojectSingleKeypoint(Eigen::Vector2i& px_py, double z, Eigen::Vector3d& keypoint_3D_vec)
 {
+    if (!is_initialized_)
+      return 0;
     double fx = camera_intrinsics_(0,0);
     double fy = camera_intrinsics_(1,1);
     double cx = camera_intrinsics_(0,2);
     double cy = camera_intrinsics_(1,2);
+    int px = px_py(0);
+    int py = px_py(1);
     double x = (px - cx) * z / fx;
     double y = (py - cy) * z / fy;
-    point_3D << x, y, z;
+    keypoint_3D_vec << x, y, z;
+
+    return 1;
 }
 
-void ReprojectKeypoints::
-reprojectKeypoints(Eigen::MatrixX2d& keypoints_2D, Eigen::MatrixX3d& keypoints_3D)
+int ReprojectKeypoints::
+reprojectKeypoints(Eigen::MatrixX2i& px_py_mat, Eigen::VectorXd& z_vec, Eigen::MatrixX3d& keypoints_3D_mat)
 {
+  if (!is_initialized_)
+    return 0;
 
+  for (int i=0; i < px_py_mat.rows(); i++)
+  {
+    Eigen::Vector2i px_py = px_py_mat.row(i);
+    double z = z_vec(i);
+    Eigen::Vector3d keypoint_3D_vec;
+    reprojectSingleKeypoint(px_py, z, keypoint_3D_vec);
+    keypoints_3D_mat.row(i) = keypoint_3D_vec;
+  }
+
+  return 1;
 }
 
 }

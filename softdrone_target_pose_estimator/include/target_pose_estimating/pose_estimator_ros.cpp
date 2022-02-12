@@ -35,17 +35,22 @@ void PoseEstimatorROS::
 keypoints3DCallback(const Keypoints3D& keypoints_3D)
 {
 
+  ROS_INFO_STREAM("called");
   Eigen::Matrix3Xd keypoints_3D_mat;
   keypoints3DToEigen(keypoints_3D, keypoints_3D_mat);
 
   Eigen::Matrix3d R;
   Eigen::Vector3d t;
-  solveTransformation(keypoints_3D_mat, R, t);
+  ROS_INFO_STREAM("HERE");
+  int success = solveTransformation(keypoints_3D_mat, R, t);
+  ROS_INFO_STREAM(success);
 
-  PoseWCov pose;
-  eigenToPoseWCov(R, t, pose);
-
-  pose_pub_.publish(pose);
+  if (success)
+  {
+    PoseWCov pose;
+    eigenToPoseWCov(R, t, pose);
+    pose_pub_.publish(pose);
+  }
 }
 
 void PoseEstimatorROS::

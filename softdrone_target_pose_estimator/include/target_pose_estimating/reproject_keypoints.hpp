@@ -26,7 +26,7 @@ class ReprojectKeypoints {
 
     ReprojectKeypoints();
 
-    ReprojectKeypoints(Eigen::Matrix4d& camera_intrinsics);
+    ReprojectKeypoints(Eigen::Matrix3d& camera_intrinsics);
 
     ~ReprojectKeypoints() = default;
 
@@ -34,13 +34,13 @@ class ReprojectKeypoints {
 
     bool is_initialized_;
 
-    Eigen::Matrix4d camera_intrinsics_;
+    Eigen::Matrix3d camera_intrinsics_;
 
-    void init(Eigen::Matrix4d& camera_intrinsics);
+    void init(Eigen::Matrix3d& camera_intrinsics);
 
-    void reprojectTo3D(double px, double py, double z, Eigen::Vector3d& point_3D);
+    int reprojectSingleKeypoint(Eigen::Vector2i& px_py, double z, Eigen::Vector3d& keypoint_3D_vec);
 
-    void reprojectKeypoints(Eigen::MatrixX2d& keypoints_2D, Eigen::MatrixX3d& keypoints_3D);
+    int reprojectKeypoints(Eigen::MatrixX2i& px_py_mat, Eigen::VectorXd& z_vec, Eigen::MatrixX3d& keypoints_3D_mat);
 
 };
 

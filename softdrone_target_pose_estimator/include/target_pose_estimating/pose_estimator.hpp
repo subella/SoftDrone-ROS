@@ -43,7 +43,7 @@ class PoseEstimator {
 
     void initCadFrame(const std::string& cad_frame_file_name);
 
-    void solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t);
+    int solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t);
 
 };
 

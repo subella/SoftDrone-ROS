@@ -75,16 +75,16 @@ rgbImageCallback(const ImageMsg& rgb_image_msg)
 softdrone_target_pose_estimator::Keypoints2D KeypointDetectorROS::
 tensorToKeypoints2D(torch::Tensor& tensor_kpts)
 {
-  Keypoints2D kpts;
-  kpts.header.stamp = ros::Time::now();
+  Keypoints2D keypoints_2D_msg;
+  keypoints_2D_msg.header.stamp = ros::Time::now();
   for (int i = 0; i < tensor_kpts.sizes()[1]; ++i)
     {
-      Keypoint2D kpt;
-      kpt.x = tensor_kpts[0][i][0].item<int>();
-      kpt.y = tensor_kpts[0][i][1].item<int>();
-      kpts.keypoints_2D.push_back(kpt);
+      Keypoint2D keypoint_2D_msg;
+      keypoint_2D_msg.x = tensor_kpts[0][i][0].item<int>();
+      keypoint_2D_msg.y = tensor_kpts[0][i][1].item<int>();
+      keypoints_2D_msg.keypoints_2D.push_back(keypoint_2D_msg);
     }
-  return kpts;
+  return keypoints_2D_msg;
 }
 
 }; //namespace sdrone
