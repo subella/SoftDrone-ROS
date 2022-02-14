@@ -23,7 +23,8 @@ namespace sdrone
 
 class PoseEstimatorROS : public PoseEstimator {
   public:
-    typedef softdrone_target_pose_estimator::Keypoints3D Keypoints3D;
+    typedef softdrone_target_pose_estimator::Keypoint3D Keypoint3DMsg;
+    typedef softdrone_target_pose_estimator::Keypoints3D Keypoints3DMsg;
     typedef geometry_msgs::PoseWithCovariance PoseWCov;
 
     PoseEstimatorROS(const ros::NodeHandle &nh);
@@ -49,9 +50,9 @@ class PoseEstimatorROS : public PoseEstimator {
 
     ros::Publisher pose_pub_;
 
-    void keypoints3DCallback(const Keypoints3D& keypoints_3D);
+    void keypoints3DCallback(const Keypoints3DMsg& keypoints_3D_msg);
 
-    void keypoints3DToEigen(const Keypoints3D& keypoints_3D, Eigen::Matrix3Xd& keypoints_3D_mat);
+    void keypoints3DToEigen(const std::vector<Keypoint3DMsg> keypoints_3D, Eigen::Matrix3Xd& keypoints_3D_mat);
 
     void eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& pose);
 

@@ -62,6 +62,9 @@ initCadFrame(const std::string& cad_frame_file_name)
 int PoseEstimator::
 solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t)
 {
+    if (!is_initialized_)
+        return 0;
+
     try
     {
         solver_.solve(cad_frame_keypoints_, keypoints_3D);
