@@ -1,0 +1,12 @@
+<launch>
+  <group ns="soft_drone">
+    <node pkg="softdrone_target_pose_estimator"
+          name="controller_node"
+          type="controller_node.py"
+          output="screen">
+    </node>
+  </group>
+  <include file="$(find softdrone_target_pose_estimator)/launch/keypoint_detector.launch" />
+  <include file="$(find softdrone_target_pose_estimator)/launch/reproject_keypoints.launch" />
+  <include file="$(find softdrone_target_pose_estimator)/launch/pose_estimator.launch" />
+</launch>
