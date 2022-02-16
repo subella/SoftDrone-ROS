@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import rospy
 import tf
+from tf import transformations as tfn
 import tf2_ros
 from std_msgs.msg import Bool
 from mavros_msgs.msg import State, PositionTarget
@@ -57,6 +58,11 @@ def build_tf_message(p, q, child_frame, parent_frame):
     tf_msg.header.stamp = rospy.Time.now()
     return tf_msg
 
+def invert_transform(T):
+    T_inv = np.eye(4)
+    T_inv[:3,:3] = T[:3,:3].T
+    T_inv[:3,-1] = -np.matmul(T[:3,:3].T, T[:3,-1])
+    return T_inv
 
 def republish_current_t265_odom(event):
     global last_odom_in
@@ -64,32 +70,42 @@ def republish_current_t265_odom(event):
     olast = odom_msg.pose.pose.orientation
     q = [olast.x, olast.y, olast.z, olast.w]
     r,p,y = tf.transformations.euler_from_quaternion(q)
-    q_new = tf.transformations.quaternion_from_euler(r,p - np.radians(45),y)
+    pos = odom_msg.pose.pose.position
+
+    T_cam_in_base = tfn.compose_matrix(translate=(0,0,0), angles=(0, np.pi/4, np.pi)) # TODO: extract from tf tree
+    T_base_in_cam = invert_transform(T_cam_in_base)
+    T_cam_in_odom = tfn.compose_matrix(translate=(pos.x, pos.y, pos.z), angles=(r,p,y))
+    T_odom_in_map = tfn.compose_matrix(angles=(0,0,180))
+
+    T_base_in_map = T_odom_in_map.dot(T_cam_in_odom).dot(T_base_in_cam)
+    _, _, base_in_map_angles, base_in_map_trans, _ = tfn.decompose_matrix(T_base_in_map)
+    base_in_map_q = tfn.quaternion_from_euler(*base_in_map_angles)
+
+    tf_msg = build_tf_message(base_in_map_trans, base_in_map_q, 'base_link', 'map')
+    br.sendTransform(tf_msg)
 
     odom_msg.header.frame_id = 'map'
     odom_msg.child_frame_id = 'base_link'
-    odom_msg.pose.pose.orientation.x = q_new[0]
-    odom_msg.pose.pose.orientation.y = q_new[1]
-    odom_msg.pose.pose.orientation.z = q_new[2]
-    odom_msg.pose.pose.orientation.w = q_new[3]
+    odom_msg.pose.pose.position.x = tf_msg.transform.translation.x
+    odom_msg.pose.pose.position.y = tf_msg.transform.translation.y
+    odom_msg.pose.pose.position.z = tf_msg.transform.translation.z
+    odom_msg.pose.pose.orientation.x = tf_msg.transform.rotation.x
+    odom_msg.pose.pose.orientation.y = tf_msg.transform.rotation.y
+    odom_msg.pose.pose.orientation.z = tf_msg.transform.rotation.z
+    odom_msg.pose.pose.orientation.w = tf_msg.transform.rotation.w
     odom_pub.publish(odom_msg)
-
-
-    p = last_odom_in.pose.pose.position
-    tf_msg = build_tf_message([p.x,p.y,p.z], q_new, 'base_link', 'map')
-    br.sendTransform(tf_msg)
 
     ps = PoseStamped()
     ps.header.stamp = rospy.Time.now()
     ps.header.frame_id = 'map'
-    ps.pose.position.x = p.x
-    ps.pose.position.y = p.y
-    ps.pose.position.z = p.z
+    ps.pose.position.x = tf_msg.transform.translation.x
+    ps.pose.position.y = tf_msg.transform.translation.y
+    ps.pose.position.z = tf_msg.transform.translation.z
 
-    ps.pose.orientation.x = q_new[0]
-    ps.pose.orientation.y = q_new[1]
-    ps.pose.orientation.z = q_new[2]
-    ps.pose.orientation.w = q_new[3]
+    ps.pose.orientation.x = tf_msg.transform.rotation.x
+    ps.pose.orientation.y = tf_msg.transform.rotation.y
+    ps.pose.orientation.z = tf_msg.transform.rotation.z
+    ps.pose.orientation.w = tf_msg.transform.rotation.w
     pose_pub.publish(ps)
 
 
