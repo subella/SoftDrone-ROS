@@ -38,12 +38,12 @@
     <arg name="target_speed" default="0.1" doc="Simulated target speed"/>
 
     <!-- Simulate mavros -->
-    <include if="$(arg simulate_mavros)" file="$(find softdrone_core)/launch/fake_mavros.launch">
+    <include if="$(arg simulate_mavros)" file="$(find softdrone_core)/launch/nodes/fake_mavros.launch">
         <arg name="camera_odom_passthrough" value="$(arg camera_odom_passthrough)"/>
     </include>
 
     <!-- Launch (actual) mavros -->
-    <include if="$(arg use_real_mavros)" file="$(find softdrone_core)/launch/mavros.launch">
+    <include if="$(arg use_real_mavros)" file="$(find softdrone_core)/launch/nodes/mavros.launch">
         <arg name="sitl" default="false"/>
         <arg name="gcs_ip" default=""/>
     </include>
@@ -52,7 +52,7 @@
     <!-- Launch the simulated target node -->
     <group if="$(arg simulate_target)">
         <remap if="$(arg sim_target_as_tracker_output)" from="/sparkgrasptar/world" to="/tracker/target/pose"/>
-        <include file="$(find softdrone_core)/launch/sim_target_node.launch">
+        <include file="$(find softdrone_core)/launch/nodes/sim_target_node.launch">
             <arg name="x" value="$(arg target_x)"/>
             <arg name="y" value="$(arg target_y)"/>
             <arg name="radius" value="$(arg target_radius)"/>
@@ -65,13 +65,13 @@
     <!-- Launch the core grasp state machine logic -->
     <group if="$(arg use_grasp_state_machine)">
         <remap from="/sparkgrasptar/world" to="/tracker/target/pose"/>
-        <include file="$(find softdrone_core)/launch/run_grasp_task.launch">
+        <include file="$(find softdrone_core)/launch/nodes/run_grasp_task.launch">
             <arg name="use_gripper" value="$(arg use_gripper)"/>
         </include>
     </group>
 
     <!-- Launch the simulated perception logic -->
-    <include if="$(arg simulate_perception)" file="$(find softdrone_core)/launch/sim_perception_node.launch"/>
+    <include if="$(arg simulate_perception)" file="$(find softdrone_core)/launch/nodes/sim_perception_node.launch"/>
 
 
 
@@ -92,7 +92,7 @@
 
     <group if="$(arg publish_static_transforms)">
         <remap from="camera_odom" to="/mavros/odometry/out"/>
-        <include file="$(find softdrone_core)/launch/t265_odom_to_tf.launch"/>
+        <include file="$(find softdrone_core)/launch/nodes/t265_odom_to_tf.launch"/>
     </group>
 
 
@@ -110,13 +110,13 @@
         <remap from="twist" to="/mavros/local_position/twist"/>
         <!--remap from="waypoint" to=""/-->
         <remap from="target_pose" to="/tracker/target/pose"/>
-        <include file="$(find softdrone_core)/launch/polynomial_planner_node.launch" />
+        <include file="$(find softdrone_core)/launch/nodes/polynomial_planner_node.launch" />
     </group>
 
     <!-- Launch visualization -->
-    <include if="$(arg use_rviz)" file="$(find softdrone_core)/launch/rviz.launch"/>
+    <include if="$(arg use_rviz)" file="$(find softdrone_core)/launch/nodes/rviz.launch"/>
 
     <!-- Launch robot state publisher -->
-    <include if="$(arg use_robot_state_publisher)" file="$(find softdrone_core)/launch/robot_state_publisher.launch"/>
+    <include if="$(arg use_robot_state_publisher)" file="$(find softdrone_core)/launch/nodes/robot_state_publisher.launch"/>
 
 </launch>
