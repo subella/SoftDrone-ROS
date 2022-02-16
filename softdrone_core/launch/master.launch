@@ -109,7 +109,7 @@
 
     <group if="$(arg launch_odom_static_transforms)">
         <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 1000" />
-        <node pkg="tf" type="static_transform_publisher" name="odom_to_t265_odom" args="0 0 0 0 0 3.14159 odom nav_cam_odom_frame 1000" />
+        <node pkg="tf" type="static_transform_publisher" name="odom_to_t265_odom" args="0 0 0 3.14159 0 0 odom nav_cam_odom_frame 1000" />
     </group>
 
     <include if="$(arg launch_mavros_odom_to_tf)" file="$(find softdrone_core)/launch/nodes/mavros_odom_to_tf.launch"/>
