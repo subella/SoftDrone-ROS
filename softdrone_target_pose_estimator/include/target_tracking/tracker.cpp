@@ -8,7 +8,7 @@
 
 #include <target_tracking/tracker.hpp>
 
-namespace sdrone
+namespace soft
 {
 
 Tracker::
@@ -23,23 +23,10 @@ Tracker(const Belief7D &b_target_meas)
   init(b_target_meas);
 };
 
-Tracker::
-Tracker(const Belief6D &b_target_meas)
-{
-  init(b_target_meas);
-};
-
 void Tracker::
 init(const Belief7D &b_target_meas)
 {
   b_target_ = b_target_meas;
-  is_initialized_ = true;
-};
-
-void Tracker::
-init(const Belief6D &b_target_meas)
-{
-  b_target_6D_ = b_target_meas;
   is_initialized_ = true;
 };
 
@@ -60,7 +47,7 @@ update(const Belief7D &b_target_meas)
     copyCovarianceToMat77(b_target_meas, R);
     copyCovarianceToMat77(b_target_, P);
 
-    // R = 0.1*Eigen::MatrixXd::Identity(7,7);
+    R = 0.1*Eigen::MatrixXd::Identity(7,7); //TODO: make parameter
     Mat77 S = P + R;
     Mat77 K = P*S.inverse();
 
@@ -79,35 +66,6 @@ update(const Belief7D &b_target_meas)
 };
 
 void Tracker::
-update(const Belief6D &b_target_meas)
-{
-  if(!is_initialized_)
-  {
-    init(b_target_meas);
-  }
-  else
-  {
-    Mat61 x, z;
-    copyMeanToMat61(b_target_meas, z);
-    copyMeanToMat61(b_target_6D_, x);
-
-    Mat66 R, P;
-    copyCovarianceToMat66(b_target_meas, R);
-    copyCovarianceToMat66(b_target_6D_, P);
-
-    Mat66 W = 0.01*Eigen::MatrixXd::Identity(6,6);
-    Mat66 S = P + R + W;
-    Mat66 K = P*S.inverse();
-
-    Mat61 y = z - x;
-    x = x + K*y;
-
-    Mat66 Pupdate = P - K*P;
-    setBelief(x, Pupdate);
-  }
-};
-
-void Tracker::
 copyMeanToMat71(const Belief7D &b, Mat71 &mu)
 {
     mu(0) = b.mean.m_coords(0);
@@ -120,38 +78,9 @@ copyMeanToMat71(const Belief7D &b, Mat71 &mu)
 };
 
 void Tracker::
-copyMeanToMat61(const Belief6D &b, Mat61 &mu)
-{
-    mu(0) = b.mean.m_coords(0);
-    mu(1) = b.mean.m_coords(1);
-    mu(2) = b.mean.m_coords(2);
-    mu(3) = b.mean.roll();
-    mu(4) = b.mean.pitch();
-    mu(5) = b.mean.yaw();
-};
-
-void Tracker::
 copyCovarianceToMat77(const Belief7D &b, Mat77 &cov)
 {
   cov = b.cov.asEigen();
-};
-
-void Tracker::
-copyCovarianceToMat66(const Belief6D &b, Mat66 &cov)
-{
-  cov = b.cov.asEigen();
-
-  //mrpt defines 6D as x, y, z, yaw, pitch, roll
-  //swap to define as x, y, z, roll, pitch, yaw
-  const int map[3] = {2,1,0};
-  Mat66 temp = b.cov.asEigen();
-  for(int i=0; i<3; i++)
-  {
-    for(int j=0; j<3; j++)
-    {
-      cov(i,j) = temp(3 + map[i], 3 + map[j]);
-    }
-  }
 };
 
 void Tracker::
@@ -166,16 +95,4 @@ setBelief(const Mat71 &mu,
   b_target_ = Belief7D(p, CMat77(cov));
 }
 
-void Tracker::
-setBelief(const Mat61 &mu,
-          const Mat66 &cov)
-{
-  
-  Mat61 mu_copy;
-  mu_copy=mu;
-
-  Pose6D p(mu(0), mu(1), mu(2), mu(5), mu(4), mu(3));
-  b_target_6D_ = Belief6D(p, CMat66(cov));
-}
-
-}; //namespace sdrone
+}; //namespace soft

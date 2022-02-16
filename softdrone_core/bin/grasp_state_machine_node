@@ -80,40 +80,10 @@ def main():
     rospy.loginfo("Grasp Velocity: {}".format(grasp_velocity))
     rospy.loginfo("Grasp Target: {}".format(grasp_target))
     rospy.loginfo("End Position: {}".format(end_position))
-    polynomial, lengths = planner(
-        start_position=start_position,
-        grasp_axis=(0 if trajectory_plane == "xz" else 2),
-        grasp_position=grasp_position,
-        grasp_target=grasp_target,
-        grasp_time=grasp_time,
-        grasp_velocity=grasp_velocity,
-        open_distance=open_distance,
-        use_offline_lengths=True,
-        end_time=end_time,
-        end_position=end_position,
-        end_velocity=end_velocity,
-    )
 
-    interped_start = polynomial.interp(0.0)[0]
-    print(
-        "Given start: {} Solution: {}".format(
-            np.squeeze(start_position), np.squeeze(interped_start)
-        )
-    )
-    assert np.linalg.norm(interped_start - start_position) < 1.0e-3
-    print("Initial, Open, Grasp lengths: {}".format(lengths))
-
-    # Set up the things that will make this run
-    trajectory_tracker = softdrone_core.InterpTrajectoryTracker(
-        polynomial,
-        lengths,
-        gripper_latency=gripper_latency,
-        settle_time=trajectory_settle_time,
-    )
-    state_machine = softdrone_core.GraspStateMachine(trajectory_tracker)  # NOQA
+    state_machine = softdrone_core.GraspStateMachine(None)  # NOQA
 
     rospy.spin()
-
 
 if __name__ == "__main__":
     main()

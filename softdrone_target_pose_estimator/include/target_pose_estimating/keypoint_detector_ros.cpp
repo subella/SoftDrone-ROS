@@ -1,0 +1,89 @@
+// -*-c++-*-
+//-----------------------------------------------------------------------------
+/**
+ * @file    keypoint_detector_ros.cpp
+ * @author  Samuel Ubellacker
+ */
+//-----------------------------------------------------------------------------
+
+#include <target_pose_estimating/keypoint_detector_ros.hpp>
+
+namespace softdrone
+{
+
+KeypointDetectorROS::
+KeypointDetectorROS(const ros::NodeHandle& nh)
+  : nh_(nh),
+    it_(nh)
+{
+  is_initialized_ = false;
+};
+
+KeypointDetectorROS::
+KeypointDetectorROS(const ros::NodeHandle& nh,
+                    const std::string&     rgb_img_topic,
+                    const std::string&     model_file_name,
+                    const bool             should_publish_annotated_img,
+                    const std::string&     keypoints_topic,
+                    const std::string&     annotated_img_topic)
+  : nh_(nh),
+    it_(nh),
+    KeypointDetector(model_file_name)
+{
+  rgb_image_sub_ = it_.subscribe(rgb_img_topic, 1, &KeypointDetectorROS::rgbImageCallback, this);
+
+  should_publish_annotated_img_ = should_publish_annotated_img;
+  keypoints_pub_ = nh_.advertise<Keypoints>(keypoints_topic,  1);
+  annotated_img_pub_ = it_.advertise(annotated_img_topic,  1);
+};
+
+void KeypointDetectorROS::
+rgbImageCallback(const ImageMsg& rgb_image_msg)
+{
+
+  cv_bridge::CvImagePtr cv_ptr;
+  try
+  {
+    cv_ptr = cv_bridge::toCvCopy(rgb_image_msg, sensor_msgs::image_encodings::BGR8);
+  }
+  catch (cv_bridge::Exception& e)
+  {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+
+  torch::Tensor tensor_kpts;
+  bool success = DetectKeypoints(cv_ptr->image, tensor_kpts);
+
+  if(!success)
+  {
+    ROS_WARN("Keypoint detection failed!");
+    return;
+  }
+
+  Keypoints kpts = formatKeypoints(tensor_kpts);
+  keypoints_pub_.publish(kpts);
+
+  if(should_publish_annotated_img_)
+  {
+    DrawKeypoints(cv_ptr->image, tensor_kpts);
+    annotated_img_pub_.publish(cv_ptr->toImageMsg());
+  }
+
+};
+
+softdrone_target_pose_estimator::Keypoints KeypointDetectorROS::
+formatKeypoints(torch::Tensor& tensor_kpts)
+{
+  softdrone_target_pose_estimator::Keypoints kpts;
+  for (int i = 0; i < tensor_kpts.sizes()[1]; ++i)
+    {
+      softdrone_target_pose_estimator::Keypoint kpt;
+      kpt.x = tensor_kpts[0][i][0].item<int>();
+      kpt.y = tensor_kpts[0][i][1].item<int>();
+      kpts.keypoints[i] = kpt;
+    }
+  return kpts;
+}
+
+}; //namespace softdrone
