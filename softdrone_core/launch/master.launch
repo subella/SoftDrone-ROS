@@ -15,6 +15,7 @@
     <arg name="launch_t265" default="false"/>
     <arg name="launch_d455" default="false"/>
     <arg name="launch_odom_static_transforms" default="false"/>
+    <arg name="launch_mavros_odom_to_tf" default="false"/>
 
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
@@ -106,9 +107,11 @@
     <!-- Launch robot state publisher -->
     <include if="$(arg launch_robot_state_publisher)" file="$(find softdrone_core)/launch/nodes/robot_state_publisher.launch"/>
 
-    <group if="launch_odom_static_transforms">
+    <group if="$(arg launch_odom_static_transforms)">
         <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 1000" />
         <node pkg="tf" type="static_transform_publisher" name="odom_to_t265_odom" args="0 0 0 0 0 3.14159 odom nav_cam_odom_frame 1000" />
     </group>
+
+    <include if="$(arg launch_mavros_odom_to_tf)" file="$(find softdrone_core)/launch/nodes/mavros_odom_to_tf.launch"/>
 
 </launch>

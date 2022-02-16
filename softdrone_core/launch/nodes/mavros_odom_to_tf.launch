@@ -1,0 +1,4 @@
+<launch>
+    <node name="mavros_odom_to_tf" pkg="softdrone_core" type="mavros_odom_to_tf" output="screen"/>
+</launch>
+
