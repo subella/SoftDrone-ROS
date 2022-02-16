@@ -9,29 +9,15 @@
     <arg name="target_speed" default="0.1" doc="Simulated target speed"/>
 
     <include file="$(find softdrone_core)/launch/master.launch">
-        <arg name="use_grasp_state_machine" value="true"/>
-        <arg name="use_gripper" value="false"/>
-        <arg name="use_tracker" value="true"/>
-        <arg name="sim_target_as_tracker_output" value="false"/>
-        <arg name="use_rviz" value="true"/>
-        <arg name="use_polynomial_planner" value="true"/>
 
-        <arg name="simulation_ros" value="true"/>
-        <arg name="simulate_mavros" value="true"/>
-        <arg name="simulate_perception" value="true"/>
-        <arg name="simulate_target" value="true"/>
-        <arg name="camera_odom_passthrough" value="false"/>
-        <arg name="use_d455" value="false"/>
-
-        <arg name="use_real_mavros" value="false"/>
-        <arg name="use_t265" value="false"/>
-        <arg name="publish_static_transforms" value="true"/>
-
-        <arg name="target_motion" value="$(arg target_motion)"/>
-        <arg name="target_x" value="$(arg target_x)"/>
-        <arg name="target_y" value="$(arg target_y)"/>
-        <arg name="target_radius" value="$(arg target_radius)"/>
-        <arg name="target_speed" value="$(arg target_speed)"/>
+        <arg name="launch_fake_mavros_node" default="true"/>
+        <arg name="launch_fake_observation_node" default="true"/>
+        <arg name="launch_fake_target_node" default="true"/>
+        <arg name="launch_polynomial_planner_node" default="true"/>
+        <arg name="launch_grasp_state_machine_node" default="true"/>
+        <arg name="launch_tracker_node" default="true" doc="Use EKF target tracker?" />
+        <arg name="launch_robot_state_publisher" default="true" doc="Use robot state publisher to get static transform + mesh?"/>
+        <arg name="launch_rviz" default="true"/>
 
     </include>
 
