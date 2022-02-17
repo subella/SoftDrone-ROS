@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
 
 	load_params(nh);
-	softdrone::KeypointDetectorROS keypoint_detector(nh, 
+	sdrone::KeypointDetectorROS keypoint_detector(nh, 
                                                    rgb_img_topic_, 
                                                    model_file_name_, 
                                                    should_publish_annotated_img_,

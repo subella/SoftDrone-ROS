@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-namespace softdrone
+namespace sdrone
 {
 
 class KeypointDetector {
@@ -55,6 +55,6 @@ class KeypointDetector {
 
 };
 
-}; //namespace soft
+}; //namespace sdrone
 
 #endif // Tracker_HPP

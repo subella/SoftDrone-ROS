@@ -8,7 +8,7 @@
 
 #include <target_pose_estimating/keypoint_detector_ros.hpp>
 
-namespace softdrone
+namespace sdrone
 {
 
 KeypointDetectorROS::

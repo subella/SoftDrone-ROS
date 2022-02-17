@@ -143,4 +143,8 @@ target_link_libraries(test_keypoint_detector
   ${TORCH_LIBRARIES}
   TorchVision::TorchVision
   keypoint_detector
+  Eigen3::Eigen
+  teaserpp::teaser_registration
+  teaserpp::teaser_io
+  pose_estimator
 )

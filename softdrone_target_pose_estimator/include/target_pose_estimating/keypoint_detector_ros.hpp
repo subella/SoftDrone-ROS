@@ -19,7 +19,7 @@
 
 #include "softdrone_target_pose_estimator/Keypoints2D.h"
 
-namespace softdrone
+namespace sdrone
 {
 
 class KeypointDetectorROS : public KeypointDetector {
@@ -62,6 +62,6 @@ class KeypointDetectorROS : public KeypointDetector {
     
 };
 
-}; //namespace softdrone
+}; //namespace sdrone
 
 #endif // Tracker_ROS_HPP

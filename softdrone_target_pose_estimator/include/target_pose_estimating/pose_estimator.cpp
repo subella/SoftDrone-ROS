@@ -57,6 +57,8 @@ initCadFrame(const std::string& cad_frame_file_name)
             matrix(i,j) = buffer[cols * i + j];
 
     cad_frame_keypoints_ = matrix.transpose();
+    std::cout<< "CAD FRAME" << std::flush;
+    std::cout << cad_frame_keypoints_ << std::flush;
 }
 
 int PoseEstimator::
