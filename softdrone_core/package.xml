@@ -17,6 +17,7 @@
   <exec_depend>mavros-extras</exec_depend>
   <exec_depend>softdrone_target_tracking</exec_depend>
   <exec_depend>message_runtime</exec_depend>
+  <exec_depend>realsense2_camera</exec_depend>
 
 
   <export>
