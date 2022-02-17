@@ -52,6 +52,7 @@ include_directories(
 add_library(keypoint_detector include/target_pose_estimating/keypoint_detector.cpp)
 target_link_libraries(keypoint_detector 
   ${catkin_LIBRARIES}
+  ${GTEST_LIBRARIES} 
   ${OpenCV_LIBRARIES}
   ${TORCH_LIBRARIES}
   TorchVision::TorchVision
@@ -131,3 +132,15 @@ target_link_libraries(pose_estimator_node
   teaserpp::teaser_io
   pose_estimator_ros
  )
+
+#TESTS
+#add_executable(test_keypoint_detector tests/test_keypoint_detector.cpp)
+catkin_add_gtest(test_keypoint_detector tests/test_keypoint_detector.cpp WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+target_link_libraries(test_keypoint_detector 
+  ${GTEST_LIBRARIES} 
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${TORCH_LIBRARIES}
+  TorchVision::TorchVision
+  keypoint_detector
+)
