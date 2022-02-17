@@ -27,7 +27,7 @@ def odom_cb(msg):
 if __name__ == '__main__':
 
     rospy.init_node('mavros_to_odom_tf')
-    broadcaster = tf2_ros.StaticTransformBroadcaster()
+    broadcaster = tf2_ros.TransformBroadcaster()
     rospy.Subscriber('/mavros/odometry/in', Odometry, odom_cb)
     rospy.spin()
 
