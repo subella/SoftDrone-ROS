@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <iostream>
 
@@ -30,6 +31,8 @@ class ReprojectKeypoints {
 
     ~ReprojectKeypoints() = default;
 
+    int reprojectKeypoints(Eigen::MatrixX2i& px_py_mat, cv::Mat& depth_img, Eigen::MatrixX3d& keypoints_3D_mat);
+
   protected:
 
     bool is_initialized_;
@@ -40,7 +43,7 @@ class ReprojectKeypoints {
 
     int reprojectSingleKeypoint(Eigen::Vector2i& px_py, double z, Eigen::Vector3d& keypoint_3D_vec);
 
-    int reprojectKeypoints(Eigen::MatrixX2i& px_py_mat, Eigen::VectorXd& z_vec, Eigen::MatrixX3d& keypoints_3D_mat);
+    void depthImgToZ(Eigen::MatrixX2i px_py_mat, cv::Mat& depth_img, Eigen::Vector3d& keypoint_3D_vec);
 
 };
 

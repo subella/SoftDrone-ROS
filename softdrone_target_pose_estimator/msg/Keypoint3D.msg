@@ -1,5 +1,5 @@
 # Single Keypoint 3D coordinates.
 
-uint32 x
-uint32 y
-uint32 z
+int32 x
+int32 y
+int32 z

@@ -1,4 +1,5 @@
 #include <target_pose_estimating/keypoint_detector.hpp>
+#include <target_pose_estimating/reproject_keypoints.hpp>
 #include <target_pose_estimating/pose_estimator.hpp>
 #include <gtest/gtest.h>
  
@@ -13,7 +14,61 @@ TEST(KeypointDetector, DetectKeypoints) {
     EXPECT_TRUE(allclose);
 }
 
-TEST(PoseEstimator, solveTransformation) {
+TEST(ReprojectKeypoints, ReprojectKeypoints) {
+    Eigen::Matrix3d camera_intrinsics;
+    camera_intrinsics << 629.1040649414062, 0.0,              637.203369140625, 
+                         0.0,               628.583251953125, 380.56463623046875, 
+                         0.0,               0.0,              1.0;
+
+    sdrone::ReprojectKeypoints reproject_keypoints(camera_intrinsics);
+    cv::Mat depth_img = cv::imread("./data/test_depth_img.png", cv::IMREAD_UNCHANGED);
+
+    Eigen::MatrixX2i px_py_mat(13, 2);
+    px_py_mat << 665, 514, 
+                 642, 523,
+                 639, 501,
+                 613, 509,
+                 656, 576,
+                 655, 561,
+                 626, 576,
+                 577, 597,
+                 574, 616,
+                 540, 618,
+                 521, 583,
+                 655, 587,
+                 646, 591;
+    Eigen::MatrixX3d keypoints_3D_answer(13, 3);
+    keypoints_3D_answer << 34.59644147,   166.21488006,  783.,
+                           5.8099016,     172.66725904,  762.,
+                           2.31324367,    155.19447002,  810.,
+                           -30.50889797,  162.02983957,  793.,
+                           23.21552664,   241.58021579,  777.,
+                           21.81070376,   221.31621394,  771.,
+                           -13.05359485,  227.89999765,  733.,
+                           -65.8395332,   236.89388766,  688.,
+                           -69.01992376,  257.31531091,  687.,
+                           -105.6853837,  258.36798596,  684.,
+                           -125.23505834, 218.3500375,   678.,
+                           23.59290134,   273.89704204,  834.,
+                           11.45190609,   274.18255639,  819.;
+
+    Eigen::MatrixX3d keypoints_3D(13, 3);
+    reproject_keypoints.reprojectKeypoints(px_py_mat, depth_img, keypoints_3D);
+
+    bool allclose;
+    if ((keypoints_3D - keypoints_3D_answer).norm() > 0.01)
+    {
+        allclose = false;
+    }
+    else
+    {
+        allclose = true;
+    }
+
+    EXPECT_TRUE(allclose);
+}
+
+TEST(PoseEstimator, SolveTransformation) {
     sdrone::TeaserParams params;
     params.cbar2 = 1;
     params.noise_bound = 5;

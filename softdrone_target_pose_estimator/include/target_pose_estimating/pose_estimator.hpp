@@ -41,6 +41,8 @@ class PoseEstimator {
 
     teaser::RobustRegistrationSolver solver_;
 
+    TeaserParams params_;
+
     void init(const std::string& cad_frame_file_name);
 
     void initCadFrame(const std::string& cad_frame_file_name);   

@@ -15,7 +15,6 @@
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
-#include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <message_filters/subscriber.h>
@@ -75,8 +74,7 @@ class ReprojectKeypointsROS : public ReprojectKeypoints {
 
     void syncCallback(const Keypoints2D::ConstPtr& keypoints_2D_msg, const ImageMsg::ConstPtr& depth_img_msg);
 
-    void makePxPyZ(const std::vector<Keypoint2D>& keypoints_2D, const cv::Mat& depth_img, 
-                   Eigen::MatrixX2i& px_py_mat, Eigen::VectorXd& z_vec);
+    void makePxPy(const std::vector<Keypoint2D>& keypoints_2D, Eigen::MatrixX2i& px_py_mat);
 
     void eigenToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3D& keypoints_3D_msg);
 

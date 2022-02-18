@@ -8,7 +8,7 @@
 
 #include <target_pose_estimating/reproject_keypoints_ros.hpp>
 
-#define DEPTH_CONVERSION ((double) 1)
+
 
 namespace sdrone
 {
@@ -74,11 +74,10 @@ syncCallback(const Keypoints2D::ConstPtr& keypoints_2D_msg, const ImageMsg::Cons
   auto depth_img = cv_ptr->image;
 
   Eigen::MatrixX2i px_py_mat(num_kpts, 2);
-  Eigen::VectorXd z_vec(num_kpts);
-  makePxPyZ(keypoints_2D, depth_img, px_py_mat, z_vec);
+  makePxPy(keypoints_2D, px_py_mat);
 
   Eigen::MatrixX3d keypoints_3D_mat(num_kpts, 3);
-  int success = reprojectKeypoints(px_py_mat, z_vec, keypoints_3D_mat); 
+  int success = reprojectKeypoints(px_py_mat, depth_img, keypoints_3D_mat); 
 
   if (success)
   {
@@ -90,17 +89,13 @@ syncCallback(const Keypoints2D::ConstPtr& keypoints_2D_msg, const ImageMsg::Cons
 };
 
 void ReprojectKeypointsROS::
-makePxPyZ(const std::vector<Keypoint2D>& keypoints_2D, const cv::Mat& depth_img, 
-          Eigen::MatrixX2i& px_py_mat, Eigen::VectorXd& z_vec)
+makePxPy(const std::vector<Keypoint2D>& keypoints_2D, Eigen::MatrixX2i& px_py_mat)
 {
   for (int i=0; i < keypoints_2D.size(); i++)
   {
     int px = keypoints_2D[i].x;
     int py = keypoints_2D[i].y;
-    int depth_img_z = depth_img.at<int>(py, px);
-    double z = DEPTH_CONVERSION * depth_img_z;
     px_py_mat.row(i) << px, py;
-    z_vec(i) = z;
   }
 }
 
