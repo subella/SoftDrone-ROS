@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!-- Kinematic model, simplified visual, no collisions -->
+<robot name="softdrone" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="PI" value="3.1415926535897931" />
+
+    <link name="base_link">
+     <visual>
+        <origin xyz="0.275 0.12 0.05" rpy="0 0 ${PI}" />
+        <geometry>
+          <mesh scale=".001 .001 .001" filename="package://softdrone_core/meshes/drone_mesh_v27.stl"/>
+        </geometry>
+     </visual>
+    </link>
+
+    <link name="nav_cam_pose_frame"></link>
+    <link name="target_cam_link"></link>
+  
+    <joint name="base_link_to_nav_cam" type="fixed">
+      <origin xyz="-0.08 0 0" rpy="0 0.785 ${PI}" />
+      <parent link="base_link"/>
+      <child link="nav_cam_pose_frame" />
+    </joint>
+
+
+    <joint name="base_link_to_target_cam" type="fixed">
+      <origin xyz="0.08 0 0" rpy="0 0.785 0" />
+      <parent link="base_link"/>
+      <child link="target_cam_link" />
+    </joint>
+  
+</robot>

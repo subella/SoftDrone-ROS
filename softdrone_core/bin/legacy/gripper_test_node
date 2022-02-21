@@ -53,7 +53,7 @@ def main():
         grasp_axis=0,
         grasp_position=grasp_position,
         grasp_target=grasp_target,
-        grasp_time=5.0,
+        grasp_time=4.0,
         grasp_velocity=np.array([0.0, 0.0, 0.0]),
         open_distance=0.1,
         use_offline_lengths=True,

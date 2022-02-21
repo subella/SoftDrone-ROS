@@ -26,24 +26,74 @@ Simulation
 
 To launch the ROS simulation, in one terminal run:
 ```
-roslaunch softdrone_core master.launch simulation_ros:=true
+roslaunch softdrone_core no_hardware.launch
 ```
 This should result in a new RVIZ window.
 
 In another terminal, run
 ```
-roslaunch softdrone_core setpoint_cli_node.launch send_to_mavros:=false
+roslaunch softdrone_core setpoint_cli_node.launch
 ```
 
 We use this window to (among other things) mimic arming the drone from the RC
 controller.  Type ARM into the prompt and press enter. After 5 seconds the
 drone should take off and start following the red trajectory.
 
+Launch File Structure
+=====================
 
-Rebase-Oriented Git Workflow
-============================
+Every node that we intend to use in simulation or hardware gets its own launch
+file in the `SoftDrone-Ros/softdrone_core/launch/nodes` directory. This is where
+the configuration file to load (if any) is specified. These configuration files
+should be stored in `SoftDrone-ROS/softdrone_core/config`. Parameters should go
+in config files if it is unlikely that we would like to set them from the
+commandline. 
 
-If you are making reasonably small changes that don't rely on coordination with others, we prefer a rebase-oriented workflow. 
+There is a launch file called `master.launch` that has the ability to launch all
+other launch files. There is a boolean parameter for each node that can be
+launched by the file. Currently, these parameters are:
+
+```
+launch_fake_mavros_node
+launch_mavros
+launch_fake_observation_node
+launch_fake_target_node
+launch_gripper_node
+launch_mocap_wrapper
+launch_polynomial_planner_node
+launch_t265_odom_to_tf
+launch_grasp_state_machine_node
+launch_tracker_node
+launch_robot_state_publisher
+launch_rviz
+launch_t265
+launch_d455
+```
+
+Usually you should be interacting with a higher level launch file. For example,
+`no_hardware.launch` invokes `master.launch` with the nodes necessary for
+simulating the drone behavior without any hardware (cameras, gripper, or
+pixhawk) attached. `all_but_pixhawk.launch` results in launching the nodes
+required to run everything except the pixhawk. Thus is it easy to specify
+testing configurations of different subsets of nodes by making a new top-level
+launch file.
+
+Setting Topic Names
+-------------------
+
+Topic names should be set to a short, descriptive name in the a node's own
+namespace (i.e. with a private node handle). This should be set directly in the
+code and not in a configuration file. In order to "connect" the topics from
+different nodes together, we use `remap` in `master.launch`. This decouples the
+writing of individual nodes from the final topology in which they are connected.
+It makes it easier to understand which nodes are connected, as all of that
+information is centralized in the single `master.launch` file.
+
+Rebase-Oriented Git Workflow ("Trunk-based development")
+========================================================
+
+If you are making reasonably small changes that don't rely on coordination with
+others, we prefer a rebase-oriented workflow. 
 
 ```
 git checkout master

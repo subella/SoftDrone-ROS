@@ -1,22 +1,28 @@
 #!/usr/bin/env python
-
+import copy
 import numpy as np
 import rospy
 import tf
+from tf import transformations as tfn
+import tf2_ros
 from std_msgs.msg import Bool
 from mavros_msgs.msg import State, PositionTarget
 from mavros_msgs.srv import SetMode, SetModeResponse, CommandBool, CommandBoolResponse
-from geometry_msgs.msg import PoseStamped, TwistStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped, TransformStamped
 from nav_msgs.msg import Odometry
 
 R_position = 0.1
 R_orientation = 0.01
 R_twist = 0.1
 
+last_odom_in = Odometry()
+
 x = 0
 y = 0
 z = 0
 yaw = 0
+pitch = 0
+roll = 0
 vx = 0
 vy = 0
 vz = 0
@@ -36,8 +42,75 @@ def handle_set_mode(req):
     print("setting mode to: " + str(req.base_mode))
     return SetModeResponse(True)
 
+def build_tf_message(p, q, child_frame, parent_frame):
+    tf_msg = TransformStamped()
+    tf_msg.header.frame_id = parent_frame
+    tf_msg.child_frame_id = child_frame
+    tf_msg.transform.translation.x = p[0]
+    tf_msg.transform.translation.y = p[1]
+    tf_msg.transform.translation.z = p[2]
+
+    tf_msg.transform.rotation.x = q[0]
+    tf_msg.transform.rotation.y = q[1]
+    tf_msg.transform.rotation.z = q[2]
+    tf_msg.transform.rotation.w = q[3]
+
+    tf_msg.header.stamp = rospy.Time.now()
+    return tf_msg
+
+def invert_transform(T):
+    T_inv = np.eye(4)
+    T_inv[:3,:3] = T[:3,:3].T
+    T_inv[:3,-1] = -np.matmul(T[:3,:3].T, T[:3,-1])
+    return T_inv
+
+def republish_current_t265_odom(event):
+    global last_odom_in
+    odom_msg = copy.deepcopy(last_odom_in)
+    olast = odom_msg.pose.pose.orientation
+    q = [olast.x, olast.y, olast.z, olast.w]
+    r,p,y = tf.transformations.euler_from_quaternion(q)
+    pos = odom_msg.pose.pose.position
+
+    T_cam_in_base = tfn.compose_matrix(translate=(0,0,0), angles=(0, np.pi/4, np.pi)) # TODO: extract from tf tree
+    T_base_in_cam = invert_transform(T_cam_in_base)
+    T_cam_in_odom = tfn.compose_matrix(translate=(pos.x, pos.y, pos.z), angles=(r,p,y))
+    T_odom_in_map = tfn.compose_matrix(angles=(0,0,180))
+
+    T_base_in_map = T_odom_in_map.dot(T_cam_in_odom).dot(T_base_in_cam)
+    _, _, base_in_map_angles, base_in_map_trans, _ = tfn.decompose_matrix(T_base_in_map)
+    base_in_map_q = tfn.quaternion_from_euler(*base_in_map_angles)
+
+    tf_msg = build_tf_message(base_in_map_trans, base_in_map_q, 'base_link', 'map')
+    br.sendTransform(tf_msg)
+
+    odom_msg.header.frame_id = 'map'
+    odom_msg.child_frame_id = 'base_link'
+    odom_msg.pose.pose.position.x = tf_msg.transform.translation.x
+    odom_msg.pose.pose.position.y = tf_msg.transform.translation.y
+    odom_msg.pose.pose.position.z = tf_msg.transform.translation.z
+    odom_msg.pose.pose.orientation.x = tf_msg.transform.rotation.x
+    odom_msg.pose.pose.orientation.y = tf_msg.transform.rotation.y
+    odom_msg.pose.pose.orientation.z = tf_msg.transform.rotation.z
+    odom_msg.pose.pose.orientation.w = tf_msg.transform.rotation.w
+    odom_pub.publish(odom_msg)
+
+    ps = PoseStamped()
+    ps.header.stamp = rospy.Time.now()
+    ps.header.frame_id = 'map'
+    ps.pose.position.x = tf_msg.transform.translation.x
+    ps.pose.position.y = tf_msg.transform.translation.y
+    ps.pose.position.z = tf_msg.transform.translation.z
+
+    ps.pose.orientation.x = tf_msg.transform.rotation.x
+    ps.pose.orientation.y = tf_msg.transform.rotation.y
+    ps.pose.orientation.z = tf_msg.transform.rotation.z
+    ps.pose.orientation.w = tf_msg.transform.rotation.w
+    pose_pub.publish(ps)
+
+
 def publish_current_pose(event):
-    global x,y,z,yaw,vx,vy,vz
+    global x,y,z,roll, pitch, yaw,vx,vy,vz
 
     ps = PoseStamped()
     ps.header.stamp = rospy.Time.now()
@@ -46,7 +119,7 @@ def publish_current_pose(event):
     ps.pose.position.y = y
     ps.pose.position.z = z
 
-    q = tf.transformations.quaternion_from_euler(0, 0, yaw)
+    q = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
     ps.pose.orientation.x = q[0]
     ps.pose.orientation.y = q[1]
     ps.pose.orientation.z = q[2]
@@ -78,10 +151,11 @@ def publish_current_pose(event):
     odom_msg.twist.covariance = (R_twist * np.eye(6)).flatten().tolist()
     odom_pub.publish(odom_msg)
 
-    br.sendTransform((x, y, z), q, rospy.Time.now(), 'base_link', 'map')
+    tf_msg = build_tf_message((x,y,z), q, 'base_link', 'map')
+    br.sendTransform(tf_msg)
 
 def setpoint_cb(msg):
-    global x,y,z,yaw,vx,vy,vz,time_last, position_last
+    global x,y,z,yaw,pitch,roll,vx,vy,vz,time_last, position_last
 
     x = msg.position.x
     y = msg.position.y
@@ -101,8 +175,23 @@ def setpoint_cb(msg):
     position_last = new_pos
     time_last = rospy.Time.now()
 
+def odom_passthrough_cb(msg):
+    global last_odom_in, x,y,z,yaw,pitch,roll
+    last_odom_in = msg
+    x = msg.pose.pose.position.x
+    y = msg.pose.pose.position.y
+    z = msg.pose.pose.position.z
+    o = msg.pose.pose.orientation
+    roll,pitch,yaw = tf.transformations.euler_from_quaternion([o.x,o.y,o.z,o.w])
+
+
 armed = False
 rospy.init_node('sim_start_node')
+
+#tfBuffer = tf2_ros.Buffer()
+#tf_listener = tf2_ros.TransformListener(tfBuffer)
+
+camera_odom_passthrough = rospy.get_param("~camera_odom_passthrough", False)
 rospy.Service('/mavros/set_mode', SetMode, handle_set_mode)
 rospy.Service('/mavros/cmd/arming', CommandBool, handle_arming)
 
@@ -110,7 +199,11 @@ pose_pub = rospy.Publisher('/mavros/local_position/pose', PoseStamped, queue_siz
 twist_pub = rospy.Publisher('/mavros/local_position/twist', TwistStamped, queue_size=1, latch=True)
 odom_pub = rospy.Publisher('/mavros/odometry/in', Odometry, queue_size=1, latch=True)
 state_pub = rospy.Publisher('/mavros/state', State, queue_size=1, latch=True)
-rospy.Subscriber('/mavros/setpoint_raw/local', PositionTarget, setpoint_cb)
+
+if camera_odom_passthrough:
+    rospy.Subscriber('/mavros/odometry/out', Odometry, odom_passthrough_cb)
+else:
+    rospy.Subscriber('/mavros/setpoint_raw/local', PositionTarget, setpoint_cb)
 
 time_last = rospy.Time.now()
 position_last = None
@@ -145,8 +238,13 @@ odom_msg.twist.covariance = (R_twist * np.eye(6)).flatten().tolist()
 odom_pub.publish(odom_msg)
 
 br = tf.TransformBroadcaster()
+br = tf2_ros.TransformBroadcaster()
 
 rospy.Timer(rospy.Duration(1.0), publish_armed_state, oneshot=False)
-rospy.Timer(rospy.Duration(0.03), publish_current_pose, oneshot=False)
+if camera_odom_passthrough:
+    rospy.Timer(rospy.Duration(0.03), republish_current_t265_odom, oneshot=False)
+else:
+    rospy.Timer(rospy.Duration(0.03), publish_current_pose, oneshot=False)
+
 rospy.spin()
 

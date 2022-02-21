@@ -1,3 +1,0 @@
-<launch>
-    <node pkg="softdrone_core" type="fake_mavros_node" name="fake_mavros_node" output="screen"/>
-</launch>

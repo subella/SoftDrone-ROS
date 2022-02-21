@@ -5,6 +5,11 @@ import std_msgs.msg
 import std_srvs.srv
 import serial
 
+"""only for needed for plotting"""
+import numpy as np
+import csv
+import rospkg
+import time
 
 def _clip(x, low=0, high=255):
     """Clip a number."""
@@ -31,6 +36,7 @@ class GripperNode:
             queue_size=10,
         )
         self._open_serv = rospy.Service("open", std_srvs.srv.Empty, self._open_callback)
+        self._data = np.array([]) # only used with _log_data and _receive_msg
 
     def __enter__(self):
         """Open the serial connection."""
@@ -62,14 +68,50 @@ class GripperNode:
         to_send = [_clip(length, high=max_length) for length, max_length in zip(self._lengths, max_lengths)]
         self._serial_connection.write("b{}\n".format(bytearray(to_send)))
 
+    def _log_data(self): #only used for debugging
+        rospack = rospkg.RosPack()
+        save_path = rospack.get_path('softdrone_core') + "/data/data.csv"
+        np.savetxt(save_path, self._data, fmt="%s", delimiter=",")
+
+    def _receive_msg(self):
+        """Only used for recording data"""
+        msg = self._serial_connection.readline()
+        header, body = msg[:2], msg[2:]
+        if header == "E:":
+            errs = map(float, body.split())
+            for err, length, err_list, length_list in zip(errs, lengths, length_errs, desired_lengths):
+                err_list.append(err)
+                length_list.append(length)
+
+        print(msg)
+
+        chunks = msg.split(' ')
+        chunks = np.asarray(chunks[:-1])
+        chunks = np.hstack((chunks,self._lengths))
+        if len(chunks) == 13:
+            if len(self._data) == 0:
+                self._data = chunks
+            else:
+                print("self._lengths:")
+                print(self._lengths)
+                print("self._data")
+                print(self._data)
+                print("chunks:")
+                print(chunks)
+                self._data = np.vstack((self._data, chunks))
+                self._log_data()
+
     def spin(self):
         """Send lengths as long as ros is ok."""
-        rate = rospy.Rate(10.0)
+        rate = rospy.Rate(50.0)
+
         while not rospy.is_shutdown():
             while self._serial_connection.in_waiting:
                 rospy.logdebug(self._serial_connection.readline())
+                # self._receive_msg()
 
             self._send_lengths()
+            # self._receive_msg()
             rate.sleep()
 
 

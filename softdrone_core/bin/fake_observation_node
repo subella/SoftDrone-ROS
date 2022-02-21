@@ -47,7 +47,7 @@ def target_cb(msg):
 
     pwcs = PoseWithCovarianceStamped()
     pwcs.pose.pose = msg.pose
-    pwcs.pose.covariance = np.eye(6)*.0001
+    pwcs.pose.covariance = (np.eye(6)*.0001).flatten().tolist()
     pwcs.header.stamp = rospy.Time.now()
     pwcs.header.frame_id = 'map'
     target_global_pub.publish(pwcs)
@@ -57,7 +57,7 @@ def publish_relative_target_observation():
     target_rel_global = target_pos - drone_pos
     theta = -drone_yaw
     target_rel_x_body = target_rel_global[0]*np.cos(theta) - target_rel_global[1]*np.sin(theta)
-    target_rel_y_body = target_rel_global[1]*np.cos(theta) + target_rel_global[1]*np.sin(theta)
+    target_rel_y_body = target_rel_global[1]*np.cos(theta) + target_rel_global[0]*np.sin(theta)
     target_rel_z_body = target_rel_global[2]
     target_rel_yaw_body = target_yaw - drone_yaw
     q = tf.transformations.quaternion_from_euler(0.0, 0.0, target_rel_yaw_body)
@@ -65,12 +65,14 @@ def publish_relative_target_observation():
     eps_pos = np.sqrt(R_pos)
     eps_pos = 0
     eps_rot = np.sqrt(R_rot)
+    eps_rot = 0
     eulers_noisy = np.array([0.,0., target_rel_yaw_body]) + eps_rot*np.random.randn(3)
     q = tf.transformations.quaternion_from_euler(*eulers_noisy)
 
     msg = PoseWithCovarianceStamped()
     msg.header.stamp = rospy.Time.now()
     msg.header.frame_id = 'base_link'
+
     msg.pose.pose.position.x = target_rel_x_body + np.random.randn()*eps_pos
     msg.pose.pose.position.y = target_rel_y_body + np.random.randn()*eps_pos
     msg.pose.pose.position.z = target_rel_z_body + np.random.randn()*eps_pos
@@ -78,6 +80,7 @@ def publish_relative_target_observation():
     msg.pose.pose.orientation.y = q[1]
     msg.pose.pose.orientation.z = q[2]
     msg.pose.pose.orientation.w = q[3]
+
     msg.pose.covariance = np.diag([R_pos, R_pos, R_pos, R_rot, R_rot, R_rot]).flatten()
     target_rel_pub.publish(msg)
 

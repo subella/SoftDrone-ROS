@@ -3,7 +3,7 @@
     <arg name="use_mocap_target" default="false"/>
     <arg name="use_gripper" default="false"/>
 
-    <node pkg="softdrone_core" type="trajectory_tracking_node" name="trajectory_tracking_node" output="screen">
+    <node pkg="softdrone_core" type="grasp_state_machine_node" name="grasp_state_machine_node" output="screen">
         <remap from="state" to="/mavros/state"/>
         <remap from="pose" to="/mavros/local_position/pose"/>
         <remap from="target" to="/mavros/setpoint_raw/local"/>
