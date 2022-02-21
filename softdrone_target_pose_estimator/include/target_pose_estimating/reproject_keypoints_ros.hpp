@@ -32,21 +32,23 @@ class ReprojectKeypointsROS : public ReprojectKeypoints {
 
   public:
     
-    typedef softdrone_target_pose_estimator::Keypoint2D Keypoint2D;
-    typedef softdrone_target_pose_estimator::Keypoints2D Keypoints2D;
-    typedef softdrone_target_pose_estimator::Keypoint3D Keypoint3D;
-    typedef softdrone_target_pose_estimator::Keypoints3D Keypoints3D;
+    typedef softdrone_target_pose_estimator::Keypoint2D Keypoint2DMsg;
+    typedef softdrone_target_pose_estimator::Keypoints2D Keypoints2DMsg;
+    typedef softdrone_target_pose_estimator::Keypoint3D Keypoint3DMsg;
+    typedef softdrone_target_pose_estimator::Keypoints3D Keypoints3DMsg;
     typedef sensor_msgs::Image ImageMsg;
     typedef sensor_msgs::CameraInfo CameraInfoMsg;
-    typedef message_filters::sync_policies::ApproximateTime<Keypoints2D, ImageMsg> SyncPolicy;
+    typedef message_filters::sync_policies::ApproximateTime<Keypoints2DMsg, ImageMsg> SyncPolicy;
 
     ReprojectKeypointsROS(const ros::NodeHandle &nh);
 
     ReprojectKeypointsROS(const ros::NodeHandle& nh,
-                          const std::string&     keypoints_2D_topic,
-                          const std::string&     keypoints_3D_topic,
-                          const std::string&     rgb_cam_info_topic,
-                          const std::string&     depth_img_topic);
+                          const std::string&     keypoints_2D_sub_topic,
+                          const std::string&     keypoints_3D_sub_topic,
+                          const std::string&     rgb_cam_info_sub_topic,
+                          const std::string&     depth_img_sub_topic,
+                          const std::string&     keypoints_2D_pub_topic,
+                          const std::string&     keypoints_3D_pub_topic);
 
     ~ReprojectKeypointsROS() = default;
 
@@ -60,23 +62,33 @@ class ReprojectKeypointsROS : public ReprojectKeypoints {
 
     image_transport::ImageTransport it_;
 
-    message_filters::Subscriber<Keypoints2D> keypoints_2D_sub_;
+    message_filters::Subscriber<Keypoints2DMsg> keypoints_2D_sub_;
+
+    ros::Subscriber keypoints_3D_sub_;
 
     ros::Subscriber rgb_cam_info_sub_;
 
     image_transport::SubscriberFilter depth_img_sub_;
 
-    message_filters::Synchronizer<SyncPolicy> sync_;
+    ros::Publisher keypoints_2D_pub_;
 
     ros::Publisher keypoints_3D_pub_;
 
+    message_filters::Synchronizer<SyncPolicy> sync_;
+
     void rgbCamInfoCallback(const CameraInfoMsg& camera_info_msg);
 
-    void syncCallback(const Keypoints2D::ConstPtr& keypoints_2D_msg, const ImageMsg::ConstPtr& depth_img_msg);
+    void keypoints2DCallback(const Keypoints2DMsg::ConstPtr& keypoints_2D_msg, const ImageMsg::ConstPtr& depth_img_msg);
 
-    void makePxPy(const std::vector<Keypoint2D>& keypoints_2D, Eigen::MatrixX2i& px_py_mat);
+    void keypoints3DCallback(const Keypoints3DMsg& keypoints_3D_msg);
 
-    void eigenToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3D& keypoints_3D_msg);
+    void makeKeypoints2DMat(const std::vector<Keypoint2DMsg>& keypoints_2D, Eigen::MatrixX2i& keypoints_2D_mat);
+
+    void makeKeypoints3DMat(const std::vector<Keypoint3DMsg>& keypoints_3D, Eigen::MatrixX3d& keypoints_3D_mat);
+
+    void keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg);
+
+    void keypoints2DMatToKeypoints2DMsg(Eigen::MatrixX2i& keypoints_2D_mat, Keypoints2DMsg& keypoints_2D_msg);
 
 };
 

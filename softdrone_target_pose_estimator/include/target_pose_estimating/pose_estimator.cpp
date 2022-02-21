@@ -61,32 +61,20 @@ initCadFrame(const std::string& cad_frame_file_name)
         for (int j = 0; j < cols; j++)
             matrix(i,j) = buffer[cols * i + j];
 
-    cad_frame_keypoints_ = matrix.transpose();
+
+    cad_frame_keypoints_ = matrix;
+    //cad_frame_keypoints_ = matrix.transpose();
 }
 
 int PoseEstimator::
-solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t)
+solveTransformation(Eigen::MatrixX3d& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t)
 {
     if (!is_initialized_)
         return 0;
 
     try
     {
-        // Eigen::Matrix3Xd keypoints_3D2 (3, 13);
-        // keypoints_3D2.row(0) << 33.2724982, 4.9671052, 1.25381468, -31.26401346, 21.82148281,
-        //                        20.08924026, -14.09728151, -66.51182183, -69.04602762, -105.7634699,
-        //                        -126.35688104, 21.54286407, 9.59531259;
-
-        // keypoints_3D2.row(1) << 164.79990612, 168.29259231, 154.91091854, 159.63966852, 239.96312074,
-        //                        219.90923897, 224.50828476, 232.98404034, 253.64538866, 254.1953732,
-        //                        216.87030347, 268.9356993,  270.24513745;
-
-        // keypoints_3D2.row(2) << 780.78155908, 747.98341003, 813.90712514, 785.87050527, 774.19316156,
-        //                        771.4787762,  724.36339773, 680.92319297, 679.28279643, 676.00235736,
-        //                        676.99352248, 822.48078072, 809.36966347;
-        std::cout << keypoints_3D << std::endl << std::flush;
-        //TeaserSolver solver(params_);
-        solver_.solve(cad_frame_keypoints_, keypoints_3D);
+        solver_.solve(cad_frame_keypoints_.transpose(), keypoints_3D.transpose());
         auto solution = solver_.getSolution();
         R = solution.rotation;
         t = solution.translation;
@@ -98,5 +86,15 @@ solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::V
         return 0;
     }
 }
+
+void PoseEstimator::
+transformCadFrame(Eigen::Matrix3d& R, Eigen::Vector3d& t, Eigen::MatrixX3d& transformed_cad_frame_keypoints){
+    for (int i=0; i < cad_frame_keypoints_.rows(); i++)
+    {
+        // transformed_cad_frame_keypoints.row(i) = R * cad_frame_keypoints_.row(i).transpose() + t;
+    }
+    transformed_cad_frame_keypoints = cad_frame_keypoints_;
+}
+
 
 }

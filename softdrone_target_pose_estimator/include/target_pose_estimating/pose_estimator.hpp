@@ -21,6 +21,7 @@ namespace sdrone
 
 typedef teaser::RobustRegistrationSolver::Params TeaserParams;
 typedef teaser::RobustRegistrationSolver TeaserSolver;
+typedef Eigen::Matrix<double, 4, 4> Matrix4d;
 
 class PoseEstimator {
 
@@ -31,13 +32,13 @@ class PoseEstimator {
     PoseEstimator(const std::string&  cad_frame_file_name,
                   const TeaserParams& params);
 
-    int solveTransformation(Eigen::Matrix3Xd& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t);
+    int solveTransformation(Eigen::MatrixX3d& keypoints_3D, Eigen::Matrix3d& R, Eigen::Vector3d& t);
 
   protected:
 
     bool is_initialized_;
 
-    Eigen::Matrix3Xd cad_frame_keypoints_;
+    Eigen::MatrixX3d cad_frame_keypoints_;
 
     teaser::RobustRegistrationSolver solver_;
 
@@ -46,6 +47,10 @@ class PoseEstimator {
     void init(const std::string& cad_frame_file_name);
 
     void initCadFrame(const std::string& cad_frame_file_name);   
+
+    void transformCadFrame(Eigen::Matrix3d& R, Eigen::Vector3d& t, Eigen::MatrixX3d& transformed_cad_frame_keypoints);   
+
+
 
 };
 

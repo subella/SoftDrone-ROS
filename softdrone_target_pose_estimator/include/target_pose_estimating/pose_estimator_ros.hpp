@@ -14,7 +14,7 @@
 #include <ros/ros.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <target_pose_estimating/pose_estimator.hpp>
 #include "softdrone_target_pose_estimator/Keypoints3D.h"
 
@@ -25,13 +25,14 @@ class PoseEstimatorROS : public PoseEstimator {
   public:
     typedef softdrone_target_pose_estimator::Keypoint3D Keypoint3DMsg;
     typedef softdrone_target_pose_estimator::Keypoints3D Keypoints3DMsg;
-    typedef geometry_msgs::PoseWithCovariance PoseWCov;
+    typedef geometry_msgs::PoseWithCovarianceStamped PoseWCov;
 
     PoseEstimatorROS(const ros::NodeHandle &nh);
 
     PoseEstimatorROS(const ros::NodeHandle& nh,
-                     const std::string&     keypoints_3D_topic,
-                     const std::string&     pose_topic,
+                     const std::string&     keypoints_3D_sub_topic,
+                     const std::string&     pose_pub_topic,
+                     const std::string&     transformed_cad_frame_pub_topic,
                      const std::string&     cad_frame_file_name,
                      const TeaserParams&    params);
 
@@ -50,9 +51,13 @@ class PoseEstimatorROS : public PoseEstimator {
 
     ros::Publisher pose_pub_;
 
+    ros::Publisher transformed_cad_frame_pub_;
+
     void keypoints3DCallback(const Keypoints3DMsg& keypoints_3D_msg);
 
-    void keypoints3DToEigen(const std::vector<Keypoint3DMsg> keypoints_3D, Eigen::Matrix3Xd& keypoints_3D_mat);
+    void keypoints3DToEigen(const std::vector<Keypoint3DMsg> keypoints_3D, Eigen::MatrixX3d& keypoints_3D_mat);
+
+    void keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg);
 
     void eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& pose);
 

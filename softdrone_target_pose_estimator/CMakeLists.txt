@@ -48,11 +48,15 @@ include_directories(
 )
 
 # LIBRARIES
+add_library(helper_functions include/target_pose_estimating/helper_functions.cpp)
+target_link_libraries(helper_functions 
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+)
 
 add_library(keypoint_detector include/target_pose_estimating/keypoint_detector.cpp)
 target_link_libraries(keypoint_detector 
   ${catkin_LIBRARIES}
-  ${GTEST_LIBRARIES} 
   ${OpenCV_LIBRARIES}
   ${TORCH_LIBRARIES}
   TorchVision::TorchVision
@@ -97,6 +101,20 @@ target_link_libraries(pose_estimator_ros
   pose_estimator
 )
 
+add_library(plotter include/target_pose_estimating/plotter.cpp)
+target_link_libraries(plotter
+  ${catkin_LIBRARIES}
+  Eigen3::Eigen
+  reproject_keypoints
+)
+
+add_library(plotter_ros include/target_pose_estimating/plotter_ros.cpp)
+target_link_libraries(plotter_ros
+  ${catkin_LIBRARIES}
+  helper_functions
+  plotter
+)
+
 # EXECUTABLES
 
 add_executable(keypoint_detector_node src/keypoint_detector_node.cpp)
@@ -131,6 +149,15 @@ target_link_libraries(pose_estimator_node
   teaserpp::teaser_registration
   teaserpp::teaser_io
   pose_estimator_ros
+ )
+
+add_executable(plotter_node src/plotter_node.cpp)
+
+add_dependencies(plotter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(plotter_node
+  ${catkin_LIBRARIES}
+  plotter_ros
  )
 
 #TESTS

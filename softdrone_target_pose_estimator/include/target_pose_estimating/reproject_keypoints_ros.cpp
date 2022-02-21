@@ -25,19 +25,24 @@ ReprojectKeypointsROS(const ros::NodeHandle &nh)
 
 ReprojectKeypointsROS::
 ReprojectKeypointsROS(const ros::NodeHandle& nh,
-                      const std::string&     keypoints_2D_topic,
-                      const std::string&     keypoints_3D_topic,
-                      const std::string&     rgb_cam_info_topic,
-                      const std::string&     depth_img_topic)
+                      const std::string&     keypoints_2D_sub_topic,
+                      const std::string&     keypoints_3D_sub_topic,
+                      const std::string&     rgb_cam_info_sub_topic,
+                      const std::string&     depth_img_sub_topic,
+                      const std::string&     keypoints_2D_pub_topic,
+                      const std::string&     keypoints_3D_pub_topic)
   : nh_(nh), 
     it_(nh_),
-    keypoints_2D_sub_(nh_, keypoints_2D_topic, 1),
-    depth_img_sub_(it_, depth_img_topic, 1),
+    keypoints_2D_sub_(nh_, keypoints_2D_sub_topic, 1),
+    depth_img_sub_(it_, depth_img_sub_topic, 1),
     sync_(SyncPolicy(10), keypoints_2D_sub_, depth_img_sub_)
 {
-  rgb_cam_info_sub_ = nh_.subscribe(rgb_cam_info_topic, 1, &ReprojectKeypointsROS::rgbCamInfoCallback, this);
-  sync_.registerCallback(boost::bind(&ReprojectKeypointsROS::syncCallback, this, _1, _2));
-  keypoints_3D_pub_ = nh_.advertise<Keypoints3D>(keypoints_3D_topic,  1);
+  sync_.registerCallback(boost::bind(&ReprojectKeypointsROS::keypoints2DCallback, this, _1, _2));
+  rgb_cam_info_sub_ = nh_.subscribe(rgb_cam_info_sub_topic, 1, &ReprojectKeypointsROS::rgbCamInfoCallback, this);
+  keypoints_3D_sub_ = nh_.subscribe(keypoints_3D_sub_topic, 1, &ReprojectKeypointsROS::keypoints3DCallback, this);
+
+  keypoints_2D_pub_ = nh_.advertise<Keypoints2DMsg>(keypoints_2D_pub_topic,  1);
+  keypoints_3D_pub_ = nh_.advertise<Keypoints3DMsg>(keypoints_3D_pub_topic,  1);
 };
 
 void ReprojectKeypointsROS::
@@ -52,11 +57,13 @@ rgbCamInfoCallback(const CameraInfoMsg& camera_info_msg)
       camera_intrinsics(i, j) = camera_info_msg.K[i+j];
 
   init(camera_intrinsics);
+  std::cout.precision(17);
+  std::cout << camera_intrinsics << std::flush;
 }
 
 
 void ReprojectKeypointsROS::
-syncCallback(const Keypoints2D::ConstPtr& keypoints_2D_msg, const ImageMsg::ConstPtr& depth_img_msg)
+keypoints2DCallback(const Keypoints2DMsg::ConstPtr& keypoints_2D_msg, const ImageMsg::ConstPtr& depth_img_msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
   try
@@ -73,43 +80,90 @@ syncCallback(const Keypoints2D::ConstPtr& keypoints_2D_msg, const ImageMsg::Cons
   int num_kpts = keypoints_2D.size();
   auto depth_img = cv_ptr->image;
 
-  Eigen::MatrixX2i px_py_mat(num_kpts, 2);
-  makePxPy(keypoints_2D, px_py_mat);
+  Eigen::MatrixX2i keypoints_2D_mat(num_kpts, 2);
+  makeKeypoints2DMat(keypoints_2D, keypoints_2D_mat);
 
   Eigen::MatrixX3d keypoints_3D_mat(num_kpts, 3);
-  int success = reprojectKeypoints(px_py_mat, depth_img, keypoints_3D_mat); 
+  int success = reprojectKeypoints(keypoints_2D_mat, depth_img, keypoints_3D_mat); 
 
   if (success)
   {
-    Keypoints3D keypoints_3D_msg;
-    eigenToKeypoints3DMsg(keypoints_3D_mat, keypoints_3D_msg);
+    Keypoints3DMsg keypoints_3D_msg;
+    keypoints3DMatToKeypoints3DMsg(keypoints_3D_mat, keypoints_3D_msg);
     keypoints_3D_pub_.publish(keypoints_3D_msg);
   }
 
 };
 
 void ReprojectKeypointsROS::
-makePxPy(const std::vector<Keypoint2D>& keypoints_2D, Eigen::MatrixX2i& px_py_mat)
+keypoints3DCallback(const Keypoints3DMsg& keypoints_3D_msg)
+{
+  auto keypoints_3D = keypoints_3D_msg.keypoints_3D;
+  int num_kpts = keypoints_3D.size();
+
+  Eigen::MatrixX3d keypoints_3D_mat(num_kpts, 3);
+  makeKeypoints3DMat(keypoints_3D, keypoints_3D_mat);
+
+  Eigen::MatrixX2i keypoints_2D_mat(num_kpts, 2);
+  int success = projectKeypoints(keypoints_3D_mat, keypoints_2D_mat);
+
+  if (success)
+  {
+    Keypoints2DMsg keypoints_2D_msg;
+    keypoints2DMatToKeypoints2DMsg(keypoints_2D_mat, keypoints_2D_msg);
+    keypoints_2D_pub_.publish(keypoints_2D_msg);
+  }
+
+}
+
+void ReprojectKeypointsROS::
+makeKeypoints3DMat(const std::vector<Keypoint3DMsg>& keypoints_3D, Eigen::MatrixX3d& keypoints_3D_mat)
+{
+  for (int i=0; i < keypoints_3D.size(); i++)
+  {
+    double x = keypoints_3D[i].x;
+    double y = keypoints_3D[i].y;
+    double z = keypoints_3D[i].z;
+    keypoints_3D_mat.row(i) << x, y, z;
+  }
+}
+
+void ReprojectKeypointsROS::
+makeKeypoints2DMat(const std::vector<Keypoint2DMsg>& keypoints_2D, Eigen::MatrixX2i& keypoints_2D_mat)
 {
   for (int i=0; i < keypoints_2D.size(); i++)
   {
     int px = keypoints_2D[i].x;
     int py = keypoints_2D[i].y;
-    px_py_mat.row(i) << px, py;
+    keypoints_2D_mat.row(i) << px, py;
   }
 }
 
 void ReprojectKeypointsROS::
-eigenToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3D& keypoints_3D_msg)
+keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg)
 {
   keypoints_3D_msg.header.stamp = ros::Time::now();
   for (int i=0; i < keypoints_3D_mat.rows(); i++)
   {
-    Keypoint3D keypoint_3D_msg;
+    Keypoint3DMsg keypoint_3D_msg;
     keypoint_3D_msg.x = keypoints_3D_mat(i, 0);
     keypoint_3D_msg.y = keypoints_3D_mat(i, 1);
     keypoint_3D_msg.z = keypoints_3D_mat(i, 2);
     keypoints_3D_msg.keypoints_3D.push_back(keypoint_3D_msg);
+  }  
+
+}
+
+void ReprojectKeypointsROS::
+keypoints2DMatToKeypoints2DMsg(Eigen::MatrixX2i& keypoints_2D_mat, Keypoints2DMsg& keypoints_2D_msg)
+{
+  keypoints_2D_msg.header.stamp = ros::Time::now();
+  for (int i=0; i < keypoints_2D_mat.rows(); i++)
+  {
+    Keypoint2DMsg keypoint_2D_msg;
+    keypoint_2D_msg.x = keypoints_2D_mat(i, 0);
+    keypoint_2D_msg.y = keypoints_2D_mat(i, 1);
+    keypoints_2D_msg.keypoints_2D.push_back(keypoint_2D_msg);
   }  
 
 }

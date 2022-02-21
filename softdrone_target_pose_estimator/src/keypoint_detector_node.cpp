@@ -1,7 +1,7 @@
 // -*-c++-*-
 //-----------------------------------------------------------------------------
 /**
- * @file    keypoint_detector_node.hpp
+ * @file    keypoint_detector_node.cpp
  * @author  Samuel Ubellacker
  * 
  * @brief Runs an neural net to detect pre-labelled keypoints from an rgb image.
