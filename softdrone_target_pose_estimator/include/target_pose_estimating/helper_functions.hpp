@@ -14,4 +14,6 @@ void keypoints3DMsgToEigenMat(const Keypoints3DMsg& keypoints_3D_msg, Eigen::Mat
 
 void poseWCovToEigenMat(const PoseWCov& pose_cov, Eigen::Matrix3d& R, Eigen::Vector3d& t);
 
+void eigenMatToCov(const Eigen::MatrixXd& cov, PoseWCov &pwc);
+
 #endif

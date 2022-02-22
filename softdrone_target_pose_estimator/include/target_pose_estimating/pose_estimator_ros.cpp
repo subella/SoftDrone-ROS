@@ -93,6 +93,7 @@ void PoseEstimatorROS::
 eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& pose_cov)
 {
   pose_cov.header.stamp = ros::Time::now();
+  pose_cov.header.frame_id = "agent";
 
   pose_cov.pose.pose.position.x = t[0];
   pose_cov.pose.pose.position.y = t[1];
@@ -103,6 +104,16 @@ eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& po
   pose_cov.pose.pose.orientation.x = q.x();
   pose_cov.pose.pose.orientation.y = q.y();
   pose_cov.pose.pose.orientation.z = q.z();
+
+  Eigen::MatrixXd cov = Eigen::MatrixXd::Identity(6,6);
+  cov(0,0) = 0.5;
+  cov(1,1) = 0.5;
+  cov(2,2) = 0.5;
+  cov(3,3) = .1;
+  cov(4,4) = .1;
+  cov(5,5) = .1;
+  eigenMatToCov(cov, pose_cov);
+
 }
 
 }; //namespace sdrone

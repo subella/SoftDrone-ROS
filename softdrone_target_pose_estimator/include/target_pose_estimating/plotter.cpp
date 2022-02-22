@@ -48,6 +48,7 @@ transformCadFrame(Eigen::Matrix3d& R, Eigen::Vector3d& t, Eigen::MatrixX3d& tran
 void Plotter::
 drawCadFrameKeypoints(cv::Mat& img, Eigen::MatrixX2i& keypoints_2D_mat)
 {
+  std::cout << keypoints_2D_mat << std::endl;
   for (int i = 0; i < keypoints_2D_mat.rows(); i++)
   {
     int px = keypoints_2D_mat.coeff(i, 0);

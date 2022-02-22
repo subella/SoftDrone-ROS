@@ -3,7 +3,7 @@ pose_estimator_params:
   pose_pub_topic: "/estimated_pose"
   transformed_cad_frame_pub_topic: "/cad_frame_keypoints"
   cad_frame_file_name: "$(env HOME)/CadFrames/box.csv"
-  noise_bound: 10
+  noise_bound: 40
   cbar2: 1
   estimate_scaling: false
   rotation_max_iterations: 100

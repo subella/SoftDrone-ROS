@@ -26,3 +26,15 @@ void poseWCovToEigenMat(const PoseWCov& pose_cov, Eigen::Matrix3d& R, Eigen::Vec
     R = q.toRotationMatrix();
 
 }
+
+void eigenMatToCov(const Eigen::MatrixXd& cov, PoseWCov &pwc)
+{
+  const int map[6] = {0,1,2,5,4,3};
+  for(int i=0; i<6; i++)
+  {
+    for(int j=0; j<6; j++)
+    {
+      pwc.pose.covariance[map[i]*6 + map[j]] = cov(i,j);
+    }
+  }
+}

@@ -227,11 +227,26 @@ void sampleData(PoseWCov &agent, PoseWCov &target_rel)
 		                     cov_target_rel);
 
 	//sample
-	agent.pose = sdrone::TrackerROS::samplePose(mu_agent, cov_agent);
+	//agent.pose = sdrone::TrackerROS::samplePose(mu_agent, cov_agent);
+	agent.pose.position.x = 0;
+  agent.pose.position.y = 0;
+  agent.pose.position.z = 0;
+  
+  agent.pose.orientation.w = 1;
+  agent.pose.orientation.x = 0;
+  agent.pose.orientation.y = 0;
+  agent.pose.orientation.z = 0;
 	target_rel.pose = sdrone::TrackerROS::samplePose(mu_target_rel, cov_target_rel);
 
 	//populate covariance
-	copyCov(cov_agent, agent);
+	Eigen::MatrixXd cov = Eigen::MatrixXd::Identity(6,6);
+  cov(0,0) = .5;
+  cov(1,1) = .5;
+  cov(2,2) = .5;
+  cov(3,3) = 0.1;
+  cov(4,4) = 0.1;
+  cov(5,5) = 0.1;
+	copyCov(cov, agent);
 
 	//the covariance of measurement is used for R matrix, make
 	//covariance order of magnitue larger than the actual distribution

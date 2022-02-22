@@ -90,6 +90,7 @@ target_link_libraries(pose_estimator
  Eigen3::Eigen
  teaserpp::teaser_registration
  teaserpp::teaser_io
+ helper_functions
 )
 
 add_library(pose_estimator_ros include/target_pose_estimating/pose_estimator_ros.cpp)

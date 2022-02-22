@@ -16,6 +16,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <target_pose_estimating/pose_estimator.hpp>
+#include <target_pose_estimating/helper_functions.hpp>
 #include "softdrone_target_pose_estimator/Keypoints3D.h"
 
 namespace sdrone
