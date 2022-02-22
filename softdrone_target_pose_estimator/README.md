@@ -41,3 +41,8 @@ Package for target pose estimating
 export Torch_DIR=your/path/libtorch
 catkin build
 ```
+
+## Running:
+```
+roslaunch softdrone_target_pose_estimator estimate_target_pose.launch
+```
