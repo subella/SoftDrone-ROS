@@ -118,6 +118,8 @@ target_link_libraries(plotter_ros
 
 # EXECUTABLES
 
+add_dependencies(helper_functions ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 add_executable(keypoint_detector_node src/keypoint_detector_node.cpp)
 
 add_dependencies(keypoint_detector_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
