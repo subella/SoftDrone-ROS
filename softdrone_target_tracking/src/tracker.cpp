@@ -32,6 +32,8 @@ Tracker(const Belief6D &b_target_meas)
 void Tracker::
 init(const Belief7D &b_target_meas)
 {
+  std::cout << "BAD ENTRY" << std::endl;
+  exit(1);
   b_target_ = b_target_meas;
   is_initialized_ = true;
 };
@@ -40,12 +42,17 @@ void Tracker::
 init(const Belief6D &b_target_meas)
 {
   b_target_6D_ = b_target_meas;
+  // b_target_6D_.mean.m_coords(0) = b_target_6D_.mean.m_coords(0)/1000.;
+  // b_target_6D_.mean.m_coords(1) = b_target_6D_.mean.m_coords(1)/1000.;
+  // b_target_6D_.mean.m_coords(2) = b_target_6D_.mean.m_coords(2)/1000.;
   is_initialized_ = true;
 };
 
 void Tracker::
 update(const Belief7D &b_target_meas)
 {
+  std::cout << "BAD ENTRY" << std::endl;
+  exit(1);
   if(!is_initialized_)
   {
     init(b_target_meas);
@@ -90,6 +97,12 @@ update(const Belief6D &b_target_meas)
     Mat61 x, z;
     copyMeanToMat61(b_target_meas, z);
     copyMeanToMat61(b_target_6D_, x);
+    // z(0) = z(0)/1000.;
+    // z(1) = z(1)/1000.;
+    // z(2) = z(2)/1000.;
+
+    std::cout << "z: " << z << std::endl;
+    std::cout << "x: " << x << std::endl;
 
     Mat66 R, P;
     copyCovarianceToMat66(b_target_meas, R);

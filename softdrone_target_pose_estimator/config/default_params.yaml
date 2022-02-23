@@ -1,4 +1,0 @@
-tracker_params:
-  agent_topic: "dummy/agent/odom"
-  target_relative_topic: "dummy/target_relative/pose"
-  target_topic: "tracker/target/pose"

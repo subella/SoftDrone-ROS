@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-namespace softdrone
+namespace sdrone
 {
 
 class KeypointDetector {
@@ -33,6 +33,8 @@ class KeypointDetector {
 
     KeypointDetector(const std::string& model_file_name);
 
+    bool DetectKeypoints(cv::Mat& raw_img, torch::Tensor& keypoints);
+
   protected:
 
     bool is_initialized_;
@@ -41,20 +43,18 @@ class KeypointDetector {
 
     void init(const std::string& model_file_name);
 
-    bool DetectKeypoints(cv::Mat& img, torch::Tensor& keypoints);
-
     static c10::IValue GetTracingInputs(cv::Mat& img, c10::Device device);
 
-    static cv::Mat PreprocessImage(cv::Mat& img);
+    void PreprocessImage(cv::Mat& raw_img, cv::Mat& preproc_img);
 
-    torch::Tensor ForwardPass(cv::Mat& preprocessed_img);
+    void ForwardPass(cv::Mat& preproc_img, torch::Tensor& raw_keypoints);
 
-    static torch::Tensor PostprocessKeypoints(torch::Tensor& keypoints);
+    static void PostprocessKeypoints(torch::Tensor& raw_keypoints, torch::Tensor& postproc_keypoints);
 
     static void DrawKeypoints(cv::Mat& img, torch::Tensor& keypoints);
 
 };
 
-}; //namespace soft
+}; //namespace sdrone
 
 #endif // Tracker_HPP

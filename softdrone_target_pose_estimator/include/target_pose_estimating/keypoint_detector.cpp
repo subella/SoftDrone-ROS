@@ -8,7 +8,7 @@
 
 #include <target_pose_estimating/keypoint_detector.hpp>
 
-namespace softdrone
+namespace sdrone
 {
 
 KeypointDetector::
@@ -34,19 +34,23 @@ init(const std::string& model_file_name)
 };
 
 bool KeypointDetector::
-DetectKeypoints(cv::Mat& img, torch::Tensor& keypoints)
+DetectKeypoints(cv::Mat& raw_img, torch::Tensor& keypoints)
 {
     if (!is_initialized_)
         return 0;
 
-    cv::Mat preprocessed_image = PreprocessImage(img);
-    torch::Tensor preprocessed_keypoints = ForwardPass(preprocessed_image);
-    if (!preprocessed_keypoints.numel())
+    cv::Mat preproc_img;
+    PreprocessImage(raw_img, preproc_img);
+
+    torch::Tensor raw_keypoints;
+    ForwardPass(preproc_img, raw_keypoints);
+
+    if (!raw_keypoints.numel())
     {
         return 0;
     }
 
-    keypoints = PostprocessKeypoints(preprocessed_keypoints);
+    PostprocessKeypoints(raw_keypoints, keypoints);
     return 1;  
 }
 
@@ -64,34 +68,34 @@ GetTracingInputs(cv::Mat& img, c10::Device device)
   return input;
 }
 
-cv::Mat KeypointDetector::
-PreprocessImage(cv::Mat& img)
+void KeypointDetector::
+PreprocessImage(cv::Mat& raw_img, cv::Mat& preproc_img)
 {
-    // TODO: Port python code.
-    return img;
+    // TODO: No preprocessing is needed for this resolution, but we
+    // will have to port the python code to support all resolutions.
+    preproc_img = raw_img;
 }
 
-torch::Tensor KeypointDetector::
-ForwardPass(cv::Mat& img)
+void KeypointDetector::
+ForwardPass(cv::Mat& preproc_img, torch::Tensor& raw_keypoints)
 {
     //TODO don't recreate device each callback
     auto device = (*std::begin(module.buffers())).device();
-    auto inputs = GetTracingInputs(img, device);
+    auto inputs = GetTracingInputs(preproc_img, device);
     auto output = module.forward({inputs});
     auto outputs = output.toTuple()->elements();
-    auto keypoints = outputs[3].toTensor();
+    raw_keypoints = outputs[3].toTensor();
 
     if (device.is_cuda())
         c10::cuda::getCurrentCUDAStream().synchronize();
-
-    return keypoints;
 }
 
-torch::Tensor KeypointDetector::
-PostprocessKeypoints(torch::Tensor& keypoints)
+void KeypointDetector::
+PostprocessKeypoints(torch::Tensor& raw_keypoints, torch::Tensor& postproc_keypoints)
 {
-    // TODO: Port python code.
-    return keypoints;
+    // TODO: No postprocessing is needed for this resolution, but we
+    // will have to port the python code to support all resolutions.
+    postproc_keypoints = raw_keypoints;
 }
 
 void KeypointDetector::

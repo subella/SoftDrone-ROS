@@ -17,15 +17,16 @@
 #include <cv_bridge/cv_bridge.h>
 #include <target_pose_estimating/keypoint_detector.hpp>
 
-#include "softdrone_target_pose_estimator/Keypoints.h"
+#include "softdrone_target_pose_estimator/Keypoints2D.h"
 
-namespace softdrone
+namespace sdrone
 {
 
 class KeypointDetectorROS : public KeypointDetector {
   public:
     typedef sensor_msgs::ImageConstPtr ImageMsg;
-    typedef softdrone_target_pose_estimator::Keypoints Keypoints;
+    typedef softdrone_target_pose_estimator::Keypoint2D Keypoint2D;
+    typedef softdrone_target_pose_estimator::Keypoints2D Keypoints2D;
 
     KeypointDetectorROS(const ros::NodeHandle &nh);
 
@@ -57,10 +58,10 @@ class KeypointDetectorROS : public KeypointDetector {
 
     void rgbImageCallback(const ImageMsg& rgb_img);
 
-    static Keypoints formatKeypoints(torch::Tensor& tensor_kpts);
+    static Keypoints2D tensorToKeypoints2D(torch::Tensor& tensor_kpts);
     
 };
 
-}; //namespace softdrone
+}; //namespace sdrone
 
 #endif // Tracker_ROS_HPP

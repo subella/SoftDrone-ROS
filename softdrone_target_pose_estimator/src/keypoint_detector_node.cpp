@@ -1,7 +1,7 @@
 // -*-c++-*-
 //-----------------------------------------------------------------------------
 /**
- * @file    keypoint_detector_node.hpp
+ * @file    keypoint_detector_node.cpp
  * @author  Samuel Ubellacker
  * 
  * @brief Runs an neural net to detect pre-labelled keypoints from an rgb image.
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
 
 	load_params(nh);
-	softdrone::KeypointDetectorROS keypoint_detector(nh, 
+	sdrone::KeypointDetectorROS keypoint_detector(nh, 
                                                    rgb_img_topic_, 
                                                    model_file_name_, 
                                                    should_publish_annotated_img_,
