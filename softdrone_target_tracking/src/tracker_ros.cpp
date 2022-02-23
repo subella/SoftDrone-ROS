@@ -15,7 +15,7 @@ TrackerROS::
 TrackerROS(const ros::NodeHandle &nh)
   : nh_(nh), 
     agent_sub_(nh_, "agent_odom", 1),
-    target_rel_sub_(nh_, "/estimated_pose", 1),
+    target_rel_sub_(nh_, "estimated_relative_pose", 1),
     sync_(SyncPolicy(10), agent_sub_, target_rel_sub_)
 {
   is_initialized_ = false;

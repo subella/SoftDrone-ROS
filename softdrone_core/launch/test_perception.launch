@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find softdrone_core)/launch/master.launch">
+        <arg name="launch_keypoint_detector_node" value="true"/>
+        <arg name="launch_reproject_keypoints_node" value="true"/>
+        <arg name="launch_pose_estimator_node" value="true"/>
+        <arg name="launch_plotter_node" value="true"/>
+        <arg name="launch_tracker_node" value="true"/>
+        <arg name="launch_d455" value="true"/>
+        <!-- publishes drone's (fake) odometry -->
+        <arg name="launch_dummy_tracker_node" value="true"/>
+    </include>
+
+</launch>

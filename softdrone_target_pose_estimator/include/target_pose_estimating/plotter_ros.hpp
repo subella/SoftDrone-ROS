@@ -38,12 +38,6 @@ class PlotterROS : public Plotter {
 
     PlotterROS(const ros::NodeHandle& nh);
 
-    PlotterROS(const ros::NodeHandle& nh,
-               const std::string&     rgb_img_sub_topic,
-               const std::string&     cad_keypoints_sub_topic,
-               const std::string&     estimated_pose_sub_topic_,
-               const std::string&     reprojected_cad_keypoints_img_pub_topic);
-
     ~PlotterROS() = default;
 
 

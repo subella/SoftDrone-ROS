@@ -21,7 +21,7 @@ std::string target_topic_;
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "tracker_node");
-	ros::NodeHandle nh;
+	ros::NodeHandle nh("~");
 
 	ROS_INFO("tracker_node running...");
 

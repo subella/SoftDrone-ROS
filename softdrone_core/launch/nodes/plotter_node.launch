@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="softdrone_target_pose_estimator"
+          name="plotter_node"
+          type="plotter_node"
+          output="screen"/>
+</launch>

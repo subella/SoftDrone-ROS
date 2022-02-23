@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="softdrone_target_pose_estimator"
+          name="pose_estimator_node"
+          type="pose_estimator_node"
+          output="screen">
+        <rosparam command="load" file="$(find softdrone_core)/config/pose_estimator_node.yaml" subst_value="true"/>
+    </node>
+</launch>

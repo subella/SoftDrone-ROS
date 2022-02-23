@@ -31,11 +31,8 @@ class KeypointDetectorROS : public KeypointDetector {
     KeypointDetectorROS(const ros::NodeHandle &nh);
 
     KeypointDetectorROS(const ros::NodeHandle &nh,
-                        const std::string     &rgb_img_topic,
                         const std::string     &model_file_name,
-                        const bool            should_publish_annotated_img,
-                        const std::string     &keypoints_topic,
-                        const std::string     &annotated_img_topic);
+                        const bool            should_publish_annotated_img);
 
     ~KeypointDetectorROS() = default;
 

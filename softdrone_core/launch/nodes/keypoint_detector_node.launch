@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="softdrone_target_pose_estimator"
+          name="keypoint_detector_node"
+          type="keypoint_detector_node"
+          output="screen">
+        <rosparam command="load" file="$(find softdrone_core)/config/keypoint_detector_node.yaml" subst_value="true"/>
+    </node>
+</launch>
