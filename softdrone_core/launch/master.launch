@@ -10,13 +10,17 @@
     <arg name="launch_t265_odom_to_tf" default="false"/>
     <arg name="launch_grasp_state_machine_node" default="false"/>
     <arg name="launch_tracker_node" default="false" doc="Use EKF target tracker?" />
+    <arg name="launch_dummy_tracker_node" default="false"/>
     <arg name="launch_robot_state_publisher" default="false" doc="Use robot state publisher to get static transform + mesh?"/>
     <arg name="launch_rviz" default="false"/>
     <arg name="launch_t265" default="false"/>
     <arg name="launch_d455" default="false"/>
     <arg name="launch_odom_static_transforms" default="false"/>
     <arg name="launch_mavros_odom_to_tf" default="false"/>
-
+    <arg name="launch_keypoint_detector_node" default="false"/>
+    <arg name="launch_reproject_keypoints_node" default="false"/>
+    <arg name="launch_pose_estimator_node" default="false"/>
+    <arg name="launch_plotter_node" default="false"/>
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
     <arg name="sim_target_as_tracker_output" default="$(eval not arg('launch_tracker_node'))" doc="Map the simulated target pose to the tracker output topic"/>
@@ -83,15 +87,6 @@
         <include file="$(find softdrone_core)/launch/nodes/t265_odom_to_tf.launch"/>
     </group>
 
-
-    <!-- Launch the EKF estimator that updates estimate of target's state -->
-    <group if="$(arg launch_tracker_node)">
-        <remap from="agent_odom" to="/mavros/odometry/in"/>
-        <remap from="relative_pose_observation" to="/perception/target_rel_estimate"/>
-        <remap from="target_global_pose_estimate" to="/tracker/target/pose"/>
-        <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
-    </group>
-
     <!-- Launch the trajectory planner. -->
     <group if="$(arg launch_polynomial_planner_node)">
         <remap from="pose" to="/mavros/local_position/pose"/>
@@ -113,5 +108,42 @@
     </group>
 
     <include if="$(arg launch_mavros_odom_to_tf)" file="$(find softdrone_core)/launch/nodes/mavros_odom_to_tf.launch"/>
+
+    <!-- Launching Perception Stack -->
+    <group if="$(arg launch_keypoint_detector_node)">
+        <remap from="~rgb_img_in" to="target_cam/color/image_raw"/>
+        <include file="$(find softdrone_core)/launch/nodes/keypoint_detector_node.launch" />
+    </group>
+
+    <group if="$(arg launch_reproject_keypoints_node)">
+        <remap from="~keypoints_2d_in" to="keypoint_detector_node/keypoints_out"/>
+        <remap from="~depth_img_in" to="target_cam/aligned_depth_to_color/image_raw"/>
+        <remap from="~rgb_cam_info_in" to="target_cam/color/camera_info"/>
+        <include file="$(find softdrone_core)/launch/nodes/reproject_keypoints_node.launch" />
+    </group>
+
+    <group if="$(arg launch_pose_estimator_node)" >
+        <remap from="~keypoints_3d_in" to="reproject_keypoints_node/keypoints_3d_out"/>
+        <include file="$(find softdrone_core)/launch/nodes/pose_estimator_node.launch" />
+    </group>
+
+    <group if="$(arg launch_plotter_node)" >
+        <remap from="~rgb_img_in" to="target_cam/color/image_raw"/>
+        <remap from="~cad_keypoints_in" to="pose_estimator_node/transformed_cad_out"/>
+        <remap from="~estimated_pose_in" to="pose_estimator_node/estimated_pose_out"/>
+        <include file="$(find softdrone_core)/launch/nodes/plotter_node.launch" />
+    </group>
+
+    <!-- Launch the EKF estimator that updates estimate of target's state -->
+    <group if="$(arg launch_tracker_node)">
+        <remap from="agent_odom" to="/mavros/odometry/in"/>
+        <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
+        <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
+    </group>
+
+    <group if="$(arg launch_dummy_tracker_node)">
+        <remap from="agent_odom_out" to="/mavros/odometry/in"/>
+        <include file="$(find softdrone_core)/launch/nodes/dummy_tracker_node.launch"/>
+    </group>
 
 </launch>

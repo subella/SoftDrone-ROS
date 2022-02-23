@@ -29,13 +29,6 @@ typedef geometry_msgs::PoseWithCovariance PoseWCov;
 typedef geometry_msgs::PoseWithCovarianceStamped PoseWCovStamp;
 typedef nav_msgs::Odometry Odom;
 
-std::string agent_topic_;
-std::string target_rel_topic_;
-std::string target_topic_;
-std::string agent_truth_topic_;
-std::string target_truth_topic_;
-
-void load_params(const ros::NodeHandle &nh);
 void getAgentTruth(Eigen::VectorXd &mu, Eigen::MatrixXd &cov);
 void getTargetTruth(Eigen::VectorXd &mu);
 void getTargetRelativeTruth(const Eigen::VectorXd &mu_agent, const Eigen::VectorXd &mu_target, Eigen::VectorXd &mu_target_rel, Eigen::MatrixXd &cov_target_rel);
@@ -46,16 +39,14 @@ void getTruth(Pose &agent_truth, Pose &target_truth);
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "dummy_node");
-	ros::NodeHandle nh;
+	ros::NodeHandle nh("~");
 
 	ROS_INFO("dummy_node running...");
 
-	load_params(nh);
-
-	ros::Publisher odom_pub = nh.advertise<Odom>(agent_topic_, 1000);
-	ros::Publisher pwcs_pub = nh.advertise<PoseWCovStamp>(target_rel_topic_, 1000);
-	ros::Publisher agent_truth_pub = nh.advertise<PoseStamp>(agent_truth_topic_, 1000);
-	ros::Publisher target_truth_pub = nh.advertise<PoseStamp>(target_truth_topic_, 1000);
+	ros::Publisher odom_pub = nh.advertise<Odom>("agent_odom_out", 1000);
+	ros::Publisher pwcs_pub = nh.advertise<PoseWCovStamp>("target_pwcs_out", 1000);
+	ros::Publisher agent_truth_pub = nh.advertise<PoseStamp>("agent_pose_gt_out", 1000);
+	ros::Publisher target_truth_pub = nh.advertise<PoseStamp>("target_pose_gt_out", 1000);
 	
 	ros::Rate loop_rate(20);
 	while (ros::ok())
@@ -108,15 +99,6 @@ int main(int argc, char **argv)
 
 
 	return 0;
-}
-
-void load_params(const ros::NodeHandle &nh)
-{
-  nh.getParam("tracker_params/agent_topic", agent_topic_);
-  nh.getParam("tracker_params/target_relative_topic", target_rel_topic_);
-  nh.getParam("tracker_params/target_topic", target_topic_);
-  nh.getParam("tracker_params/agent_truth_topic", agent_truth_topic_);
-  nh.getParam("tracker_params/target_truth_topic", target_truth_topic_);
 }
 
 void getAgentTruth(Eigen::VectorXd &mu, Eigen::MatrixXd &cov)

@@ -20,17 +20,14 @@ PoseEstimatorROS(const ros::NodeHandle &nh)
 
 PoseEstimatorROS::
 PoseEstimatorROS(const ros::NodeHandle& nh,
-                 const std::string&     keypoints_3D_sub_topic,
-                 const std::string&     pose_pub_topic,
-                 const std::string&     transformed_cad_frame_pub_topic,
                  const std::string&     cad_frame_file_name,
                  const TeaserParams&    params)
   : nh_(nh),
     PoseEstimator(cad_frame_file_name, params)
 {
-  keypoints_sub_ = nh_.subscribe(keypoints_3D_sub_topic, 1, &PoseEstimatorROS::keypoints3DCallback, this);
-  pose_pub_ = nh_.advertise<PoseWCov>(pose_pub_topic,  1);
-  transformed_cad_frame_pub_ = nh_.advertise<Keypoints3DMsg>(transformed_cad_frame_pub_topic,  1);
+  keypoints_sub_ = nh_.subscribe("keypoints_3d_in", 1, &PoseEstimatorROS::keypoints3DCallback, this);
+  pose_pub_ = nh_.advertise<PoseWCov>("estimated_pose_out",  1);
+  transformed_cad_frame_pub_ = nh_.advertise<Keypoints3DMsg>("transformed_cad_out",  1);
 };
 
 void PoseEstimatorROS::

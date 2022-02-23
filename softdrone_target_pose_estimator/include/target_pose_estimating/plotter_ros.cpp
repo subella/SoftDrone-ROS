@@ -15,29 +15,15 @@ namespace sdrone
 PlotterROS::
 PlotterROS(const ros::NodeHandle& nh)
   : nh_(nh),
-    it_(nh_),
-    rgb_img_sub_(it_, "", 1),
-    pose_sub_(nh_, "", 1),
-    sync_(SyncPolicy(10), rgb_img_sub_, pose_sub_)
-{
-};
-
-PlotterROS::
-PlotterROS(const ros::NodeHandle& nh,
-           const std::string&     rgb_img_sub_topic,
-           const std::string&     cad_keypoints_sub_topic,
-           const std::string&     estimated_pose_sub_topic_,
-           const std::string&     reprojected_cad_keypoints_img_pub_topic)
-  : nh_(nh),
     it_(nh),
-    rgb_img_sub_(it_, rgb_img_sub_topic, 1),
-    pose_sub_(nh_, estimated_pose_sub_topic_, 1),
+    rgb_img_sub_(it_, "rgb_img_in", 1),
+    pose_sub_(nh_, "estimated_pose_in", 1),
     sync_(SyncPolicy(10), rgb_img_sub_, pose_sub_)
 {
   sync_.registerCallback(boost::bind(&PlotterROS::annotateCadFrameCallback, this, _1, _2));
-  cad_keypoints_sub_ = nh_.subscribe(cad_keypoints_sub_topic, 1, &PlotterROS::cadKeypointsCallback, this);
+  cad_keypoints_sub_ = nh_.subscribe("cad_keypoints_in", 1, &PlotterROS::cadKeypointsCallback, this);
 
-  reprojected_cad_keypoints_img_pub_ = it_.advertise(reprojected_cad_keypoints_img_pub_topic,  1);
+  reprojected_cad_keypoints_img_pub_ = it_.advertise("reprojected_keypoints_out",  1);
 
 };
 

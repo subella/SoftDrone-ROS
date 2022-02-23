@@ -1,0 +1,2 @@
+model_file_name: "$(env HOME)/KeypointDetectorModels/model_hardware_jitted"
+should_publish_annotated_img: true

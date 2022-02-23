@@ -12,26 +12,22 @@
 #include <ros/ros.h>
 #include <target_pose_estimating/pose_estimator_ros.hpp>
 
-std::string keypoints_3D_sub_topic_;
-std::string pose_pub_topic_;
-std::string transformed_cad_frame_pub_topic_;
 std::string cad_frame_file_name_;
 sdrone::TeaserParams params_;
 
 void load_params(const ros::NodeHandle& nh)
 {
-  nh.getParam("pose_estimator_params/keypoints_3D_sub_topic", keypoints_3D_sub_topic_);
-  nh.getParam("pose_estimator_params/pose_pub_topic", pose_pub_topic_);
-  nh.getParam("pose_estimator_params/transformed_cad_frame_pub_topic", transformed_cad_frame_pub_topic_);
-  nh.getParam("pose_estimator_params/cad_frame_file_name", cad_frame_file_name_);
-  nh.getParam("pose_estimator_params/noise_bound", params_.noise_bound);
-  nh.getParam("pose_estimator_params/cbar2", params_.cbar2);
-  nh.getParam("pose_estimator_params/estimate_scaling", params_.estimate_scaling);
+  nh.getParam("cad_frame_file_name", cad_frame_file_name_);
+  ROS_INFO_STREAM("Pose estimator cad frame name: " << cad_frame_file_name_);
+  std::cout << "\n\ncad frame name: " << cad_frame_file_name_ << std::endl;
+  nh.getParam("noise_bound", params_.noise_bound);
+  nh.getParam("cbar2", params_.cbar2);
+  nh.getParam("estimate_scaling", params_.estimate_scaling);
   int rotation_max_iterations;
-  nh.param("pose_estimator_params/rotation_max_iterations", rotation_max_iterations);
+  nh.param("rotation_max_iterations", rotation_max_iterations);
   params_.rotation_max_iterations = (unsigned long) rotation_max_iterations;
-  nh.getParam("pose_estimator_params/rotation_gnc_factor", params_.rotation_gnc_factor);
-  nh.getParam("pose_estimator_params/rotation_cost_threshold", params_.rotation_cost_threshold);
+  nh.getParam("rotation_gnc_factor", params_.rotation_gnc_factor);
+  nh.getParam("rotation_cost_threshold", params_.rotation_cost_threshold);
   // TODO: We can expose this to the yaml if needed.
   params_.rotation_estimation_algorithm =
       teaser::RobustRegistrationSolver::ROTATION_ESTIMATION_ALGORITHM::GNC_TLS;
@@ -39,19 +35,15 @@ void load_params(const ros::NodeHandle& nh)
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "pose_estimator_node");
-	ros::NodeHandle nh;
+    std::cout << "\n\n\n Pose Estimator \n\n\n" << std::endl;
+    ros::init(argc, argv, "pose_estimator_node");
+    ros::NodeHandle nh("~");
 
-	ROS_INFO("pose_estimator_node running...");
+    ROS_INFO("pose_estimator_node running...");
 
-	load_params(nh);
-	sdrone::PoseEstimatorROS pose_estimator(nh, 
-                                          keypoints_3D_sub_topic_,
-                                          pose_pub_topic_,
-                                          transformed_cad_frame_pub_topic_,
-                                          cad_frame_file_name_,
-                                          params_);
-	ros::spin();
+    load_params(nh);
+    sdrone::PoseEstimatorROS pose_estimator(nh, cad_frame_file_name_, params_);
+    ros::spin();
 
 	return 0;
 }

@@ -21,20 +21,17 @@ KeypointDetectorROS(const ros::NodeHandle& nh)
 
 KeypointDetectorROS::
 KeypointDetectorROS(const ros::NodeHandle& nh,
-                    const std::string&     rgb_img_topic,
                     const std::string&     model_file_name,
-                    const bool             should_publish_annotated_img,
-                    const std::string&     keypoints_topic,
-                    const std::string&     annotated_img_topic)
+                    const bool             should_publish_annotated_img)
   : nh_(nh),
     it_(nh),
     KeypointDetector(model_file_name)
 {
-  rgb_image_sub_ = it_.subscribe(rgb_img_topic, 1, &KeypointDetectorROS::rgbImageCallback, this);
+  rgb_image_sub_ = it_.subscribe("rgb_img_in", 1, &KeypointDetectorROS::rgbImageCallback, this);
 
   should_publish_annotated_img_ = should_publish_annotated_img;
-  keypoints_pub_ = nh_.advertise<Keypoints2D>(keypoints_topic,  1);
-  annotated_img_pub_ = it_.advertise(annotated_img_topic,  1);
+  keypoints_pub_ = nh_.advertise<Keypoints2D>("keypoints_out",  1);
+  annotated_img_pub_ = it_.advertise("annotated_img_out",  1);
 };
 
 void KeypointDetectorROS::

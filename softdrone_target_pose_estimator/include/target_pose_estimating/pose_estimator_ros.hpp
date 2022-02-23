@@ -31,9 +31,6 @@ class PoseEstimatorROS : public PoseEstimator {
     PoseEstimatorROS(const ros::NodeHandle &nh);
 
     PoseEstimatorROS(const ros::NodeHandle& nh,
-                     const std::string&     keypoints_3D_sub_topic,
-                     const std::string&     pose_pub_topic,
-                     const std::string&     transformed_cad_frame_pub_topic,
                      const std::string&     cad_frame_file_name,
                      const TeaserParams&    params);
 

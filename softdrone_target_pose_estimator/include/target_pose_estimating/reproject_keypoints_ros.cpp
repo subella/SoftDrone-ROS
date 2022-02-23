@@ -14,35 +14,19 @@ namespace sdrone
 {
 
 ReprojectKeypointsROS::
-ReprojectKeypointsROS(const ros::NodeHandle &nh)
+ReprojectKeypointsROS(const ros::NodeHandle& nh)
   : nh_(nh), 
     it_(nh_),
-    keypoints_2D_sub_(nh_, "", 1),
-    depth_img_sub_(it_, "", 1),
-    sync_(SyncPolicy(10), keypoints_2D_sub_, depth_img_sub_)
-{
-};
-
-ReprojectKeypointsROS::
-ReprojectKeypointsROS(const ros::NodeHandle& nh,
-                      const std::string&     keypoints_2D_sub_topic,
-                      const std::string&     keypoints_3D_sub_topic,
-                      const std::string&     rgb_cam_info_sub_topic,
-                      const std::string&     depth_img_sub_topic,
-                      const std::string&     keypoints_2D_pub_topic,
-                      const std::string&     keypoints_3D_pub_topic)
-  : nh_(nh), 
-    it_(nh_),
-    keypoints_2D_sub_(nh_, keypoints_2D_sub_topic, 1),
-    depth_img_sub_(it_, depth_img_sub_topic, 1),
+    keypoints_2D_sub_(nh_, "keypoints_2d_in", 1),
+    depth_img_sub_(it_, "depth_img_in", 1),
     sync_(SyncPolicy(10), keypoints_2D_sub_, depth_img_sub_)
 {
   sync_.registerCallback(boost::bind(&ReprojectKeypointsROS::keypoints2DCallback, this, _1, _2));
-  rgb_cam_info_sub_ = nh_.subscribe(rgb_cam_info_sub_topic, 1, &ReprojectKeypointsROS::rgbCamInfoCallback, this);
-  keypoints_3D_sub_ = nh_.subscribe(keypoints_3D_sub_topic, 1, &ReprojectKeypointsROS::keypoints3DCallback, this);
+  rgb_cam_info_sub_ = nh_.subscribe("rgb_cam_info_in", 1, &ReprojectKeypointsROS::rgbCamInfoCallback, this);
+  keypoints_3D_sub_ = nh_.subscribe("keypoints_3d_in", 1, &ReprojectKeypointsROS::keypoints3DCallback, this);
 
-  keypoints_2D_pub_ = nh_.advertise<Keypoints2DMsg>(keypoints_2D_pub_topic,  1);
-  keypoints_3D_pub_ = nh_.advertise<Keypoints3DMsg>(keypoints_3D_pub_topic,  1);
+  keypoints_2D_pub_ = nh_.advertise<Keypoints2DMsg>("keypoints_2d_out",  1);
+  keypoints_3D_pub_ = nh_.advertise<Keypoints3DMsg>("keypoints_3d_out",  1);
 };
 
 void ReprojectKeypointsROS::

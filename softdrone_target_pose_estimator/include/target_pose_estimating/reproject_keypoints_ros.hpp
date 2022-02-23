@@ -42,14 +42,6 @@ class ReprojectKeypointsROS : public ReprojectKeypoints {
 
     ReprojectKeypointsROS(const ros::NodeHandle &nh);
 
-    ReprojectKeypointsROS(const ros::NodeHandle& nh,
-                          const std::string&     keypoints_2D_sub_topic,
-                          const std::string&     keypoints_3D_sub_topic,
-                          const std::string&     rgb_cam_info_sub_topic,
-                          const std::string&     depth_img_sub_topic,
-                          const std::string&     keypoints_2D_pub_topic,
-                          const std::string&     keypoints_3D_pub_topic);
-
     ~ReprojectKeypointsROS() = default;
 
   private:

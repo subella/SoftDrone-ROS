@@ -72,8 +72,8 @@ target_link_libraries(tracker_node
   rbt
 )
 
-add_executable(dummy_node src/dummy_node.cpp)
-target_link_libraries(dummy_node 
+add_executable(dummy_tracker_node src/dummy_node.cpp)
+target_link_libraries(dummy_tracker_node 
   ${catkin_LIBRARIES}
   Eigen3::Eigen
   ${MRPT_LIBRARIES}

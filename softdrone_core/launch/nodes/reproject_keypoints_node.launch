@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="softdrone_target_pose_estimator"
+          name="reproject_keypoints_node"
+          type="reproject_keypoints_node"
+          output="screen">
+    </node>
+</launch>

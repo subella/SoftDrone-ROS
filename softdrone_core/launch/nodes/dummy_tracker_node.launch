@@ -1,0 +1,11 @@
+<launch>
+
+    <node pkg="softdrone_target_tracking"
+          name="dummy_tracker_node"
+          type="dummy_tracker_node"
+          output="screen">
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="static_transform_odom_to_map" args="0 0 0 0 0 0 odom map 100" />
+
+</launch>
