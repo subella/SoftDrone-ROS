@@ -136,13 +136,13 @@
 
     <!-- Launch the EKF estimator that updates estimate of target's state -->
     <group if="$(arg launch_tracker_node)">
-        <remap from="agent_odom" to="/mavros/odometry/in"/>
+        <remap from="~agent_odom" to="/mavros/odometry/in"/>
         <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
         <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
     </group>
 
     <group if="$(arg launch_dummy_tracker_node)">
-        <remap from="agent_odom_out" to="/mavros/odometry/in"/>
+        <remap from="~agent_odom_out" to="/mavros/odometry/in"/>
         <include file="$(find softdrone_core)/launch/nodes/dummy_tracker_node.launch"/>
     </group>
 
