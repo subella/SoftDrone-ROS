@@ -16,7 +16,8 @@ TrackerROS(const ros::NodeHandle &nh)
   : nh_(nh), 
     agent_sub_(nh_, "agent_odom", 1),
     target_rel_sub_(nh_, "estimated_relative_pose", 1),
-    sync_(SyncPolicy(10), agent_sub_, target_rel_sub_)
+    sync_(SyncPolicy(10), agent_sub_, target_rel_sub_),
+    tf_listener_(tf_buffer_)
 {
   is_initialized_ = false;
   target_pub_ = nh_.advertise<PoseWCovStamp>("target_global_pose_estimate",  1);
@@ -56,9 +57,15 @@ syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs)
   time_stamp_ = odom->header.stamp;
   frame_id_ = odom->header.frame_id;
 
-  if(odom->child_frame_id != pwcs->header.frame_id)
+  geometry_msgs::TransformStamped optical_to_body_tf = 
+    tf_buffer_.lookupTransform("base_link", pwcs->header.frame_id, ros::Time(0), ros::Duration(1.0));
+
+  geometry_msgs::PoseWithCovarianceStamped pwcs_body;
+  tf2::doTransform(*pwcs, pwcs_body, optical_to_body_tf);
+
+  if(odom->child_frame_id != pwcs_body.header.frame_id)
   {
-    ROS_ERROR("Error: odom->child_frame_id != pwcs->header.frame_id");
+    ROS_ERROR_STREAM("Error: odom->child_frame_id (" << odom->child_frame_id << ") != pwcs_body.header.frame_id (" << pwcs_body.header.frame_id << ")");
   }
 
   //don't use 7D, left/right multiplication by jacobian to convert
@@ -71,7 +78,7 @@ syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs)
 
   //use 6D
   Belief6D b_agent = belief6DFromPoseWCov(odom->pose);
-  Belief6D b_target_rel = belief6DFromPoseWCov(pwcs->pose);
+  Belief6D b_target_rel = belief6DFromPoseWCov(pwcs_body.pose);
   Belief6D b_target_meas = b_agent + b_target_rel;
   update(b_target_meas);
   publishResults6D();

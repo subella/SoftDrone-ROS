@@ -19,6 +19,8 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <nav_msgs/Odometry.h>
 
 #include <target_tracking/tracker.hpp>
@@ -68,6 +70,9 @@ class TrackerROS : public Tracker {
 
     /** \brief */
     ros::Publisher target_pub_;
+
+    tf2_ros::Buffer tf_buffer_;
+    tf2_ros::TransformListener tf_listener_;
 
     /** \brief */
     void syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs);

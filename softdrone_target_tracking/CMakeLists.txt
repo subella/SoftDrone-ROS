@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf2
+  tf2_ros
   nav_msgs
   geometry_msgs
   message_filters
@@ -29,6 +30,8 @@ catkin_package(
   std_msgs
   nav_msgs
   geometry_msgs
+  tf2
+  tf2_ros
 )
 
 include_directories(

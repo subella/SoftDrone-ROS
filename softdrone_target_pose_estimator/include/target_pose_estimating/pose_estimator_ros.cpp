@@ -90,7 +90,7 @@ void PoseEstimatorROS::
 eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& pose_cov)
 {
   pose_cov.header.stamp = ros::Time::now();
-  pose_cov.header.frame_id = "agent";
+  pose_cov.header.frame_id = "target_cam_color_optical_frame";
 
   pose_cov.pose.pose.position.x = t[0];
   pose_cov.pose.pose.position.y = t[1];
