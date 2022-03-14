@@ -4,6 +4,8 @@ import rospy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 
 import tf
+import tf2_ros
+import tf2_geometry_msgs
 
 use_noise = True
 
@@ -54,42 +56,66 @@ def target_cb(msg):
 
 def publish_relative_target_observation():
 
-    target_rel_global = target_pos - drone_pos
-    theta = -drone_yaw
-    target_rel_x_body = target_rel_global[0]*np.cos(theta) - target_rel_global[1]*np.sin(theta)
-    target_rel_y_body = target_rel_global[1]*np.cos(theta) + target_rel_global[0]*np.sin(theta)
-    target_rel_z_body = target_rel_global[2]
-    target_rel_yaw_body = target_yaw - drone_yaw
-    q = tf.transformations.quaternion_from_euler(0.0, 0.0, target_rel_yaw_body)
+    #                                       target frame, source frame, time, timeout
+
+    try:
+        transform = tf_buffer.lookup_transform('target_cam_color_optical_frame', 'target', rospy.Time.now(), rospy.Duration(5.0))
+    except:
+        rospy.logwarn("Cannot transform target frame to target_cam_color_optical_frame")
+        return
+
+    pose_transformed = tf2_geometry_msgs.do_transform_pose(target_origin_pose, transform)    
+
+    ### 
+    #target_rel_global = target_pos - drone_pos
+    #theta = -drone_yaw
+    #target_rel_x_body = target_rel_global[0]*np.cos(theta) - target_rel_global[1]*np.sin(theta)
+    #target_rel_y_body = target_rel_global[1]*np.cos(theta) + target_rel_global[0]*np.sin(theta)
+    #target_rel_z_body = target_rel_global[2]
+    #target_rel_yaw_body = target_yaw - drone_yaw
+    #q = tf.transformations.quaternion_from_euler(0.0, 0.0, target_rel_yaw_body)
 
     eps_pos = np.sqrt(R_pos)
-    eps_pos = 0
+    #eps_pos = 0
     eps_rot = np.sqrt(R_rot)
-    eps_rot = 0
-    eulers_noisy = np.array([0.,0., target_rel_yaw_body]) + eps_rot*np.random.randn(3)
-    q = tf.transformations.quaternion_from_euler(*eulers_noisy)
+    #eps_rot = 0
+    #eulers_noisy = np.array([0.,0., target_rel_yaw_body]) + eps_rot*np.random.randn(3)
+    #q = tf.transformations.quaternion_from_euler(*eulers_noisy)
 
     msg = PoseWithCovarianceStamped()
     msg.header.stamp = rospy.Time.now()
-    msg.header.frame_id = 'base_link'
+    msg.header.frame_id = 'target_cam_color_optical_frame'
 
-    msg.pose.pose.position.x = target_rel_x_body + np.random.randn()*eps_pos
-    msg.pose.pose.position.y = target_rel_y_body + np.random.randn()*eps_pos
-    msg.pose.pose.position.z = target_rel_z_body + np.random.randn()*eps_pos
-    msg.pose.pose.orientation.x = q[0]
-    msg.pose.pose.orientation.y = q[1]
-    msg.pose.pose.orientation.z = q[2]
-    msg.pose.pose.orientation.w = q[3]
+    msg.pose.pose.position.x = pose_transformed.pose.position.x + np.random.randn()*eps_pos
+    msg.pose.pose.position.y = pose_transformed.pose.position.y + np.random.randn()*eps_pos
+    msg.pose.pose.position.z = pose_transformed.pose.position.z + np.random.randn()*eps_pos
+    # can optionally add some noise to orientation
+    msg.pose.pose.orientation.x = pose_transformed.pose.orientation.x
+    msg.pose.pose.orientation.y = pose_transformed.pose.orientation.y
+    msg.pose.pose.orientation.z = pose_transformed.pose.orientation.z
+    msg.pose.pose.orientation.w = pose_transformed.pose.orientation.w
 
     msg.pose.covariance = np.diag([R_pos, R_pos, R_pos, R_rot, R_rot, R_rot]).flatten()
     target_rel_pub.publish(msg)
 
 rospy.init_node('fake_observation_node')
-target_pos_sub = rospy.Subscriber('/sparkgrasptar/world', PoseWithCovarianceStamped, target_cb, queue_size=1)
-drone_pos_sub = rospy.Subscriber('/mavros/local_position/pose', PoseStamped, drone_cb, queue_size=1)
+target_pos_sub = rospy.Subscriber('~target_global', PoseWithCovarianceStamped, target_cb, queue_size=1)
+drone_pos_sub = rospy.Subscriber('~drone_pose', PoseStamped, drone_cb, queue_size=1)
 
-target_rel_pub = rospy.Publisher('/perception/target_rel_estimate', PoseWithCovarianceStamped, queue_size=1)
-target_global_pub = rospy.Publisher('/perception/target_global_truth', PoseWithCovarianceStamped, queue_size=1)
+target_rel_pub = rospy.Publisher('~target_rel_obs', PoseWithCovarianceStamped, queue_size=1)
+target_global_pub = rospy.Publisher('~target_global_truth', PoseWithCovarianceStamped, queue_size=1)
+
+tf_buffer = tf2_ros.Buffer(rospy.Duration(100.0))  # tf buffer length
+tf_listener = tf2_ros.TransformListener(tf_buffer)
+
+target_origin_pose = PoseStamped()
+target_origin_pose.pose.position.x = 0
+target_origin_pose.pose.position.y = 0
+target_origin_pose.pose.position.z = 0
+target_origin_pose.pose.orientation.x = 0
+target_origin_pose.pose.orientation.y = 0
+target_origin_pose.pose.orientation.z = 0
+target_origin_pose.pose.orientation.w = 1
 
 rate = rospy.Rate(50)
 while not rospy.is_shutdown():

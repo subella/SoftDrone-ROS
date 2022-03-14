@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import rospy
 import numpy as np
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped
 import tf
+import tf2_ros
 
 
 #self._takeoff_offset = rospy.get_param("~takeoff_offset", 1.0)
@@ -16,15 +17,19 @@ yc = rospy.get_param("~y", 0.0)
 
 circumference = 2.0*np.pi*radius
 
-target_pub = rospy.Publisher("/sparkgrasptar/world", PoseWithCovarianceStamped, queue_size=1)
+target_pub = rospy.Publisher("~target_global", PoseWithCovarianceStamped, queue_size=1)
+tf_broadcaster = tf2_ros.TransformBroadcaster()
+target_transform = TransformStamped()
+target_transform.header.frame_id = "map"
+target_transform.child_frame_id = "target"
 
-period = circumference / speed
 msg = PoseWithCovarianceStamped()
 msg.pose.covariance = (0.001*np.eye(6).flatten()).tolist()
 rate = rospy.Rate(20)
 while not rospy.is_shutdown():
     t = rospy.Time.now().to_sec()
     if target_motion == 'circle':
+        period = circumference / speed
         x = xc + radius * np.cos(2.0*np.pi*t/period)
         y = yc + radius * np.sin(2.0*np.pi*t/period)
         q = [0,0,0,1]
@@ -47,6 +52,16 @@ while not rospy.is_shutdown():
     msg.pose.pose.orientation.y = q[1]
     msg.pose.pose.orientation.z = q[2]
     msg.pose.pose.orientation.w = q[3]
+
+    target_transform.header.stamp = rospy.Time.now()
+    target_transform.transform.translation.x = x
+    target_transform.transform.translation.y = y
+    target_transform.transform.translation.z = height
+    target_transform.transform.rotation.x = q[0]
+    target_transform.transform.rotation.y = q[1]
+    target_transform.transform.rotation.z = q[2]
+    target_transform.transform.rotation.w = q[3]
+    tf_broadcaster.sendTransform(target_transform)
 
     target_pub.publish(msg)
     rate.sleep()

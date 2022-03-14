@@ -45,7 +45,9 @@
 
     <!-- Launch the simulated target node -->
     <group if="$(arg launch_fake_target_node)">
-        <remap if="$(arg sim_target_as_tracker_output)" from="/sparkgrasptar/world" to="/tracker/target/pose"/>
+        <remap unless="$(arg sim_target_as_tracker_output)" from="target_global" to="/sparkgrasptar/world"/>
+        <remap if="$(arg sim_target_as_tracker_output)" from="target_global" to="/tracker_node/target_global_pos_estimate"/>
+
         <include file="$(find softdrone_core)/launch/nodes/fake_target_node.launch">
             <arg name="x" value="$(arg target_x)"/>
             <arg name="y" value="$(arg target_y)"/>
@@ -58,14 +60,19 @@
 
     <!-- Launch the core grasp state machine logic -->
     <group if="$(arg launch_grasp_state_machine_node)">
-        <remap from="/sparkgrasptar/world" to="/tracker/target/pose"/>
+        <remap from="/sparkgrasptar/world" to="/tracker_node/target_global_pose_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/grasp_state_machine_node.launch">
             <arg name="use_gripper" value="$(arg launch_gripper_node)"/>
         </include>
     </group>
 
     <!-- Launch the simulated perception logic -->
-    <include if="$(arg launch_fake_observation_node)" file="$(find softdrone_core)/launch/nodes/fake_observation_node.launch"/>
+    <group if="$(arg launch_fake_observation_node)">
+        <remap from="~target_rel_obs" to="pose_estimator_node/estimated_pose_out" />
+        <remap from="~drone_pose" to="/mavros/local_position/pose"/>
+        <remap from="~target_global" to="/sparkgrasptar/world"/>
+        <include file="$(find softdrone_core)/launch/nodes/fake_observation_node.launch"/>
+    </group>
 
     <group if="$(arg launch_d455)">
         <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
@@ -92,7 +99,7 @@
         <remap from="pose" to="/mavros/local_position/pose"/>
         <remap from="twist" to="/mavros/local_position/twist"/>
         <!--remap from="waypoint" to=""/-->
-        <remap from="target_pose" to="/tracker/target/pose"/>
+        <remap from="target_pose" to="tracker_node/target_global_pose_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/polynomial_planner_node.launch" />
     </group>
 
@@ -138,7 +145,7 @@
 
     <!-- Launch the EKF estimator that updates estimate of target's state -->
     <group if="$(arg launch_tracker_node)">
-        <remap from="~agent_odom" to="/mavros/odometry/in"/>
+        <remap from="~agent_odom" to="/mavros/odometry/in"/> <!-- TODO: change this so the tracker and Mavros both listen to the odom from the camera namespace -->
         <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
         <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
     </group>
