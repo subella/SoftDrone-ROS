@@ -49,6 +49,8 @@ rgbImageCallback(const ImageMsg& rgb_image_msg)
     return;
   }
 
+  time_stamp_ = rgb_image_msg->header.stamp;
+
   torch::Tensor tensor_kpts;
   bool success = DetectKeypoints(cv_ptr->image, tensor_kpts);
 
@@ -73,7 +75,7 @@ softdrone_target_pose_estimator::Keypoints2D KeypointDetectorROS::
 tensorToKeypoints2D(torch::Tensor& tensor_kpts)
 {
   Keypoints2D keypoints_2D_msg;
-  keypoints_2D_msg.header.stamp = ros::Time::now();
+  keypoints_2D_msg.header.stamp = time_stamp_;
   for (int i = 0; i < tensor_kpts.sizes()[1]; ++i)
     {
       Keypoint2D keypoint_2D_msg;

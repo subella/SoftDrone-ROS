@@ -33,7 +33,7 @@ PoseEstimatorROS(const ros::NodeHandle& nh,
 void PoseEstimatorROS::
 keypoints3DCallback(const Keypoints3DMsg& keypoints_3D_msg)
 {
-
+  time_stamp_ = keypoints_3D_msg.header.stamp;
   auto keypoints_3D = keypoints_3D_msg.keypoints_3D;
   int num_kpts = keypoints_3D.size();
   Eigen::MatrixX3d keypoints_3D_mat(num_kpts, 3);
@@ -74,7 +74,7 @@ keypoints3DToEigen(const std::vector<Keypoint3DMsg> keypoints_3D, Eigen::MatrixX
 void PoseEstimatorROS::
 keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg)
 {
-  keypoints_3D_msg.header.stamp = ros::Time::now();
+  keypoints_3D_msg.header.stamp = time_stamp_;
   for (int i=0; i < keypoints_3D_mat.rows(); i++)
   {
     Keypoint3DMsg keypoint_3D_msg;
@@ -89,7 +89,7 @@ keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMs
 void PoseEstimatorROS::
 eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& pose_cov)
 {
-  pose_cov.header.stamp = ros::Time::now();
+  pose_cov.header.stamp = time_stamp_;
   pose_cov.header.frame_id = "target_cam_color_optical_frame";
 
   pose_cov.pose.pose.position.x = t[0];

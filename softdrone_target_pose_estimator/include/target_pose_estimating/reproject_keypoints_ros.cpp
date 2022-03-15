@@ -27,6 +27,13 @@ ReprojectKeypointsROS(const ros::NodeHandle& nh)
 
   keypoints_2D_pub_ = nh_.advertise<Keypoints2DMsg>("keypoints_2d_out",  1);
   keypoints_3D_pub_ = nh_.advertise<Keypoints3DMsg>("keypoints_3d_out",  1);
+
+  // TODO: fix this architecture
+  Eigen::Matrix3d camera_intrinsics;
+  camera_intrinsics << 629.10406494140625,                  0,   637.203369140625,
+                         0,   637.203369140625,                  0,
+                         637.203369140625,                  0,   628.583251953125;
+  init(camera_intrinsics);
 };
 
 void ReprojectKeypointsROS::
@@ -60,6 +67,8 @@ keypoints2DCallback(const Keypoints2DMsg::ConstPtr& keypoints_2D_msg, const Imag
     return;
   }
 
+  time_stamp_ = keypoints_2D_msg->header.stamp;
+
   auto keypoints_2D = keypoints_2D_msg->keypoints_2D;
   int num_kpts = keypoints_2D.size();
   auto depth_img = cv_ptr->image;
@@ -82,6 +91,7 @@ keypoints2DCallback(const Keypoints2DMsg::ConstPtr& keypoints_2D_msg, const Imag
 void ReprojectKeypointsROS::
 keypoints3DCallback(const Keypoints3DMsg& keypoints_3D_msg)
 {
+  time_stamp_ = keypoints_3D_msg.header.stamp;
   auto keypoints_3D = keypoints_3D_msg.keypoints_3D;
   int num_kpts = keypoints_3D.size();
 
@@ -126,7 +136,7 @@ makeKeypoints2DMat(const std::vector<Keypoint2DMsg>& keypoints_2D, Eigen::Matrix
 void ReprojectKeypointsROS::
 keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg)
 {
-  keypoints_3D_msg.header.stamp = ros::Time::now();
+  keypoints_3D_msg.header.stamp = time_stamp_;
   for (int i=0; i < keypoints_3D_mat.rows(); i++)
   {
     Keypoint3DMsg keypoint_3D_msg;
@@ -141,7 +151,7 @@ keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMs
 void ReprojectKeypointsROS::
 keypoints2DMatToKeypoints2DMsg(Eigen::MatrixX2i& keypoints_2D_mat, Keypoints2DMsg& keypoints_2D_msg)
 {
-  keypoints_2D_msg.header.stamp = ros::Time::now();
+  keypoints_2D_msg.header.stamp = time_stamp_;
   for (int i=0; i < keypoints_2D_mat.rows(); i++)
   {
     Keypoint2DMsg keypoint_2D_msg;

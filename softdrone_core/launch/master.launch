@@ -112,6 +112,7 @@
     <!-- Launching Perception Stack -->
     <group if="$(arg launch_keypoint_detector_node)">
         <remap from="~rgb_img_in" to="target_cam/color/image_raw"/>
+        <remap from="~rgb_img_in/compressed" to="target_cam/color/image_raw/compressed"/>
         <include file="$(find softdrone_core)/launch/nodes/keypoint_detector_node.launch" />
     </group>
 
@@ -129,6 +130,7 @@
 
     <group if="$(arg launch_plotter_node)" >
         <remap from="~rgb_img_in" to="target_cam/color/image_raw"/>
+        <remap from="~rgb_img_in/compressed" to="target_cam/color/image_raw/compressed"/>
         <remap from="~cad_keypoints_in" to="pose_estimator_node/transformed_cad_out"/>
         <remap from="~estimated_pose_in" to="pose_estimator_node/estimated_pose_out"/>
         <include file="$(find softdrone_core)/launch/nodes/plotter_node.launch" />

@@ -55,7 +55,7 @@ class KeypointDetectorROS : public KeypointDetector {
 
     void rgbImageCallback(const ImageMsg& rgb_img);
 
-    static Keypoints2D tensorToKeypoints2D(torch::Tensor& tensor_kpts);
+    Keypoints2D tensorToKeypoints2D(torch::Tensor& tensor_kpts);
     
 };
 
