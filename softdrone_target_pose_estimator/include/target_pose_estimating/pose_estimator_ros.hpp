@@ -51,6 +51,10 @@ class PoseEstimatorROS : public PoseEstimator {
 
     ros::Publisher transformed_cad_frame_pub_;
 
+    double observation_covariance_translation_;
+
+    double observation_covariance_rotation_;
+
     void keypoints3DCallback(const Keypoints3DMsg& keypoints_3D_msg);
 
     void keypoints3DToEigen(const std::vector<Keypoint3DMsg> keypoints_3D, Eigen::MatrixX3d& keypoints_3D_mat);

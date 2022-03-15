@@ -28,6 +28,9 @@ PoseEstimatorROS(const ros::NodeHandle& nh,
   keypoints_sub_ = nh_.subscribe("keypoints_3d_in", 1, &PoseEstimatorROS::keypoints3DCallback, this);
   pose_pub_ = nh_.advertise<PoseWCov>("estimated_pose_out",  1);
   transformed_cad_frame_pub_ = nh_.advertise<Keypoints3DMsg>("transformed_cad_out",  1);
+
+  nh_.getParam("observation_covariance_translation", observation_covariance_translation_);
+  nh_.getParam("observation_covariance_rotation", observation_covariance_rotation_);
 };
 
 void PoseEstimatorROS::
@@ -92,9 +95,9 @@ eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& po
   pose_cov.header.stamp = time_stamp_;
   pose_cov.header.frame_id = "target_cam_color_optical_frame";
 
-  pose_cov.pose.pose.position.x = t[0];
-  pose_cov.pose.pose.position.y = t[1];
-  pose_cov.pose.pose.position.z = t[2];
+  pose_cov.pose.pose.position.x = t[0]/1000.;
+  pose_cov.pose.pose.position.y = t[1]/1000.;
+  pose_cov.pose.pose.position.z = t[2]/1000.;
   
   Eigen::Quaterniond q(R);
   pose_cov.pose.pose.orientation.w = q.w();
@@ -103,12 +106,12 @@ eigenToPoseWCov(const Eigen::Matrix3d& R, const Eigen::Vector3d& t, PoseWCov& po
   pose_cov.pose.pose.orientation.z = q.z();
 
   Eigen::MatrixXd cov = Eigen::MatrixXd::Identity(6,6);
-  cov(0,0) = 0.5;
-  cov(1,1) = 0.5;
-  cov(2,2) = 0.5;
-  cov(3,3) = .1;
-  cov(4,4) = .1;
-  cov(5,5) = .1;
+  cov(0,0) = observation_covariance_translation_;
+  cov(1,1) = observation_covariance_translation_;
+  cov(2,2) = observation_covariance_translation_;
+  cov(3,3) = observation_covariance_rotation_;
+  cov(4,4) = observation_covariance_rotation_;
+  cov(5,5) = observation_covariance_rotation_;
   eigenMatToCov(cov, pose_cov);
 
 }

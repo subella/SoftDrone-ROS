@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="softdrone_target_tracking"
+          name="tracker_node"
+          type="tracker_node"
+          output="screen">
+        <rosparam command="load" file="$(find softdrone_core)/config/tracker_node.yaml"/>
+    </node>
+</launch>

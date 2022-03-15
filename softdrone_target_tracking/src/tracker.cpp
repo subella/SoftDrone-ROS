@@ -15,6 +15,8 @@ Tracker::
 Tracker()
 {
   is_initialized_ = false;
+  process_covariance_trans_ = 0;
+  process_covariance_rot_ = 0;
 };
 
 Tracker::
@@ -101,15 +103,21 @@ update(const Belief6D &b_target_meas)
     // z(1) = z(1)/1000.;
     // z(2) = z(2)/1000.;
 
-    std::cout << "z: " << z << std::endl;
-    std::cout << "x: " << x << std::endl;
-
     Mat66 R, P;
     copyCovarianceToMat66(b_target_meas, R);
     copyCovarianceToMat66(b_target_6D_, P);
 
-    Mat66 W = 0.01*Eigen::MatrixXd::Identity(6,6);
-    Mat66 S = P + R + W;
+    Mat66 W = Eigen::MatrixXd::Identity(6,6);
+    W(0,0) = process_covariance_trans_;
+    W(1,1) = process_covariance_trans_;
+    W(2,2) = process_covariance_trans_;
+    W(3,3) = process_covariance_rot_;
+    W(4,4) = process_covariance_rot_;
+    W(5,5) = process_covariance_rot_;
+    //Mat66 S = (P + W) + R;
+    //Mat66 K = P*S.inverse();
+    P += W;
+    Mat66 S = P + R;
     Mat66 K = P*S.inverse();
 
     Mat61 y = z - x;

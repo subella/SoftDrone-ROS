@@ -22,6 +22,8 @@ TrackerROS(const ros::NodeHandle &nh)
   is_initialized_ = false;
   target_pub_ = nh_.advertise<PoseWCovStamp>("target_global_pose_estimate",  1);
   sync_.registerCallback(boost::bind(&TrackerROS::syncCallback, this, _1, _2));
+  nh_.getParam("process_covariance_translation", process_covariance_trans_);
+  nh_.getParam("process_covariance_rotation", process_covariance_rot_);
 };
 
 TrackerROS::Pose TrackerROS::
@@ -195,9 +197,9 @@ TrackerROS::Pose6D TrackerROS::
 getPose6DFromPoseWCov(const PoseWCov &pwc)
 {
   Pose7D p7D;
-  p7D.m_coords[0] = pwc.pose.position.x/1000.;
-  p7D.m_coords[1] = pwc.pose.position.y/1000.;
-  p7D.m_coords[2] = pwc.pose.position.z/1000.;
+  p7D.m_coords[0] = pwc.pose.position.x;
+  p7D.m_coords[1] = pwc.pose.position.y;
+  p7D.m_coords[2] = pwc.pose.position.z;
   p7D.m_quat.r() = pwc.pose.orientation.w;
   p7D.m_quat.x() = pwc.pose.orientation.x;
   p7D.m_quat.y() = pwc.pose.orientation.y;

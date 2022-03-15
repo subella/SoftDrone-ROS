@@ -1,7 +1,10 @@
-cad_frame_file_name: "$(env HOME)/CadFrames/box.csv"
+cad_frame_file_name: "$(env HOME)/CadFrames/mocap_target.csv"
 noise_bound: 10
 cbar2: 1
 estimate_scaling: false
 rotation_max_iterations: 100
 rotatation_gnc_factor: 1.4
 rotation_cost_threshold: 0.005
+
+observation_covariance_translation: 0.2
+observation_covariance_rotation: 0.05

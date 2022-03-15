@@ -1,2 +1,2 @@
-model_file_name: "$(env HOME)/KeypointDetectorModels/model_hardware_jitted"
+model_file_name: "$(env HOME)/KeypointDetectorModels/deployed_keypoint_detector_hardware_mocap.pt"
 should_publish_annotated_img: true

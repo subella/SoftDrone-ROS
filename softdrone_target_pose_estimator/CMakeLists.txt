@@ -5,6 +5,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   roscpp
   std_msgs
+  tf2
+  tf2_ros
   sensor_msgs
   cv_bridge
   image_transport
@@ -39,6 +41,9 @@ catkin_package(
                   cv_bridge
                   image_transport
                   message_runtime
+                  tf2
+                  tf2_ros
+                  geometry_msgs
 )
 
 include_directories(

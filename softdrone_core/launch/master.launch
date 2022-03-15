@@ -139,7 +139,8 @@
         <remap from="~rgb_img_in" to="target_cam/color/image_raw"/>
         <remap from="~rgb_img_in/compressed" to="target_cam/color/image_raw/compressed"/>
         <remap from="~cad_keypoints_in" to="pose_estimator_node/transformed_cad_out"/>
-        <remap from="~estimated_pose_in" to="pose_estimator_node/estimated_pose_out"/>
+        <!--remap from="~estimated_pose_in" to="pose_estimator_node/estimated_pose_out"/-->
+        <remap from="~estimated_pose_in" to="tracker_node/target_global_pose_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/plotter_node.launch" />
     </group>
 
@@ -147,7 +148,7 @@
     <group if="$(arg launch_tracker_node)">
         <remap from="~agent_odom" to="/mavros/odometry/in"/> <!-- TODO: change this so the tracker and Mavros both listen to the odom from the camera namespace -->
         <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
-        <include file="$(find softdrone_target_tracking)/launch/tracker.launch"/>
+        <include file="$(find softdrone_core)/launch/nodes/tracker_node.launch"/>
     </group>
 
     <group if="$(arg launch_dummy_tracker_node)">

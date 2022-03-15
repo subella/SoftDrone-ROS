@@ -21,6 +21,8 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <target_pose_estimating/plotter.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include "softdrone_target_pose_estimator/Keypoints2D.h"
 #include "softdrone_target_pose_estimator/Keypoints3D.h"
@@ -44,6 +46,10 @@ class PlotterROS : public Plotter {
   private:
 
     ros::NodeHandle nh_;
+
+    tf2_ros::Buffer tf_buffer_;
+
+    tf2_ros::TransformListener tf_listener_;
 
     image_transport::ImageTransport it_;
 

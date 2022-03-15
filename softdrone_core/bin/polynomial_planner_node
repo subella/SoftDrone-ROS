@@ -220,7 +220,7 @@ rospy.init_node('polynomial_generator')
 
 pg = PolynomialGenerator()
 
-rate = rospy.Rate(2)
+rate = rospy.Rate(0.1)
 while not rospy.is_shutdown():
     pg.update_waypoint_trajectory()
     pg.update_grasp_trajectory()

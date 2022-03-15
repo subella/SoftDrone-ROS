@@ -56,6 +56,9 @@ class Tracker {
     Belief7D b_target_;
     Belief6D b_target_6D_;
 
+    double process_covariance_trans_;
+    double process_covariance_rot_;
+
     /** \brief */
     void init(const Belief7D &b_target_meas);
     void init(const Belief6D &b_target_meas);

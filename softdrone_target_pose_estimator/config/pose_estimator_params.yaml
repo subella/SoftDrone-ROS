@@ -9,3 +9,4 @@ pose_estimator_params:
   rotation_max_iterations: 100
   rotatation_gnc_factor: 1.4
   rotation_cost_threshold: 0.005
+
