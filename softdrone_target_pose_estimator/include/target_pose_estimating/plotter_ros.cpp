@@ -31,7 +31,6 @@ PlotterROS(const ros::NodeHandle& nh)
 void PlotterROS::
 cadKeypointsCallback(const Keypoints3DMsg& cad_frame_keypoints_msg)
 {
-  ROS_INFO_STREAM("CAD CALLED");
   if (is_initialized_)
     return;
 
@@ -45,7 +44,6 @@ void PlotterROS::
 annotateCadFrameCallback(const ImageMsg::ConstPtr& rgb_img_msg,
                          const PoseWCov::ConstPtr& pose_msg)
 {
-  ROS_INFO_STREAM("CALLED");
   if (!is_initialized_)
     return;
 
