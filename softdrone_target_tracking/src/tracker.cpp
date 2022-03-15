@@ -11,6 +11,12 @@
 namespace sdrone
 {
 
+double returnNearestAngle(double x, double z) {
+    double diff = z - x;
+    diff += (diff > M_PI) ? -2*M_PI : (diff < -M_PI) ? 2*M_PI : 0;
+    return x + diff;
+}
+
 Tracker::
 Tracker()
 {
@@ -103,6 +109,10 @@ update(const Belief6D &b_target_meas)
     // z(1) = z(1)/1000.;
     // z(2) = z(2)/1000.;
 
+    z(3) = returnNearestAngle(x(3), z(3));
+    z(4) = returnNearestAngle(x(4), z(4));
+    z(5) = returnNearestAngle(x(5), z(5));
+
     Mat66 R, P;
     copyCovarianceToMat66(b_target_meas, R);
     copyCovarianceToMat66(b_target_6D_, P);
@@ -114,9 +124,7 @@ update(const Belief6D &b_target_meas)
     W(3,3) = process_covariance_rot_;
     W(4,4) = process_covariance_rot_;
     W(5,5) = process_covariance_rot_;
-    //Mat66 S = (P + W) + R;
-    //Mat66 K = P*S.inverse();
-    P += W;
+    P += W; // This is like the prediction step for 0-mean prior on plant update
     Mat66 S = P + R;
     Mat66 K = P*S.inverse();
 
