@@ -1,0 +1,18 @@
+target_grasp_angle: 0.0
+grasp_start_horz_offset: 2.0
+grasp_start_vert_offset: 1.0
+
+drop_position: [0.0, 1.0, 1.0]
+takeoff_offset: 1.0
+rise_offset: [0.0, 0.0, 1.0]
+open_lengths: [190, 190, 208, 208]
+land_threshold: 0.001
+dist_threshold: 0.2
+replan_during_grasp_trajectory: False
+grasp_attempted_tolerance: 1
+average_polynomial_velocity: 0.8
+desired_yaw: -1.57
+ground_effect_stop_time: 10.0
+require_grasp_confirmation: False
+control_rate: 100
+

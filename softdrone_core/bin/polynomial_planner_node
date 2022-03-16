@@ -46,15 +46,15 @@ class PolynomialGenerator:
 
         self.offset = rospy.get_param("~offset", [0, 0, -0.2])
 
-        rospy.Subscriber('pose', PoseStamped, self.set_pose_cb)
-        rospy.Subscriber('twist', TwistStamped, self.set_twist_cb)
-        rospy.Subscriber('waypoint', PoseStamped, self.set_waypoint_cb)
-        rospy.Subscriber('target_pose', PoseWithCovarianceStamped, self.set_target_pose_cb)
+        rospy.Subscriber('~pose', PoseStamped, self.set_pose_cb)
+        rospy.Subscriber('~twist', TwistStamped, self.set_twist_cb)
+        rospy.Subscriber('~waypoint', PoseStamped, self.set_waypoint_cb)
+        rospy.Subscriber('~target_pose', PoseWithCovarianceStamped, self.set_target_pose_cb)
 
-        self.waypoint_polynomial_publisher = rospy.Publisher('waypoint_polynomial', PolynomialTrajectory, queue_size=1) 
-        self.grasp_trajectory_publisher = rospy.Publisher('grasp_trajectory', GraspTrajectory, queue_size=1) 
+        self.waypoint_polynomial_publisher = rospy.Publisher('~waypoint_polynomial', PolynomialTrajectory, queue_size=1) 
+        self.grasp_trajectory_publisher = rospy.Publisher('~grasp_trajectory', GraspTrajectory, queue_size=1) 
 
-        self.trajectory_viz_pub = rospy.Publisher("viz", MarkerArray, queue_size=1, latch=True)
+        self.trajectory_viz_pub = rospy.Publisher("~viz", MarkerArray, queue_size=1, latch=True)
 
 
     def set_target_pose_cb(self, msg):
@@ -220,7 +220,7 @@ rospy.init_node('polynomial_generator')
 
 pg = PolynomialGenerator()
 
-rate = rospy.Rate(0.1)
+rate = rospy.Rate(5)
 while not rospy.is_shutdown():
     pg.update_waypoint_trajectory()
     pg.update_grasp_trajectory()
