@@ -25,7 +25,7 @@ class GripperNode:
 
     def __init__(self):
         """Grab the device and start up."""
-        self._port = rospy.get_param("~serial_port", "/dev/ttyACM0")
+        self._port = rospy.get_param("~serial_port", "/dev/arduino0")
         self._baud_rate = rospy.get_param("~baud_rate", 57600)
         self._lengths = [190, 190, 208, 208]
         self._initial_lengths = [190, 190, 208, 208]
