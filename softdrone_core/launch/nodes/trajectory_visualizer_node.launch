@@ -1,0 +1,3 @@
+<launch>
+    <node name="trajectory_visualizer_node" pkg="softdrone_core" type="trajectory_visualizer_node" output="screen"/>
+</launch>

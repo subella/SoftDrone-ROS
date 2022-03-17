@@ -1,5 +1,5 @@
 <launch>
     <node pkg="softdrone_core" type="fake_observation_node" name="fake_observation_node" output="screen">
+        <rosparam command="load" file="$(find softdrone_core)/config/fake_observation_node.yaml" />
     </node>
-
 </launch>

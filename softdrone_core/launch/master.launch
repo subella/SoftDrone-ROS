@@ -21,6 +21,7 @@
     <arg name="launch_reproject_keypoints_node" default="false"/>
     <arg name="launch_pose_estimator_node" default="false"/>
     <arg name="launch_plotter_node" default="false"/>
+    <arg name="launch_trajectory_visualizer_node" default="false"/>
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
     <arg name="sim_target_as_tracker_output" default="$(eval not arg('launch_tracker_node'))" doc="Map the simulated target pose to the tracker output topic"/>
@@ -60,10 +61,27 @@
 
     <!-- Launch the core grasp state machine logic -->
     <group if="$(arg launch_grasp_state_machine_node)">
-        <remap from="/sparkgrasptar/world" to="/tracker_node/target_global_pose_estimate"/>
-        <include file="$(find softdrone_core)/launch/nodes/grasp_state_machine_node.launch">
-            <arg name="use_gripper" value="$(arg launch_gripper_node)"/>
-        </include>
+
+        <remap from="~state" to="/mavros/state"/>
+        <remap from="~pose" to="/mavros/local_position/pose"/>
+        <remap from="~waypoint_polynomial" to="polynomial_planner_node/waypoint_polynomial"/>
+        <remap from="~grasp_trajectory" to="polynomial_planner_node/grasp_trajectory"/>
+        <remap from="~grasp_target" to="/tracker_node/target_global_pose_estimate"/>
+        <remap from="~target" to="/mavros/setpoint_raw/local"/>
+        <remap from="~lengths" to="gripper_node/lengths"/>
+
+        <include file="$(find softdrone_core)/launch/nodes/grasp_state_machine_node.launch"/>
+    </group>
+
+    <group if="$(arg launch_trajectory_visualizer_node)" >
+        <remap from="~waypoint_polynomial" to="polynomial_planner_node/waypoint_polynomial"/>
+        <remap from="~grasp_trajectory" to="polynomial_planner_node/grasp_trajectory"/>
+        <include file="$(find softdrone_core)/launch/nodes/trajectory_visualizer_node.launch"/>
+    </group>
+
+
+    <group if="$(arg launch_gripper_node)">
+        <include file="$(find softdrone_core)/launch/nodes/gripper_node.launch"/>
     </group>
 
     <!-- Launch the simulated perception logic -->
@@ -96,10 +114,10 @@
 
     <!-- Launch the trajectory planner. -->
     <group if="$(arg launch_polynomial_planner_node)">
-        <remap from="pose" to="/mavros/local_position/pose"/>
-        <remap from="twist" to="/mavros/local_position/twist"/>
-        <!--remap from="waypoint" to=""/-->
-        <remap from="target_pose" to="tracker_node/target_global_pose_estimate"/>
+        <remap from="~pose" to="/mavros/local_position/pose"/>
+        <remap from="~twist" to="/mavros/local_position/twist"/>
+        <remap from="~waypoint" to="/grasp_state_machine_node/waypoint"/>
+        <remap from="~target_pose" to="tracker_node/target_global_pose_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/polynomial_planner_node.launch" />
     </group>
 

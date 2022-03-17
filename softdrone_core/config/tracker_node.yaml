@@ -1,2 +1,4 @@
-process_covariance_translation: 0.005
-process_covariance_rotation: 0.001
+process_covariance_translation: 0.001
+process_covariance_rotation: 0.0005
+
+ekf_output_rate: 30.0

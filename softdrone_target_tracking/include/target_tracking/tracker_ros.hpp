@@ -74,12 +74,16 @@ class TrackerROS : public Tracker {
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
 
+    ros::Timer publish_timer_;
+
     /** \brief */
     void syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs);
 
     /** \brief */
     void publishResults7D();
     void publishResults6D();
+
+    void ekfOutputCallback();
 
     /** \brief */
     static Belief7D belief7DFromPoseWCov(const PoseWCov &pwc);

@@ -16,7 +16,7 @@ TrackerROS(const ros::NodeHandle &nh)
   : nh_(nh), 
     agent_sub_(nh_, "agent_odom", 1),
     target_rel_sub_(nh_, "estimated_relative_pose", 1),
-    sync_(SyncPolicy(10), agent_sub_, target_rel_sub_),
+    sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_),
     tf_listener_(tf_buffer_)
 {
   is_initialized_ = false;
@@ -24,7 +24,18 @@ TrackerROS(const ros::NodeHandle &nh)
   sync_.registerCallback(boost::bind(&TrackerROS::syncCallback, this, _1, _2));
   nh_.getParam("process_covariance_translation", process_covariance_trans_);
   nh_.getParam("process_covariance_rotation", process_covariance_rot_);
+  double ekf_output_rate;
+  nh_.getParam("ekf_output_rate", ekf_output_rate);
+
+  publish_timer_ = nh_.createTimer(ros::Duration(1/ekf_output_rate), boost::bind(&TrackerROS::ekfOutputCallback, this));
+
 };
+
+void TrackerROS::ekfOutputCallback() {
+  if (is_initialized_) {
+    publishResults6D();
+  }
+}
 
 TrackerROS::Pose TrackerROS::
 samplePose(const Eigen::VectorXd &mu,
@@ -56,7 +67,7 @@ samplePose(const Eigen::VectorXd &mu,
 void TrackerROS::
 syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs)
 {
-  time_stamp_ = odom->header.stamp;
+  //time_stamp_ = odom->header.stamp;
   frame_id_ = odom->header.frame_id;
 
   geometry_msgs::TransformStamped optical_to_body_tf = 
@@ -83,14 +94,13 @@ syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamp::ConstPtr &pwcs)
   Belief6D b_target_rel = belief6DFromPoseWCov(pwcs_body.pose);
   Belief6D b_target_meas = b_agent + b_target_rel;
   update(b_target_meas);
-  publishResults6D();
 };
 
 void TrackerROS::
 publishResults7D()
 {
   PoseWCovStamp pwcs;
-  pwcs.header.stamp = time_stamp_;
+  pwcs.header.stamp = ros::Time::now();
   pwcs.header.frame_id = frame_id_;
   pwcs.pose = poseWCovFromBelief(b_target_);
   target_pub_.publish(pwcs);
@@ -100,7 +110,7 @@ void TrackerROS::
 publishResults6D()
 {
   PoseWCovStamp pwcs;
-  pwcs.header.stamp = time_stamp_;
+  pwcs.header.stamp = ros::Time::now();
   pwcs.header.frame_id = frame_id_;
   pwcs.pose = poseWCovFromBelief(b_target_6D_);
   target_pub_.publish(pwcs);

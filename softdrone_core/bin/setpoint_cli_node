@@ -3,7 +3,7 @@ import numpy as np
 import rospy
 from mavros_msgs.msg import PositionTarget
 from geometry_msgs.msg import PoseStamped
-from mavros_msgs.srv import CommandBool
+from mavros_msgs.srv import CommandBool, SetMode
 import tf
 
 # setpoint params
@@ -33,6 +33,7 @@ def mavros_cmd_cb(event):
     global x,y,z,yaw
     msg = PositionTarget()
     msg.header.stamp = rospy.Time.now()
+    msg.header.frame_id = 'map'
     msg.coordinate_frame = PositionTarget.FRAME_LOCAL_NED
     msg.position.x = x
     msg.position.y = y
@@ -63,10 +64,17 @@ def timer_cb(event):
     msg.pose.orientation.w = q[3]
     waypoint_pub.publish(msg)
 
+def request_offboard(set_mode_client):
+    result = set_mode_client(0, "offboard")
+    return result.mode_sent
+
+
 rospy.init_node('setpoint_cli_node')
 
 setpoint_pub = rospy.Publisher('/mavros/setpoint_raw/local', PositionTarget, queue_size=1)
 waypoint_pub = rospy.Publisher('waypoint', PoseStamped, queue_size=1)
+
+set_mode_client = rospy.ServiceProxy("mavros/set_mode", SetMode)
 
 
 have_sent_waypoint = False
@@ -94,6 +102,8 @@ while not rospy.is_shutdown():
         if not have_sent_waypoint:
             have_sent_waypoint = True
             rospy.Timer(rospy.Duration(0.1), circle_cmd_cb, oneshot=False)
+    elif inp == 'offboard':
+        request_offboard(set_mode_client)
     else:
         toks = [float(t) for t in inp.split(',')]
         if len(toks) != 4:
@@ -103,7 +113,7 @@ while not rospy.is_shutdown():
 
         if not have_sent_waypoint:
             have_sent_waypoint = True
-            rospy.Timer(rospy.Duration(0.1), timer_cb, oneshot=False) 
+            rospy.Timer(rospy.Duration(0.05), timer_cb, oneshot=False) 
             if send_to_mavros:
-                rospy.Timer(rospy.Duration(0.03), mavros_cmd_cb, oneshot=False)
+                rospy.Timer(rospy.Duration(0.01), mavros_cmd_cb, oneshot=False)
 

@@ -1,0 +1,2 @@
+observation_frame: "base_link" # use if no d455
+#observation_frame: "target_cam_color_optical_frame" # Use if d455 running

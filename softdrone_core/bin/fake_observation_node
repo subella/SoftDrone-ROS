@@ -56,12 +56,12 @@ def target_cb(msg):
 
 def publish_relative_target_observation():
 
-    #                                       target frame, source frame, time, timeout
-
+    global observation_frame
+    #                                           target frame, source frame, time, timeout
     try:
-        transform = tf_buffer.lookup_transform('target_cam_color_optical_frame', 'target', rospy.Time.now(), rospy.Duration(5.0))
+        transform = tf_buffer.lookup_transform(observation_frame, 'target', rospy.Time.now(), rospy.Duration(5.0))
     except:
-        rospy.logwarn("Cannot transform target frame to target_cam_color_optical_frame")
+        rospy.logwarn("Cannot transform target frame to %s" % observation_frame)
         return
 
     pose_transformed = tf2_geometry_msgs.do_transform_pose(target_origin_pose, transform)    
@@ -84,7 +84,7 @@ def publish_relative_target_observation():
 
     msg = PoseWithCovarianceStamped()
     msg.header.stamp = rospy.Time.now()
-    msg.header.frame_id = 'target_cam_color_optical_frame'
+    msg.header.frame_id = observation_frame
 
     msg.pose.pose.position.x = pose_transformed.pose.position.x + np.random.randn()*eps_pos
     msg.pose.pose.position.y = pose_transformed.pose.position.y + np.random.randn()*eps_pos
@@ -99,6 +99,8 @@ def publish_relative_target_observation():
     target_rel_pub.publish(msg)
 
 rospy.init_node('fake_observation_node')
+
+observation_frame = rospy.get_param('~observation_frame', 'base_link')
 target_pos_sub = rospy.Subscriber('~target_global', PoseWithCovarianceStamped, target_cb, queue_size=1)
 drone_pos_sub = rospy.Subscriber('~drone_pose', PoseStamped, drone_cb, queue_size=1)
 
