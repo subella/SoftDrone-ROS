@@ -106,6 +106,7 @@ class GraspStateMachine:
         self._target_grasp_angle = rospy.get_param("~target_grasp_angle", 0.0)
         self._grasp_start_horz_offset = rospy.get_param("~grasp_start_horz_offset", 2.0)
         self._grasp_start_vert_offset = rospy.get_param("~grasp_start_vert_offset", 1.0)
+        self._trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 2.)
 
         self._drop_position = np.array(rospy.get_param("~drop_position", [0.0, 1.0, 1.0]))
 
@@ -228,8 +229,7 @@ class GraspStateMachine:
         grasp_lengths = LengthInfo(init_lengths, open_lengths, grasp_lengths, lng.open_time, lng.grasp_time)
         gripper_latency = lng.gripper_latency
 
-        trajectory_settle_time = 2. # TODO: Set this from a parameter somewhere
-        trajectory_tracker = InterpTrajectoryTracker(polynomial, grasp_lengths, gripper_latency=gripper_latency, settle_time=trajectory_settle_time)
+        trajectory_tracker = InterpTrajectoryTracker(polynomial, grasp_lengths, gripper_latency=gripper_latency, settle_time=self._trajectory_settle_time)
 
         self._last_grasp_trajectory_update = rospy.Time.now()
         self._grasp_trajectory_tracker = trajectory_tracker

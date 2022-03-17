@@ -16,3 +16,5 @@ ground_effect_stop_time: 10.0
 require_grasp_confirmation: False
 control_rate: 100
 
+trajectory_settle_time: 2.0
+
