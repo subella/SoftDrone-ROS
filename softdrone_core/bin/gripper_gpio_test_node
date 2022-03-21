@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+"""Script to get a positions/velocities/lengths trajectory."""
+import sys
+import rospy
+import numpy as np
+import std_msgs.msg
+import rospkg
+import time
+
+from softdrone.python.control.find_trajectory import find_trajectory_for_interp
+import softdrone_core
+
+def log_data(data): #only used for debugging
+    t = rospy.Time.from_sec(time.time())
+    log_data.t_sec_prev = log_data.t_sec
+    log_data.t_sec = t.to_sec() #floating point
+    dt = log_data.t_sec-log_data.t_sec_prev
+
+    rospack = rospkg.RosPack()
+    filepath_lengths = rospack.get_path('softdrone_core') + "/data/gripper_lengths.csv"
+    filepath_times = rospack.get_path('softdrone_core') + "/data/gripper_times.csv"
+
+    # print(data)
+    arr = np.array(data)
+    print(data)
+
+    if log_data.init == 0:
+        #write lengths
+        f_lengths=open(filepath_lengths, 'w')
+        np.savetxt(f_lengths, [data], fmt="%s", delimiter=",")
+        f_lengths.close()
+
+        #write times
+        f_times=open(filepath_times,"w")
+        np.savetxt(f_times, [int(log_data.t_accum*1000)], fmt="%s", delimiter=",")
+        f_times.close()
+
+        log_data.init = 1
+    else:
+        #write lengths
+        f_lengths=open(filepath_lengths, 'a')
+        np.savetxt(f_lengths, [data], fmt="%s", delimiter=",")
+        f_lengths.close()
+
+        #write times
+        log_data.t_accum = log_data.t_accum + dt
+        f_times=open(filepath_times,"a")
+        np.savetxt(f_times, [int(log_data.t_accum*1000)], fmt="%s", delimiter=",")
+        f_times.close()
+
+
+def send_lengths(pub, lengths, scale=True):
+    """Set a length target to the gripper."""
+    msg = std_msgs.msg.Int64MultiArray()
+    if scale:
+        msg.data = [int(1000 * length) for length in lengths]
+    else:
+        msg.data = [int(length) for length in lengths]
+
+    msg_dim = std_msgs.msg.MultiArrayDimension()
+    msg_dim.label = "data"
+    msg_dim.size = 4
+    msg_dim.stride = 4
+
+    msg.layout.dim.append(msg_dim)
+    msg.layout.data_offset = 0
+    # print(msg)
+    # print("---------------------------------------------------")
+    log_data(msg.data)
+    pub.publish(msg)
+
+log_data.init = 0
+log_data.t_sec = 0
+log_data.t_sec_prev = 0
+log_data.t_accum = 0
+
+def main():
+    """Run everything."""
+    global tendon_target
+    rospy.init_node("gripper_gpio_test_node")
+    pub = rospy.Publisher("lengths", std_msgs.msg.Int64MultiArray, queue_size=10)
+
+    intermediate_distance = 0.1
+    num_frames = rospy.get_param("~num_frames", 2)
+
+    grasp_position = np.array([2.0, 2.0, 0.5])
+    start_position = np.array(rospy.get_param("~start_position", [0, 0, 1.5]))
+    grasp_target = grasp_position - np.array(rospy.get_param("~offset", [0, 0, -0.2]))
+
+    end_time = np.array(rospy.get_param("~end_time", 2))
+    end_velocity = np.array(rospy.get_param("~end_velocity", [0, 0, 0]))
+    end_offset = np.array(rospy.get_param("~end_offset", [0, 0, 0]))
+    end_position = grasp_position + end_offset
+
+    start_position[1] = grasp_target[1]  # force planar trajectory
+
+    planner = find_trajectory_for_interp
+    polynomial, lengths = planner(
+        start_position=start_position,
+        grasp_axis=0,
+        grasp_position=grasp_position,
+        grasp_target=grasp_target,
+        grasp_time=4.0,
+        grasp_velocity=np.array([0.0, 0.0, 0.0]),
+        open_distance=0.1,
+        use_offline_lengths=True,
+        end_time=end_time,
+        end_position=end_position,
+        end_velocity=end_velocity,
+    )
+    print(lengths)
+
+    rospy.loginfo("Replaying lengths")
+    start_time = rospy.Time.now()
+    rate = rospy.Rate(50)  # the actual code runs at 100
+    while not rospy.is_shutdown():
+        t = (rospy.Time.now() - start_time).to_sec()
+        if t > polynomial._total_time:
+            rospy.sleep(5)
+            send_lengths(pub, [.190, .190, .208, .208])
+            break
+
+        send_lengths(pub, lengths.interp(t))
+        rate.sleep()
+
+    rospy.logwarn("Finished! Exiting")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,17 @@
+<launch>
+
+    <arg name="use_gripper" default="false"/>
+
+    <node pkg="softdrone_core" type="gripper_gpio_test_node" name="gripper_gpio_test_node" output="screen">
+        <remap from="lengths" to="/gripper/lengths"/>
+        <param name="total_time" value="5.0"/>
+        <rosparam param="start_position">[0.0, -1.0, 1.5]</rosparam>
+        <rosparam param="offset">[0, 0, -0.150]</rosparam>
+        <rosparam param="end_velocity">[0, 0.5, -0.1]</rosparam>
+    </node>
+
+    <node if="$(arg use_gripper)" pkg="softdrone_core" type="gripper_gpio_node" name="gripper" output="screen">
+        <remap from="lengths" to="/gripper/lengths"/>
+    </node>
+
+</launch>

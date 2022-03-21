@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+"""Node to control the gripper via GPIOs on Xavier NX."""
+import rospy
+import std_srvs.srv
+import RPi.GPIO as GPIO
+from std_msgs.msg import Bool
+
+class GripperNode:
+    """Node to hold gripper data."""
+
+    def __init__(self):
+        """Setup Publishers/Services"""
+        pub_in = rospy.Publisher('input_state', Bool, queue_size = 10)
+        pub_out = rospy.Publisher('output_state', Bool, queue_size = 10)
+
+        self._close_serv = rospy.Service("close_gripper", std_srvs.srv.Empty, self._close_callback)
+        self._open_serv = rospy.Service("open_gripper", std_srvs.srv.Empty, self._open_callback)
+
+        """GPIOs"""
+        self._pin_out = rospy.get_param("/gpio_input_pin", 29)
+        self._pin_in = rospy.get_param("/gpio_output_pin", 31)
+        
+        #Output - True: close gripper, False: open gripper
+        self._output_signal = False
+
+        #Input - True: gripper closed/closing, False: gripper open/opening
+        self._input_signal = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        return exc_type is None
+
+    def _open_callback(self, req):
+        """Handle an open request."""
+        self._output_signal = True
+        resp = std_srvs.srv.EmptyResponse()
+        return resp
+
+    def _close_callback(self, req):
+        """Handle an open request."""
+        self._output_signal = False
+        resp = std_srvs.srv.EmptyResponse()
+        return resp
+
+    def spin(self):
+        GPIO.setmode(GPIO.BOARD) #use board pin numbers
+        GPIO.setup(self._pin_out, GPIO.OUT)
+        GPIO.setup(self._pin_in, GPIO.IN)
+
+        GPIO.output(self._pin_out, GPIO.LOW)
+
+        """Send signal as long as ros is ok."""
+        rate = rospy.Rate(50.0)
+        counter=0
+        while not rospy.is_shutdown():
+            #send signal to gpios
+            if self._output_signal==True:
+                GPIO.output(output_pin, GPIO.HIGH)
+            else:
+                GPIO.output(output_pin, GPIO.LOW)
+            pub_out.publish(self._output_signal)
+
+            #receive signals from gpios
+            if(GPIO.input(self._pin_in) == GPIO.HIGH):
+                self._input_signal=True
+            else:
+                self._input_signal=False
+            pub_in.publish(self._input_signal)
+
+            print("Counter: ", counter, ", Sending: LOW", ", Receiving: ", input_val)
+            counter = counter+1
+            if(counter > 1000):
+                counter=0
+
+            rate.sleep()
+
+def main():
+    """Run everything."""
+    rospy.init_node("gripper_gpio_node")
+
+    with GripperNode() as node:
+        node.spin()
+        GPIO.cleanup()
+
+
+if __name__ == "__main__":
+    main()
