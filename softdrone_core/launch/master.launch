@@ -30,6 +30,7 @@
     <arg name="target_motion" default="stationary" doc="Simulated target motion type: {stationary, circle, rotating}"/>
     <arg name="target_x" default="2" doc="Simulated target x center"/>
     <arg name="target_y" default="2" doc="Simulated target y center"/>
+    <arg name="target_theta" default="0" doc="Simulated target heading"/>
     <arg name="target_radius" default="1" doc="Simulated target circle radius"/>
     <arg name="target_speed" default="0.1" doc="Simulated target speed"/>
 
@@ -46,12 +47,13 @@
 
     <!-- Launch the simulated target node -->
     <group if="$(arg launch_fake_target_node)">
-        <remap unless="$(arg sim_target_as_tracker_output)" from="target_global" to="/sparkgrasptar/world"/>
-        <remap if="$(arg sim_target_as_tracker_output)" from="target_global" to="/tracker_node/target_global_pos_estimate"/>
+        <remap unless="$(arg sim_target_as_tracker_output)" from="~target_global" to="/sparkgrasptar/world"/>
+        <remap if="$(arg sim_target_as_tracker_output)" from="~target_global" to="/tracker_node/target_global_pose_estimate"/>
 
         <include file="$(find softdrone_core)/launch/nodes/fake_target_node.launch">
             <arg name="x" value="$(arg target_x)"/>
             <arg name="y" value="$(arg target_y)"/>
+            <arg name="theta" value="$(arg target_theta)"/>
             <arg name="radius" value="$(arg target_radius)"/>
             <arg name="speed" value="$(arg target_speed)"/>
             <arg name="target_motion" value="$(arg target_motion)"/>

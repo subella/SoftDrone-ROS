@@ -17,7 +17,8 @@
         <arg name="launch_fake_target_node" value="true"/>
         <arg name="target_motion" value="stationary"/>
         <arg name="target_x" value="0"/>
-        <arg name="target_y" value="0"/>
+        <arg name="target_y" value="0.2"/>
+        <arg name="target_theta" value="3.14"/>
         <arg name="target_radius" value="1"/>
         <arg name="target_speed" value="0"/>
 
