@@ -11,7 +11,7 @@ dist_threshold: 0.2
 replan_during_grasp_trajectory: False
 grasp_attempted_tolerance: 1
 average_polynomial_velocity: 0.8
-desired_yaw: -1.57
+desired_yaw: 0
 ground_effect_stop_time: 10.0
 require_grasp_confirmation: False
 control_rate: 100

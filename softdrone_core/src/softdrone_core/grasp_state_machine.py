@@ -468,7 +468,8 @@ class GraspStateMachine:
     def _handle_waiting_for_home(self):
         """Wait for a valid home position from the drone, and a valid trajectory having been received."""
             
-        if self._last_waypoint_polynomial_update is None or self._last_grasp_trajectory_update is None:
+        #if self._last_waypoint_polynomial_update is None or self._last_grasp_trajectory_update is None:
+        if self._last_waypoint_polynomial_update is None:
             rospy.logwarn_throttle(1.0, 'Missing waypoint trajectory or target trajectory')
             return False
 
@@ -476,6 +477,7 @@ class GraspStateMachine:
 
     def _handle_waiting_for_arm(self):
         """Wait for the drone to be armed."""
+        self._update_grasp_start_point()
         if self._arm_time is None:
             return False
         else:
@@ -515,6 +517,7 @@ class GraspStateMachine:
 
     def _handle_hover(self):
         """Use loiter command to hang out at hover setpoint."""
+        self._update_grasp_start_point()
         self._loiter_at_point(
             self._home_position[0],
             self._home_position[1],
