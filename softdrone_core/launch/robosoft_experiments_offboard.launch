@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find softdrone_core)/launch/master.launch">
+        <arg name="launch_plotter_node" value="true"/>
+        <arg name="launch_rviz" value="true"/>
+    </include>
+</launch>
+
