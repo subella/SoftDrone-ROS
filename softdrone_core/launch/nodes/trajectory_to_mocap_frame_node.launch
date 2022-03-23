@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="softdrone_core" type="trajectory_to_mocap_frame_node" name="trajectory_to_mocap_frame_node" output="screen"/>
+</launch>

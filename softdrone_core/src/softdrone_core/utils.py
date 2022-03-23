@@ -1,9 +1,9 @@
 import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 
-def get_trajectory_viz_markers(pts, ns, ix, color):
+def get_trajectory_viz_markers(pts, ns, ix, color, frame_id="map"):
     strip_marker = Marker()
-    strip_marker.header.frame_id = "map"
+    strip_marker.header.frame_id = frame_id
     strip_marker.header.stamp = rospy.Time.now()
     strip_marker.ns = ns + '_line'
     strip_marker.id = ix

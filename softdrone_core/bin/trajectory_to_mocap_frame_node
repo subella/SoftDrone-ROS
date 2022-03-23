@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+import rospy
+import numpy as np
+from visualization_msgs.msg import Marker, MarkerArray
+from geometry_msgs.msg import Point, PoseArray, Pose
+from softdrone_core.msg import PolynomialTrajectory, GraspTrajectory
+from softdrone_core.utils import get_trajectory_viz_markers
+from softdrone_core import InterpTrajectoryTracker
+
+from softdrone.python.control.find_trajectory import PolynomialInfo, LengthInfo
+
+N_PTS = 50
+
+viz_pts = [Point() for _ in range(N_PTS)]
+poses_to_send = [Pose() for _ in range(N_PTS)]
+poses_msg = PoseArray()
+poses_msg.poses = poses_to_send
+
+def grasp_trajectory_cb(msg):
+    global viz_pub, poses_pub, poses_msg, N_PTS, tf_buffer, viz_pts
+    poly_msg = msg.polynomial
+    t_vals = np.linspace(0, poly_msg.time_end, N_PTS)
+    poly_x = np.polynomial.Polynomial(poly_msg.coeffs_x)
+    poly_y = np.polynomial.Polynomial(poly_msg.coeffs_y)
+    poly_z = np.polynomial.Polynomial(poly_msg.coeffs_z)
+    polynomial = PolynomialInfo([poly_x, poly_y, poly_z], poly_msg.time_end - poly_msg.time_start)
+
+    length_msg = msg.lengths
+    init_lengths = np.array(length_msg.init_lengths).reshape((4, 4))
+    open_lengths = np.array(length_msg.open_lengths).reshape((4, 4))
+    grasp_lengths = np.array(length_msg.grasp_lengths).reshape((4, 4))
+    grasp_lengths = LengthInfo(init_lengths, open_lengths, grasp_lengths, length_msg.open_time, length_msg.grasp_time)
+
+    poly_wrapper = InterpTrajectoryTracker(polynomial, grasp_lengths, length_msg.gripper_latency, 0)
+    grasp_traj = [poly_wrapper._run_normal(t) for t in t_vals]
+    try:
+        # TODO: lookup correct time (need to add field to polynomial message)
+        transform = tf_buffer.lookup_transform('mocap', 'base_link', rospy.Time.now(), rospy.Duration(1.0))
+    except:
+        rospy.logwarn("Cannot transform between mocap and base_link")
+        return
+    temp_pose = Pose()
+    for pt, p, r in zip(viz_pts, poses_msg.poses, grasp_traj):
+        temp_pose.x = r.position[0]
+        temp_pose.y = r.position[1]
+        temp_pose.z = r.position[2]
+
+        transformed_pose = tf2_geometry_msgs.do_transform_pose(temp_pose, transform)
+
+        p.position.x = transformed_pose.position[0]
+        p.position.y = transformed_pose.position[1]
+        p.position.z = transformed_pose.position[2]
+
+        pt.position.x = transformed_pose.position[0]
+        pt.position.y = transformed_pose.position[1]
+        pt.position.z = transformed_pose.position[2]
+
+    poses.msg.poses = poses_to_send
+    poses_pub.publish(poses_msg)
+
+    ma = get_trajectory_viz_markers(pt, 'grasp_trajectory_mocap', 2, (0, 0, 1))
+    viz_pub.publish(ma)
+
+
+rospy.init_node('polynomial_generator')
+
+tf_buffer = tf2_ros.Buffer(rospy.Duration(10.0))
+tf_listener = tf2_ros.TransformListener(tf_buffer)
+rospy.Subscriber('~grasp_trajectory', GraspTrajectory, grasp_trajectory_cb, queue_size=1)
+
+poses_pub = rospy.Publisher('~trajectory_mocap', PoseArray, queue_size=1)
+
+# This is just for testing. Should look the same in the Mocap frame as the body-frame trajectory transformed by rviz into mocap frame
+viz_pub = rospy.Publisher('~trajectory_vizi', MarkerArray, queue_size=1)
+
+rospy.spin()
+

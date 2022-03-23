@@ -2,7 +2,9 @@
 
 import tf2_ros
 from tf import transformations as tfn
-from geometry_msgs.msg import PoseStamped
+import tf
+from geometry_msgs.msg import PoseStamped, TransformStamped
+import numpy as np
 
 import rospy
 
@@ -13,7 +15,7 @@ tf_msg = TransformStamped()
 
 def invert_transform(T, T_out):
     T_out[:3,:3] = T[:3,:3].T
-    T_out[:3,-1] = -np.matmul(T[:3,3].T, T[:3,-1])
+    T_out[:3,-1] = -np.matmul(T[:3,:3].T, T[:3,-1])
 
 def mocap_pose_cb(msg):
     global T_base_link_to_map, br, tf_msg
@@ -25,6 +27,7 @@ def mocap_pose_cb(msg):
 
     T = tfn.compose_matrix(translate=trans, angles=angles)
     invert_transform(T, T_base_link_to_map)
+
     _, _, new_angles, new_trans, _ = tfn.decompose_matrix(T_base_link_to_map)
     new_q = tfn.quaternion_from_euler(*new_angles)
     tf_msg.header.frame_id = 'base_link'
@@ -33,7 +36,6 @@ def mocap_pose_cb(msg):
     tf_msg.transform.translation.x = new_trans[0]
     tf_msg.transform.translation.y = new_trans[1]
     tf_msg.transform.translation.z = new_trans[2]
-    tf_msg.transform.translation.w = new_trans[3]
     tf_msg.transform.rotation.x = new_q[0]
     tf_msg.transform.rotation.y = new_q[1]
     tf_msg.transform.rotation.z = new_q[2]
