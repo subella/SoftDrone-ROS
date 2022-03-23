@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg="optitrack" type="optitrack" name="optitrack" output="screen">
+        <rosparam command="load" file="$(find_softdrone_core)/config/pose_estimator_node.yaml"/>
+    </node>
+</launch>
+

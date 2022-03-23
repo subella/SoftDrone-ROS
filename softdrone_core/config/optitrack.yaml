@@ -1,0 +1,7 @@
+server: "192.168.1.12"
+local: "0.0.0.0"
+multicast_group: "239.255.42.99"
+command_port: "1510"
+data_port: "1511"
+pub_residuals: false
+

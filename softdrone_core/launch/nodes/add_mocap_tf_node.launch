@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="softdrone_core" type="add_mocap_tf_node" name="add_mocap_tf_node" output="screen">
+    </node>
+</launch>

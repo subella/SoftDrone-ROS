@@ -237,7 +237,7 @@ odom_msg.twist.twist = twist_msg.twist
 odom_msg.twist.covariance = (R_twist * np.eye(6)).flatten().tolist()
 odom_pub.publish(odom_msg)
 
-br = tf.TransformBroadcaster()
+#br = tf.TransformBroadcaster()
 br = tf2_ros.TransformBroadcaster()
 
 rospy.Timer(rospy.Duration(1.0), publish_armed_state, oneshot=False)

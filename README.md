@@ -39,6 +39,15 @@ We use this window to (among other things) mimic arming the drone from the RC
 controller.  Type ARM into the prompt and press enter. After 5 seconds the
 drone should take off and start following the red trajectory.
 
+Rosbags
+=======
+
+You can record a rosbag of all data other than the
+d455 images (the t265 is not set to publish them by default) as:
+```
+rosbag record -a -x '.*target_cam.*|.*annotated_img_out.*'
+```
+
 Launch File Structure
 =====================
 

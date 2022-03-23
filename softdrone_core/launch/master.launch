@@ -22,6 +22,9 @@
     <arg name="launch_pose_estimator_node" default="false"/>
     <arg name="launch_plotter_node" default="false"/>
     <arg name="launch_trajectory_visualizer_node" default="false"/>
+    <arg name="launch_optitrack" default="false"/>
+    <arg name="launch_add_mocap_tf_node" default="false"/>
+    <arg name="launch_trajectory_to_mocap_frame_node" default="false"/>
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
     <arg name="sim_target_as_tracker_output" default="$(eval not arg('launch_tracker_node'))" doc="Map the simulated target pose to the tracker output topic"/>
@@ -176,4 +179,18 @@
         <include file="$(find softdrone_core)/launch/nodes/dummy_tracker_node.launch"/>
     </group>
 
+    <group if="$(arg launch_optitrack)">
+        <include file="$(find softdrone_core)/launch/nodes/optitrack.launch"/>
+    </group>
+
+    <group if="$(arg launch_add_mocap_tf_node)">
+        <include file="$(find softdrone_core)/launch/nodes/add_mocap_tf_node.launch"/>
+    </group>
+
+    <group if="$(arg launch_trajectory_to_mocap_frame_node)">
+        <remap from="~grasp_trajectory" to="polynomial_planner_node/grasp_trajectory"/>
+        <include file="$(find softdrone_core)/launch/nodes/trajectory_to_mocap_frame_node.launch"/>
+    </group>
+
 </launch>
+
