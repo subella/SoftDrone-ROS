@@ -4,6 +4,7 @@
         <arg name="launch_plotter_node" value="true"/>
         <arg name="launch_rviz" value="true"/>
         <arg name="launch_trajectory_to_mocap_frame_node" value="true"/>
+        <arg name="launch_trajectory_visualizer_node" value="true"/>
     </include>
 </launch>
 

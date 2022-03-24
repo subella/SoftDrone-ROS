@@ -18,7 +18,7 @@ def get_trajectory_viz_markers(pts, ns, ix, color, frame_id="map"):
     strip_marker.points = pts
 
     sphere_marker = Marker()
-    sphere_marker.header.frame_id = "map"
+    sphere_marker.header.frame_id = frame_id
     sphere_marker.header.stamp = rospy.Time.now()
     sphere_marker.ns = ns + '_pts'
     sphere_marker.id = ix + 1
