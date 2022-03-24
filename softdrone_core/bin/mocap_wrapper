@@ -64,7 +64,8 @@ class MocapTranslator:
     def _timer_callback(self, event):
         """Send latest pose periodically if it exists."""
         if self._latest_pose is not None:
-            self._pose_pub.publish(self._latest_pose)
+            #self._pose_pub.publish(self._latest_pose)
+            pass
 
 
 def start_mocap_node_process():

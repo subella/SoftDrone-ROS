@@ -25,6 +25,7 @@
     <arg name="launch_optitrack" default="false"/>
     <arg name="launch_add_mocap_tf_node" default="false"/>
     <arg name="launch_trajectory_to_mocap_frame_node" default="false"/>
+    <arg name="launch_mocap_translator" default="false"/>
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
     <arg name="sim_target_as_tracker_output" default="$(eval not arg('launch_tracker_node'))" doc="Map the simulated target pose to the tracker output topic"/>
@@ -184,12 +185,17 @@
     </group>
 
     <group if="$(arg launch_add_mocap_tf_node)">
+        <remap from="~mocap_pose" to="/sparksdrone/world"/>
         <include file="$(find softdrone_core)/launch/nodes/add_mocap_tf_node.launch"/>
     </group>
 
     <group if="$(arg launch_trajectory_to_mocap_frame_node)">
         <remap from="~grasp_trajectory" to="polynomial_planner_node/grasp_trajectory"/>
         <include file="$(find softdrone_core)/launch/nodes/trajectory_to_mocap_frame_node.launch"/>
+    </group>
+
+    <group if="$(arg launch_mocap_translator)">
+        <include file="$(find softdrone_core)/launch/nodes/mocap_translator.launch"/>
     </group>
 
 </launch>

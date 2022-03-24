@@ -37,9 +37,9 @@ def grasp_trajectory_cb(msg):
     grasp_traj = [poly_wrapper._run_normal(t) for t in t_vals]
     try:
         # TODO: lookup correct time (need to add field to polynomial message)
-        transform = tf_buffer.lookup_transform('mocap', 'map', rospy.Time.now(), rospy.Duration(1.0))
+        transform = tf_buffer.lookup_transform('optitrack', 'map', rospy.Time.now(), rospy.Duration(1.0))
     except:
-        rospy.logwarn("Cannot transform between mocap and base_link")
+        rospy.logwarn("Cannot transform between optitrack and base_link")
         return
     temp_pose = PoseStamped()
     temp_pose.header.stamp = rospy.Time.now()
@@ -62,7 +62,7 @@ def grasp_trajectory_cb(msg):
     poses_msg.poses = poses_to_send
     poses_pub.publish(poses_msg)
 
-    ma = get_trajectory_viz_markers(viz_pts, 'grasp_trajectory_mocap', 2, (0, 0, 1), frame_id="mocap")
+    ma = get_trajectory_viz_markers(viz_pts, 'grasp_trajectory_mocap', 2, (0, 0, 1), frame_id="optitrack")
     viz_pub.publish(ma)
 
 

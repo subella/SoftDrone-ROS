@@ -1,8 +1,6 @@
 <launch>
     <arg name="mocap_ip" default="192.168.1.12"/>
 
-    <arg name="sitl" default="false"/>
-    <arg name="gcs_ip" default=""/>
     <arg name="rigid_body_name" default="sparksdrone"/>
 
     <node name="mocap_wrapper" pkg="softdrone_core" type="mocap_wrapper" output="screen">
@@ -11,10 +9,5 @@
         <remap from="vicon" to="/$(arg rigid_body_name)/world"/>
         <remap from="pose" to="/mavros/vision_pose/pose"/>
     </node>
-
-    <include file="$(find softdrone_core)/launch/mavros.launch">
-        <arg name="gcs_ip" value="$(arg gcs_ip)"/>
-        <arg name="sitl" value="$(arg sitl)"/>
-    </include>
 
 </launch>

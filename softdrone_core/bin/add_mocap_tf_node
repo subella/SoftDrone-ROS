@@ -32,7 +32,7 @@ def mocap_pose_cb(msg):
     new_q = tfn.quaternion_from_euler(*new_angles)
     tf_msg.header.frame_id = 'base_link'
     tf_msg.header.stamp = msg.header.stamp
-    tf_msg.child_frame_id = 'mocap'
+    tf_msg.child_frame_id = 'optitrack'
     tf_msg.transform.translation.x = new_trans[0]
     tf_msg.transform.translation.y = new_trans[1]
     tf_msg.transform.translation.z = new_trans[2]
