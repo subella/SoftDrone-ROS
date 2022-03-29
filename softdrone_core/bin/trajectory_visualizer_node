@@ -14,7 +14,7 @@ def waypoint_trajectory_cb(msg):
     coeffs = [msg.coeffs_x, msg.coeffs_y, msg.coeffs_z]
     poly_for_eval = [np.polynomial.polynomial.Polynomial(c) for c in coeffs]
     poly_wrapper = PolynomialInfo(poly_for_eval, msg.time_end)
-    times = np.linspace(0, msg.time_end, 50)
+    times = np.linspace(0, msg.time_end - msg.time_start, 50)
     pos_list = [poly_wrapper.interp(t)[0] for t in times]
     pts = [Point() for _ in times]
     for p, r in zip(pts, pos_list):
@@ -27,7 +27,7 @@ def waypoint_trajectory_cb(msg):
 def grasp_trajectory_cb(msg):
     global viz_pub
     poly_msg = msg.polynomial
-    t_vals = np.linspace(0, poly_msg.time_end, 50)
+    t_vals = np.linspace(0, poly_msg.time_end - poly_msg.time_start, 50)
     poly_x = np.polynomial.Polynomial(poly_msg.coeffs_x)
     poly_y = np.polynomial.Polynomial(poly_msg.coeffs_y)
     poly_z = np.polynomial.Polynomial(poly_msg.coeffs_z)

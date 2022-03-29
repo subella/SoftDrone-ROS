@@ -108,6 +108,7 @@ class PolynomialGenerator:
 
 
     def update_waypoint_trajectory(self):
+        t0 = rospy.Time.now().to_sec()
         try:
             coeffs, total_time = self.get_coeffs(self.position, self.waypoint_position, self.average_polynomial_velocity, 1.4)
         except Exception as ex:
@@ -115,8 +116,8 @@ class PolynomialGenerator:
             print(ex)
             return
         coeff_msg = PolynomialTrajectory()
-        coeff_msg.time_start = 0
-        coeff_msg.time_end = total_time
+        coeff_msg.time_start = t0
+        coeff_msg.time_end = t0 + total_time
         coeff_msg.coeffs_x = coeffs[0]
         coeff_msg.coeffs_y = coeffs[1]
         coeff_msg.coeffs_z = coeffs[2]
@@ -124,6 +125,7 @@ class PolynomialGenerator:
 
     def update_grasp_trajectory(self):
 
+        t0 = rospy.Time.now().to_sec()
         target_dist = np.linalg.norm(self.target_position - self.position)
         if target_dist < self.grasp_lockout_distance:
             # If we are close to the target, don't replan the trajectory
@@ -172,8 +174,8 @@ class PolynomialGenerator:
         coeff_msg.coeffs_x = coeffs[0].tolist()
         coeff_msg.coeffs_y = coeffs[1].tolist()
         coeff_msg.coeffs_z = coeffs[2].tolist()
-        coeff_msg.time_start = 0
-        coeff_msg.time_end = polynomial._total_time
+        coeff_msg.time_start = t0
+        coeff_msg.time_end = t0 + polynomial._total_time
 
         length_msg = LengthInfoMsg()
         length_msg.init_lengths = np.array(lengths._init_lengths).flatten()
