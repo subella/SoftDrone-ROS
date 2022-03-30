@@ -3,7 +3,7 @@ grasp_start_horz_offset: 2.0
 grasp_start_vert_offset: 1.0
 
 fixed_grasp_start_point: True
-grasp_start_pos: [-2.0, 0.0, 1.0]
+grasp_start_pos: [-3.0, 0.0, 2.0]
 grasp_start_theta: 0.0
 
 drop_position: [0.0, 1.0, 1.0]

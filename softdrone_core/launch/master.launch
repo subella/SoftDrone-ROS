@@ -164,7 +164,8 @@
         <remap from="~rgb_img_in/compressed" to="target_cam/color/image_raw/compressed"/>
         <remap from="~cad_keypoints_in" to="pose_estimator_node/transformed_cad_out"/>
         <!--remap from="~estimated_pose_in" to="pose_estimator_node/estimated_pose_out"/-->
-        <remap from="~estimated_pose_in" to="tracker_node/target_global_pose_estimate"/>
+        <remap if="$(arg sim_target_as_tracker_output)" from="~estimated_pose_in" to="tracker_node/target_global_pose_estimate_debug"/>
+        <remap unless="$(arg sim_target_as_tracker_output)" from="~estimated_pose_in" to="tracker_node/target_global_pose_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/plotter_node.launch" />
     </group>
 
