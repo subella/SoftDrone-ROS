@@ -2,6 +2,10 @@ target_grasp_angle: 0.0
 grasp_start_horz_offset: 2.0
 grasp_start_vert_offset: 1.0
 
+fixed_grasp_start_point: True
+grasp_start_pos: [-2.0, 0.0, 1.0]
+grasp_start_theta: 0.0
+
 drop_position: [0.0, 1.0, 1.0]
 takeoff_offset: 1.0
 rise_offset: [0.0, 0.0, 1.0]
@@ -12,10 +16,10 @@ grasp_attempted_tolerance: 1
 average_polynomial_velocity: 0.8
 desired_yaw: 0
 ground_effect_stop_time: 10.0
-require_grasp_confirmation: False
 control_rate: 100
 
 trajectory_settle_time: 2.0
 
 replan_during_grasp_trajectory: False
 replan_during_stages: False
+require_grasp_confirmation: True

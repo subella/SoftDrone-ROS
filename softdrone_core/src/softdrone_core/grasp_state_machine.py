@@ -103,13 +103,17 @@ class GraspStateMachine:
         self._last_grasp_trajectory_update = None
         self._grasp_attempted = False
         self._target_position = np.array([3.,3.,0.])
-        self._grasp_start_pos = np.array([0.,0.,0.])
         self._target_yaw = 0.0
         self._settle_after_pos = np.array([0.,0.,0.])
 
         self._target_grasp_angle = rospy.get_param("~target_grasp_angle", 0.0)
         self._grasp_start_horz_offset = rospy.get_param("~grasp_start_horz_offset", 2.0)
         self._grasp_start_vert_offset = rospy.get_param("~grasp_start_vert_offset", 1.0)
+        self._fixed_grasp_start_point = rospy.get_param("~fixed_grasp_start_point", False)
+        self._grasp_start_pos = np.array(rospy.get_param("~grasp_start_pos", [0.,0.,0.]))
+        self._grasp_start_theta = rospy.get_param("~grasp_start_theta", 0)
+        #self._grasp_start_pos = np.array([0.,0.,0.])
+
         self._trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 2.)
 
         self._drop_position = np.array(rospy.get_param("~drop_position", [0.0, 1.0, 1.0]))
@@ -170,7 +174,7 @@ class GraspStateMachine:
             rospy.Duration(1.0 / control_rate), self._timer_callback
         )
 
-    def _do_grasp_cb(msg):
+    def _do_grasp_cb(self, msg):
         self._grasp_start_ok = True
 
     def _target_pose_cb(self, msg):
@@ -183,16 +187,17 @@ class GraspStateMachine:
         self._target_yaw = y
 
     def _update_grasp_start_point(self):
-        theta_approach = self._target_yaw + self._target_grasp_angle
-        offset_vector = np.zeros(3)
-        offset_vector[0] = np.cos(theta_approach) * self._grasp_start_horz_offset
-        offset_vector[1] = np.sin(theta_approach) * self._grasp_start_horz_offset
-        offset_vector[2] = self._grasp_start_vert_offset
-        grasp_start_pos = self._target_position + offset_vector
-        self._grasp_start_pos = grasp_start_pos
-        grasp_start_theta = theta_approach + np.pi
-        self._desired_yaw = grasp_start_theta
-        self._update_waypoint(grasp_start_pos, grasp_start_theta)
+        if not self._fixed_grasp_start_point:
+            theta_approach = self._target_yaw + self._target_grasp_angle
+            offset_vector = np.zeros(3)
+            offset_vector[0] = np.cos(theta_approach) * self._grasp_start_horz_offset
+            offset_vector[1] = np.sin(theta_approach) * self._grasp_start_horz_offset
+            offset_vector[2] = self._grasp_start_vert_offset
+            grasp_start_pos = self._target_position + offset_vector
+            self._grasp_start_pos = grasp_start_pos
+            self._grasp_start_theta = theta_approach + np.pi
+            self._desired_yaw = grasp_start_theta
+        self._update_waypoint(self._grasp_start_pos, self._grasp_start_theta)
 
     def _update_waypoint(self, pos, yaw):
         quat = tf.transformations.quaternion_from_euler(0, 0, yaw)
