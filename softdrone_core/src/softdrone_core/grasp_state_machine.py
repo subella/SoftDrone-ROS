@@ -174,6 +174,13 @@ class GraspStateMachine:
             rospy.Duration(1.0 / control_rate), self._timer_callback
         )
 
+        #TODO(jared) combine gpio/serial nodes, setting to false doesn't enable serial without running launch for serial node
+        self._enable_gpio_grasp = rospy.get_param("~enable_gpio_grasp", True) 
+
+        if self._enable_gpio_grasp:
+            rospy.wait_for_service('close_gripper')
+            rospy.wait_for_service('open_gripper')
+
     def _do_grasp_cb(self, msg):
         self._grasp_start_ok = True
 
@@ -612,6 +619,12 @@ class GraspStateMachine:
 
         if result.lengths is not None:
             self._send_lengths(result.lengths)
+            if self._enable_gpio_grasp:
+                try:
+                    client_close_gripper = rospy.ServiceProxy('close_gripper', std_srvs.srv.Empty)
+                    client_close_gripper()
+                except rospy.ServiceException as e:
+                    print("Service call failed to close gripper: %s"%e)
 
         return result.finished
 
@@ -660,6 +673,12 @@ class GraspStateMachine:
         drop_pos = self._drop_position
         self._loiter_at_point(drop_pos[0], drop_pos[1], drop_pos[2])
         self._send_lengths(self._open_lengths, scale=False)
+        if self._enable_gpio_grasp:
+            try:
+                client_open_gripper = rospy.ServiceProxy('open_gripper', std_srvs.srv.Empty)
+                client_open_gripper()
+            except rospy.ServiceException as e:
+                print("Service call failed to open gripper: %s"%e)
         return self._has_elapsed(GraspDroneState.DROP)
 
     def _handle_moving_to_home(self):
