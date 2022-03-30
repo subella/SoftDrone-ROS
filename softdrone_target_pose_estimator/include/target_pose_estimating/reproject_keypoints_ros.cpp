@@ -27,13 +27,7 @@ ReprojectKeypointsROS(const ros::NodeHandle& nh)
 
   keypoints_2D_pub_ = nh_.advertise<Keypoints2DMsg>("keypoints_2d_out",  1);
   keypoints_3D_pub_ = nh_.advertise<Keypoints3DMsg>("keypoints_3d_out",  1);
-
-  // TODO: fix this architecture
-  Eigen::Matrix3d camera_intrinsics;
-  camera_intrinsics << 629.10406494140625,                  0,   637.203369140625,
-                         0,   637.203369140625,                  0,
-                         637.203369140625,                  0,   628.583251953125;
-  init(camera_intrinsics);
+  
 };
 
 void ReprojectKeypointsROS::
