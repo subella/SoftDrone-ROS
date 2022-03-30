@@ -18,3 +18,4 @@ control_rate: 100
 
 trajectory_settle_time: 2.0
 
+enable_gpio_grasp: True
