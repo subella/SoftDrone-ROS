@@ -39,7 +39,7 @@ rgbCamInfoCallback(const CameraInfoMsg& camera_info_msg)
   Eigen::Matrix3d camera_intrinsics;
   for (int i=0; i < camera_intrinsics.rows(); i++)
     for(int j=0; j < camera_intrinsics.cols(); j++)
-      camera_intrinsics(i, j) = camera_info_msg.K[i+j];
+      camera_intrinsics(i, j) = camera_info_msg.K[i*camera_intrinsics.cols()+j];
 
   init(camera_intrinsics);
   std::cout.precision(17);
