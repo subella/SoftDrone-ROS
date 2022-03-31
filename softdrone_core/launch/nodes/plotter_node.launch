@@ -2,5 +2,7 @@
     <node pkg="softdrone_target_pose_estimator"
           name="plotter_node"
           type="plotter_node"
-          output="screen"/>
+          output="screen">
+        <param name="image_transport" value="compressed"/>
+    </node>
 </launch>
