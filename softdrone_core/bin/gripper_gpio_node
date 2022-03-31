@@ -69,7 +69,7 @@ class GripperNode:
                 self._input_signal=False
             self.pub_in.publish(self._input_signal)
 
-            print("Counter: ", counter, ", Sending: ", self._output_signal)
+            # print("Counter: ", counter, ", Sending: ", self._output_signal)
             counter = counter+1
             if(counter > 1000):
                 counter=0

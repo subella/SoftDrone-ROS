@@ -88,7 +88,7 @@
 
 
     <group if="$(arg launch_gripper_node)">
-        <include file="$(find softdrone_core)/launch/nodes/gripper_node.launch"/>
+        <include file="$(find softdrone_core)/launch/nodes/gripper.launch"/>
     </group>
 
     <group if="$(arg launch_gripper_gpio_node)">

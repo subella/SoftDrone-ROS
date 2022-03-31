@@ -3,7 +3,7 @@
 
     <include file="$(find softdrone_core)/launch/master.launch">
         <arg name="launch_mavros" value="true"/>
-        <arg name="launch_gripper_node" value="false"/>
+        <arg name="launch_gripper_gpio_node" value="true"/>
         <arg name="launch_polynomial_planner_node" value="true"/>
         <arg name="launch_grasp_state_machine_node" value="true"/>
         <arg name="launch_tracker_node" value="true" />
