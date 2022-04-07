@@ -107,17 +107,18 @@ class GraspStateMachine:
         self._target_yaw = 0.0
         self._settle_after_pos = np.array([0.,0.,0.])
 
-        self._target_grasp_angle = rospy.get_param("~target_grasp_angle", 0.0)
-        self._grasp_start_horz_offset = rospy.get_param("~grasp_start_horz_offset", 2.0)
-        self._grasp_start_vert_offset = rospy.get_param("~grasp_start_vert_offset", 1.0)
-        self._fixed_grasp_start_point = rospy.get_param("~fixed_grasp_start_point", False)
-        self._grasp_start_pos = np.array(rospy.get_param("~grasp_start_pos", [0.,0.,0.]))
-        self._grasp_start_theta = rospy.get_param("~grasp_start_theta", 0)
-        #self._grasp_start_pos = np.array([0.,0.,0.])
+        self._target_grasp_angle = rospy.get_param("~target_grasp_angle")
+        self._grasp_start_horz_offset = rospy.get_param("~grasp_start_horz_offset")
+        self._grasp_start_vert_offset = rospy.get_param("~grasp_start_vert_offset")
+        self._fixed_grasp_start_point = rospy.get_param("~fixed_grasp_start_point")
+        self._grasp_start_pos = np.array(rospy.get_param("~grasp_start_pos"))
+        self._grasp_start_theta = rospy.get_param("~grasp_start_theta")
 
-        self._trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 2.)
+        self._grasp_start_distance = rospy.get_param("~grasp_start_distance")
 
-        self._drop_position = np.array(rospy.get_param("~drop_position", [0.0, 1.0, 1.0]))
+        self._trajectory_settle_time = rospy.get_param("~trajectory_settle_time")
+
+        self._drop_position = np.array(rospy.get_param("~drop_position"))
 
         self._state_durations = {}
         self._start_times = {}
@@ -126,8 +127,8 @@ class GraspStateMachine:
         self._register_state_durations()
         self._register_transitions()
 
-        self._takeoff_offset = rospy.get_param("~takeoff_offset", 1.0)
-        self._rise_offset = np.array(rospy.get_param("~rise_offset", [0.0, 0.0, 1.0]))
+        self._takeoff_offset = rospy.get_param("~takeoff_offset")
+        self._rise_offset = np.array(rospy.get_param("~rise_offset"))
         self._open_lengths = rospy.get_param("~open_lengths", [190, 190, 208, 208])
         self._land_threshold = rospy.get_param("~land_threshold", 0.001)
         self._dist_threshold = rospy.get_param("~dist_threshold", 0.2)
@@ -145,6 +146,16 @@ class GraspStateMachine:
             self._grasp_start_ok = False
         else:
             self._grasp_start_ok = True
+
+        #TODO(jared) combine gpio/serial nodes, setting to false doesn't enable serial without running launch for serial node
+        self._enable_gpio_grasp = rospy.get_param("~enable_gpio_grasp")
+
+        if self._enable_gpio_grasp:
+            rospy.wait_for_service('close_gripper')
+            rospy.wait_for_service('open_gripper')
+
+            self._client_close_gripper = rospy.ServiceProxy('close_gripper', std_srvs.srv.Empty)
+            self._client_open_gripper = rospy.ServiceProxy('open_gripper', std_srvs.srv.Empty)
 
         rospy.Subscriber("~state", mavros_msgs.msg.State, self._state_callback, queue_size=10)
         rospy.Subscriber("~pose", PoseStamped, self._pose_callback, queue_size=10)
@@ -175,12 +186,6 @@ class GraspStateMachine:
             rospy.Duration(1.0 / control_rate), self._timer_callback
         )
 
-        #TODO(jared) combine gpio/serial nodes, setting to false doesn't enable serial without running launch for serial node
-        self._enable_gpio_grasp = rospy.get_param("~enable_gpio_grasp", True) 
-
-        if self._enable_gpio_grasp:
-            rospy.wait_for_service('close_gripper')
-            rospy.wait_for_service('open_gripper')
 
     def _do_grasp_cb(self, msg):
         self._grasp_start_ok = True
@@ -601,7 +606,7 @@ class GraspStateMachine:
             # results in not replanning after starting to follow the grasp trajectory
             self._grasp_attempted = True
 
-        self._settle_after_pos = self._grasp_trajectory_tracker.get_end()
+        self._settle_after_pos = self._grasp_trajectory_tracker.get_end() # TODO: move this
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
         if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
@@ -609,23 +614,22 @@ class GraspStateMachine:
             # keep going back to the grasp point
             self._grasp_attempted = True
 
+        if self._enable_gpio_grasp:
+            lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
+            if lat_target_dist < self._grasp_start_distance:
+                try:
+                    self._client_close_gripper()
+                except rospy.ServiceException as e:
+                    print("Service call failed to close gripper: %s"%e)
+
         self._send_target(
             result.position,
-            yaw=self._desired_yaw,  # TODO(nathan) we should move this upstream
+            yaw=self._desired_yaw,
             velocity=result.velocity,
             acceleration=result.acceleration,
             is_grasp=True,
             use_ground_effect=elapsed < self._ground_effect_stop_time,
         )
-
-        if result.lengths is not None:
-            self._send_lengths(result.lengths)
-            if self._enable_gpio_grasp:
-                try:
-                    client_close_gripper = rospy.ServiceProxy('close_gripper', std_srvs.srv.Empty)
-                    client_close_gripper()
-                except rospy.ServiceException as e:
-                    print("Service call failed to close gripper: %s"%e)
 
         return result.finished
 
@@ -676,8 +680,7 @@ class GraspStateMachine:
         self._send_lengths(self._open_lengths, scale=False)
         if self._enable_gpio_grasp:
             try:
-                client_open_gripper = rospy.ServiceProxy('open_gripper', std_srvs.srv.Empty)
-                client_open_gripper()
+                self._client_open_gripper()
             except rospy.ServiceException as e:
                 print("Service call failed to open gripper: %s"%e)
         return self._has_elapsed(GraspDroneState.DROP)
