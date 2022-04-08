@@ -1,19 +1,14 @@
 """Custom state machine with slightly simplified logic."""
-from softdrone.python.control.find_trajectory import find_polynomials, PolynomialInfo, LengthInfo
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
-from visualization_msgs.msg import Marker, MarkerArray
 import tf
 
-from softdrone_core.msg import PolynomialTrajectory, LengthInfoMsg, GraspTrajectory
-from softdrone_core.utils import get_trajectory_viz_markers
-from softdrone_core import InterpTrajectoryTracker
+from softdrone_core.msg import MultiPolynomialTrajectory, LengthInfoMsg, GraspTrajectory
+from softdrone_core.polynomial_wrappers import multi_poly_trajectory_to_wrapper
 
-import geometry_msgs.msg
 import mavros_msgs.msg
 import mavros_msgs.srv
 from std_msgs.msg import Bool
-import std_srvs.srv
-import std_msgs.msg
+from std_srvs.srv import Empty
 import numpy as np
 import importlib
 import rospy
@@ -69,16 +64,6 @@ class SetpointType(enum.IntEnum):
     GRASP_TRAJECTORY_NO_GE = 0x9000
 
 
-def get_polynomial(
-    polynomial_wrapper, planner, start, end, average_vel, safety_factor=1.4
-):
-    """Get the polynomial."""
-    distance = np.linalg.norm(start - end)
-    total_time = distance / average_vel * safety_factor
-    polynomials = planner(start, end, time=total_time)
-    return polynomial_wrapper(polynomials, total_time)
-
-
 class GraspStateMachine:
     """Class for tracking a trajectory."""
 
@@ -129,19 +114,16 @@ class GraspStateMachine:
 
         self._takeoff_offset = rospy.get_param("~takeoff_offset")
         self._rise_offset = np.array(rospy.get_param("~rise_offset"))
-        self._open_lengths = rospy.get_param("~open_lengths", [190, 190, 208, 208])
-        self._land_threshold = rospy.get_param("~land_threshold", 0.001)
-        self._dist_threshold = rospy.get_param("~dist_threshold", 0.2)
-        self._replan_during_stages = rospy.get_param("~replan_during_stages", False)
-        self._replan_during_grasp_trajectory = rospy.get_param("~replan_during_grasp_trajectory", False)
-        self._grasp_attempted_tolerance = rospy.get_param("~grasp_attempted_tolerance", 1)
-        self._average_polynomial_velocity = rospy.get_param(
-            "~average_polynomial_velocity", 0.8
-        )
-        self._desired_yaw = rospy.get_param("~desired_yaw", 0.0)
-        self._ground_effect_stop_time = rospy.get_param("~ground_effect_stop_time", 10.0)
+        self._land_threshold = rospy.get_param("~land_threshold")
+        self._dist_threshold = rospy.get_param("~dist_threshold")
+        self._replan_during_stages = rospy.get_param("~replan_during_stages")
+        self._replan_during_grasp_trajectory = rospy.get_param("~replan_during_grasp_trajectory")
+        self._grasp_attempted_tolerance = rospy.get_param("~grasp_attempted_tolerance")
+        self._average_polynomial_velocity = rospy.get_param("~average_polynomial_velocity")
+        self._desired_yaw = rospy.get_param("~desired_yaw")
+        self._ground_effect_stop_time = rospy.get_param("~ground_effect_stop_time")
 
-        require_grasp_confirmation = rospy.get_param("~require_grasp_confirmation", False)
+        require_grasp_confirmation = rospy.get_param("~require_grasp_confirmation")
         if require_grasp_confirmation:
             self._grasp_start_ok = False
         else:
@@ -153,15 +135,14 @@ class GraspStateMachine:
         if self._enable_gpio_grasp:
             rospy.wait_for_service('close_gripper')
             rospy.wait_for_service('open_gripper')
-
-            self._client_close_gripper = rospy.ServiceProxy('close_gripper', std_srvs.srv.Empty)
-            self._client_open_gripper = rospy.ServiceProxy('open_gripper', std_srvs.srv.Empty)
+            self._client_close_gripper = rospy.ServiceProxy('close_gripper', Empty)
+            self._client_open_gripper = rospy.ServiceProxy('open_gripper', Empty)
 
         rospy.Subscriber("~state", mavros_msgs.msg.State, self._state_callback, queue_size=10)
         rospy.Subscriber("~pose", PoseStamped, self._pose_callback, queue_size=10)
 
-        rospy.Subscriber("~waypoint_polynomial", PolynomialTrajectory, self._waypoint_trajectory_cb)
-        rospy.Subscriber("~grasp_trajectory", GraspTrajectory, self._grasp_trajectory_cb)
+        rospy.Subscriber("~waypoint_polynomial", MultiPolynomialTrajectory, self._waypoint_trajectory_cb)
+        rospy.Subscriber("~grasp_trajectory", MultiPolynomialTrajectory, self._grasp_trajectory_cb)
 
         rospy.Subscriber("~grasp_target", PoseWithCovarianceStamped, self._target_pose_cb)
 
@@ -170,27 +151,25 @@ class GraspStateMachine:
         self._target_pub = rospy.Publisher(
             "~target", mavros_msgs.msg.PositionTarget, queue_size=10
         )
-        self._lengths_pub = rospy.Publisher(
-            "~lengths", std_msgs.msg.Int64MultiArray, queue_size=10
-        )
 
         self._waypoint_pub = rospy.Publisher("~waypoint", PoseStamped, queue_size=1)
 
-        control_rate = rospy.get_param("~control_rate", 100)
+        control_rate = rospy.get_param("~control_rate")
         if control_rate < 20.0:
             rospy.logfatal("Invalid control rate, must be above 20 hz")
             rospy.signal_shutdown("invalid control rate")
             return
 
-        self._timer = rospy.Timer(
-            rospy.Duration(1.0 / control_rate), self._timer_callback
-        )
+        self._timer = rospy.Timer(rospy.Duration(1.0 / control_rate), self._timer_callback)
 
 
     def _do_grasp_cb(self, msg):
+        """ Drone will wait at start point until _grasp_start_ok is True """
         self._grasp_start_ok = True
 
+
     def _target_pose_cb(self, msg):
+        """ Updated our estimate of where the target is (based on EKF) """
         msg = msg.pose
         self._target_position[0] = msg.pose.position.x
         self._target_position[1] = msg.pose.position.y
@@ -200,6 +179,7 @@ class GraspStateMachine:
         self._target_yaw = y
 
     def _update_grasp_start_point(self):
+        """ Based on where the target is, update the start point for the grasp trajectory """
         if not self._fixed_grasp_start_point:
             theta_approach = self._target_yaw + self._target_grasp_angle
             offset_vector = np.zeros(3)
@@ -213,6 +193,7 @@ class GraspStateMachine:
         self._update_waypoint(self._grasp_start_pos, self._grasp_start_theta)
 
     def _update_waypoint(self, pos, yaw):
+        """ Publish a waypoint to plan a polynomial trajectory to """
         quat = tf.transformations.quaternion_from_euler(0, 0, yaw)
         msg = PoseStamped()
         msg.header.stamp = rospy.Time.now()
@@ -227,47 +208,36 @@ class GraspStateMachine:
         self._waypoint_pub.publish(msg)
 
     def _update_waypoint_trajectory(self):
+        """ Process a trajectory to a waypoint from the planner """
         msg = self._last_received_waypoint_msg
         if msg is None:
             return
-        poly_x = np.polynomial.polynomial.Polynomial(msg.coeffs_x)
-        poly_y = np.polynomial.polynomial.Polynomial(msg.coeffs_y)
-        poly_z = np.polynomial.polynomial.Polynomial(msg.coeffs_z)
-        polys = [poly_x, poly_y, poly_z]
-        polynomial_info = PolynomialInfo(polys, msg.time_end - msg.time_start)
+        poly_wrapper = multi_poly_trajectory_to_wrapper(msg)
+
         self._last_waypoint_polynomial_update = msg.time_start
-        self._current_waypoint_polynomial = polynomial_info
+        self._current_waypoint_polynomial = poly_wrapper
 
     def _waypoint_trajectory_cb(self, msg):
+        """ Receive a trajectory to a waypoint from the planner """
         self._last_received_waypoint_msg = msg
 
 
     def _grasp_trajectory_cb(self, msg):
+        """ Receive a trajectory for a grasp from the planner """
         self._last_received_trajectory_msg = msg
 
     def _update_grasp_trajectory(self):
+        """ Process a trajectory for a grasp from the planner """
         msg = self._last_received_trajectory_msg
         if msg is None:
             return
         if self._grasp_attempted:
             return
-        poly_msg = msg.polynomial
-        poly_x = np.polynomial.Polynomial(poly_msg.coeffs_x)
-        poly_y = np.polynomial.Polynomial(poly_msg.coeffs_y)
-        poly_z = np.polynomial.Polynomial(poly_msg.coeffs_z)
-        polynomial = PolynomialInfo([poly_x, poly_y, poly_z], poly_msg.time_end - poly_msg.time_start)
 
-        lng = msg.lengths
-        init_lengths = np.array(lng.init_lengths).reshape((4, 4))
-        open_lengths = np.array(lng.open_lengths).reshape((4, 4))
-        grasp_lengths = np.array(lng.grasp_lengths).reshape((4, 4))
-        grasp_lengths = LengthInfo(init_lengths, open_lengths, grasp_lengths, lng.open_time, lng.grasp_time)
-        gripper_latency = lng.gripper_latency
+        poly_wrapper = multi_poly_trajectory_to_wrapper(msg)
 
-        trajectory_tracker = InterpTrajectoryTracker(polynomial, grasp_lengths, gripper_latency=gripper_latency, settle_time=self._trajectory_settle_time)
-
-        self._last_grasp_trajectory_update = poly_msg.time_start
-        self._grasp_trajectory_tracker = trajectory_tracker
+        self._last_grasp_trajectory_update = msg.time_start
+        self._grasp_trajectory_tracker = poly_wrapper
 
     def _register_handlers(self):
         """Register default handlers and replace with a couple new ones."""
@@ -349,26 +319,7 @@ class GraspStateMachine:
         self._state_transitions[GraspDroneState.SETTLE_AFTER] = GraspDroneState.MOVING_TO_DROP
         self._state_transitions[GraspDroneState.HANDLE_DISARM] = None
 
-    def _send_lengths(self, lengths, scale=True):
-        """Set a length target to the gripper."""
-        msg = std_msgs.msg.Int64MultiArray()
-        if scale:
-            msg.data = [int(1000 * length) for length in lengths]
-        else:
-            msg.data = [int(length) for length in lengths]
-
-        msg_dim = std_msgs.msg.MultiArrayDimension()
-        msg_dim.label = "data"
-        msg_dim.size = 4
-        msg_dim.stride = 4
-
-        msg.layout.dim.append(msg_dim)
-        msg.layout.data_offset = 0
-        self._lengths_pub.publish(msg)
-
-    def _send_target(
-        self, position, yaw=0.0, velocity=None, acceleration=None, is_grasp=False, use_ground_effect=True
-    ):
+    def _send_target(self, position, yaw=0.0, velocity=None, acceleration=None, is_grasp=False, use_ground_effect=True):
         """Send a waypoint target to mavros."""
         msg = mavros_msgs.msg.PositionTarget()
         msg.header.stamp = rospy.Time.now()
@@ -576,12 +527,13 @@ class GraspStateMachine:
             self._update_waypoint_trajectory()
 
         self._update_grasp_start_point()
-        elapsed = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
+        t_now = rospy.Time.now().to_sec()
+        elapsed = t_now - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
-        if elapsed >= curr_poly._total_time:
+        if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - curr_poly.end_point) < .1: # TODO: make parameter
             return True
 
-        pos, vel, acc = curr_poly.interp(elapsed)
+        pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
         self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
         return False
 
@@ -600,15 +552,16 @@ class GraspStateMachine:
         if self._replan_during_stages:
             self._update_grasp_trajectory()
             self._update_waypoint_trajectory()
-            self._update_waypoint(self._grasp_trajectory_tracker.get_end(), self._desired_yaw)
+            self._update_waypoint(self._grasp_trajectory_tracker.end_point, self._desired_yaw)
 
         if not self._replan_during_grasp_trajectory:
             # results in not replanning after starting to follow the grasp trajectory
             self._grasp_attempted = True
 
-        self._settle_after_pos = self._grasp_trajectory_tracker.get_end() # TODO: move this
-        elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
-        result = self._grasp_trajectory_tracker._run_normal(elapsed)
+        self._settle_after_pos = self._grasp_trajectory_tracker.end_point # TODO: move this
+        t_now = rospy.Time.now().to_sec()
+        elapsed = t_now - self._last_grasp_trajectory_update
+        des_p, des_v, des_a = self._grasp_trajectory_tracker.eval_global_pva_t(t_now)
         if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
@@ -623,15 +576,16 @@ class GraspStateMachine:
                     print("Service call failed to close gripper: %s"%e)
 
         self._send_target(
-            result.position,
+            des_p,
             yaw=self._desired_yaw,
-            velocity=result.velocity,
-            acceleration=result.acceleration,
+            velocity=des_p,
+            acceleration=des_a,
             is_grasp=True,
             use_ground_effect=elapsed < self._ground_effect_stop_time,
         )
 
-        return result.finished
+        finished = np.linalg.norm(self._current_position - self._settle_after_pos) < .2
+        return finished
 
     def _handle_settle_after(self):
         """Use loiter command to stop after executing the grasp."""
@@ -650,7 +604,7 @@ class GraspStateMachine:
         self._update_grasp_trajectory()
         self._update_waypoint_trajectory()
 
-        rise_pos = self._grasp_trajectory_tracker.get_end() + self._rise_offset
+        rise_pos = self._grasp_trajectory_tracker.end_point + self._rise_offset
         self._loiter_at_point(rise_pos[0], rise_pos[1], rise_pos[2])
         return self._has_elapsed(GraspDroneState.RISE)
 
@@ -662,12 +616,13 @@ class GraspStateMachine:
             self._update_waypoint_trajectory()
 
         self._update_waypoint(self._drop_position, 0)
-        elapsed = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
+        t_now = rospy.Time.now().to_sec()
+        elapsed = t_now - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
-        if elapsed >= curr_poly._total_time:
+        if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - curr_poly.end_point) < .1: # TODO: make parameter
             return True
 
-        pos, vel, acc = curr_poly.interp(elapsed)
+        pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
         self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
         return False
 
@@ -677,7 +632,6 @@ class GraspStateMachine:
         self._update_waypoint_trajectory()
         drop_pos = self._drop_position
         self._loiter_at_point(drop_pos[0], drop_pos[1], drop_pos[2])
-        self._send_lengths(self._open_lengths, scale=False)
         if self._enable_gpio_grasp:
             try:
                 self._client_open_gripper()
@@ -693,12 +647,13 @@ class GraspStateMachine:
             self._update_waypoint_trajectory()
 
         self._update_waypoint(self._home_position, 0)
-        elapsed = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
+        t_now = rospy.Time.now().to_sec()
+        elapsed = t_now - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
-        if elapsed >= curr_poly._total_time:
+        if elapsed >= curr_poly.t_max:
             return True
 
-        pos, vel, acc = curr_poly.interp(elapsed)
+        pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
         self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
         return False
 

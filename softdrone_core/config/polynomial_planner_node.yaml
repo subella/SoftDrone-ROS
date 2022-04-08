@@ -14,7 +14,8 @@ grasp_speed_horz: 0.2
 grasp_speed_vert: -0.035
 ground_effect_stop_time: 5.5
 
-end_offset: [2.0, 0.0, 1.0]
+end_offset_horz: 2.0
+end_offset_vert: 1.0
 end_velocity: [0.0, 0.0, 0.0]
 end_time: 5.0
 
@@ -25,3 +26,4 @@ grasp_lockout_distance: 1.0
 
 initial_lengths: [190, 190, 208, 208]
 
+codegen_dir: '$(find softdrone_core)/codegen'

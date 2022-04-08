@@ -1,0 +1,206 @@
+#!/usr/bin/env python
+import rospy
+import tf 
+import time
+import numpy as np
+import os
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, TwistStamped, Point
+from nav_msgs.msg import Odometry
+from visualization_msgs.msg import Marker, MarkerArray
+from softdrone_core.msg import MultiPolynomialTrajectory, LengthInfoMsg, GraspTrajectory
+from softdrone_core.utils import get_trajectory_viz_markers
+from softdrone_core.polynomial_trajectory_optimizer import generate_3d_solver, optimize_with_times, load_solver
+
+
+class PolynomialGenerator:
+
+    def __init__(self):
+
+        self.position = np.array([0.,0.,1.])
+        self.yaw = 0.
+        self.velocity = np.array([0.,0.,0.])
+        self.angular_velocity = 0.
+        self.waypoint_position = np.array([0.,3.,2.])
+        self.waypoint_yaw = 0.
+        self.target_position = np.array([3.,3.,0.])
+        self.target_yaw = 0.
+        self.target_velocity = np.array([0.,0.,0.]) # Not used yet. Eventually for moving target
+
+        #self.average_polynomial_velocity = rospy.get_param("~average_polynomial_velocity")
+
+        self.grasp_time = rospy.get_param("~grasp_time")
+        self.open_distance = rospy.get_param("~open_distance")
+        self.gripper_latency = rospy.get_param("~gripper_latency")
+        #self.trajectory_settle_time = rospy.get_param("~trajectory_settle_time")
+        self.start_position = np.array(rospy.get_param("~start_position"))
+        self.grasp_position = self.target_position - np.array(rospy.get_param("~offset"))
+        self.grasp_speed_horz = rospy.get_param("~grasp_speed_horz")
+        self.grasp_speed_vert = rospy.get_param("~grasp_speed_vert")
+        self.end_time = np.array(rospy.get_param("~end_time"))
+        self.end_velocity = np.array(rospy.get_param("~end_velocity"))
+        self.end_offset_horz = rospy.get_param("~end_offset_horz")
+        self.end_offset_vert = rospy.get_param("~end_offset_vert")
+        self.grasp_lockout_distance = np.array(rospy.get_param("~grasp_lockout_distance"))
+
+        self.offset = rospy.get_param("~offset")
+
+
+        rospy.Subscriber('~pose', PoseStamped, self.set_pose_cb)
+        rospy.Subscriber('~twist', TwistStamped, self.set_twist_cb)
+        rospy.Subscriber('~waypoint', PoseStamped, self.set_waypoint_cb)
+        rospy.Subscriber('~target_pose', PoseWithCovarianceStamped, self.set_target_pose_cb)
+
+        self.waypoint_polynomial_publisher = rospy.Publisher('~waypoint_polynomial', MultiPolynomialTrajectory, queue_size=1) 
+        self.grasp_trajectory_publisher = rospy.Publisher('~grasp_trajectory', MultiPolynomialTrajectory, queue_size=1) 
+
+        n_segs_grasp = 2
+        n_segs_waypoint = 1
+        order = 9
+        self.poly_order = order
+        order_to_minimize = 4
+
+        codegen_dir = rospy.get_param("~codegen_dir")
+        if not os.path.exists(codegen_dir):
+            os.makedirs(codegen_dir)
+        grasp_solver_fn = generate_3d_solver(n_segs_grasp, order, order_to_minimize, codegen_dir)
+        waypoint_solver_fn = generate_3d_solver(n_segs_waypoint, order, order_to_minimize, codegen_dir)
+
+        grasp_trajectory_evaluator = load_solver(grasp_solver_fn)
+        waypoint_trajectory_evaluator = load_solver(waypoint_solver_fn)
+
+        self.grasp_t_guess = [1.,1.]
+        self.waypoint_t_guess = [1.]
+        q_scale_params = [.01, 1, 1, 1, 1]
+        extra_q_reg = .0001
+        k_t_scale = 1000
+        j_scale =.01
+        self.solve_grasp_trajectory = lambda fixed_ders, T_guess: optimize_with_times(n_segs_grasp, order, order_to_minimize, fixed_ders, T_guess, q_scale_params, extra_q_reg, k_t_scale, j_scale, grasp_trajectory_evaluator)
+        self.solve_waypoint_trajectory = lambda fixed_ders, T_guess: optimize_with_times(n_segs_waypoint, order, order_to_minimize, fixed_ders, T_guess, q_scale_params, extra_q_reg, k_t_scale, j_scale, waypoint_trajectory_evaluator)
+
+
+    def set_target_pose_cb(self, msg):
+        msg = msg.pose
+        self.target_position[0] = msg.pose.position.x
+        self.target_position[1] = msg.pose.position.y
+        self.target_position[2] = msg.pose.position.z
+
+        quat = [msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w]
+        (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+        self.target_yaw = y
+
+    def get_coeffs(self, start, end, average_vel, safety_factor):
+        distance = np.linalg.norm(start - end)
+        total_time = distance / average_vel * safety_factor
+        coeffs = find_coeffs(start, end, time=total_time, start_velocity=self.velocity)
+        return (coeffs, total_time)
+
+    def set_pose_cb(self, msg):
+        pose = msg.pose
+        x = pose.position.x
+        y = pose.position.y
+        z = pose.position.z
+        self.position = np.array([x, y, z])
+
+        quat = [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]
+        (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+        self.yaw = y
+
+
+    def set_twist_cb(self, msg):
+        twist = msg.twist
+        vx = twist.linear.x
+        vy = twist.linear.y
+        vz = twist.linear.z
+        self.velocity = np.array([vx, vy, vz])
+
+        omega_x = twist.angular.x
+        omega_y = twist.angular.y
+        omega_z = twist.angular.z
+        self.angular_velocity = np.array([omega_x, omega_y, omega_z])
+
+
+    def set_waypoint_cb(self, msg):
+        pose = msg.pose
+        x = pose.position.x
+        y = pose.position.y
+        z = pose.position.z
+        self.waypoint_position = np.array([x, y, z])
+        quat = [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w]
+        (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+        self.waypoint_yaw = y
+
+
+    def update_waypoint_trajectory(self):
+        t0 = rospy.Time.now().to_sec()
+        pad_zeroes = [0]*((self.poly_order+1)//2 - 2)
+        end_position = self.waypoint_position
+        end_velocity = [0., 0., 0.]
+        fixed_ders_x = [self.position[0], self.velocity[0]] + pad_zeroes + [end_position[0], end_velocity[0]] + pad_zeroes
+        fixed_ders_y = [self.position[1], self.velocity[1]] + pad_zeroes + [end_position[1], end_velocity[1]] + pad_zeroes
+        fixed_ders_z = [self.position[2], self.velocity[2]] + pad_zeroes + [end_position[2], end_velocity[2]] + pad_zeroes
+        fixed_ders = [fixed_ders_x, fixed_ders_y, fixed_ders_z]
+
+        coeffs_x, coeffs_y, coeffs_z, seg_times = self.solve_waypoint_trajectory(fixed_ders, self.waypoint_t_guess)
+        self.waypoint_t_guess = seg_times
+
+        polynomial_msg = MultiPolynomialTrajectory()
+        polynomial_msg.time_start = t0
+        polynomial_msg.time_end = t0 + sum(seg_times)
+        polynomial_msg.segment_times = seg_times
+        polynomial_msg.poly_order = self.poly_order
+        polynomial_msg.coeffs_x = coeffs_x
+        polynomial_msg.coeffs_y = coeffs_y
+        polynomial_msg.coeffs_z = coeffs_z
+        self.waypoint_polynomial_publisher.publish(polynomial_msg)
+
+    def update_grasp_trajectory(self):
+
+        t0 = rospy.Time.now().to_sec()
+        target_dist = np.linalg.norm(self.target_position - self.position)
+        #if target_dist < self.grasp_lockout_distance:
+        #    # If we are close to the target, don't replan the trajectory
+        #    return
+
+        r_drone_to_target = self.target_position - self.position
+        r_displacement_plane = r_drone_to_target[:2]
+        dist_plane = np.linalg.norm(r_displacement_plane)
+        u_disp = r_displacement_plane / dist_plane
+        offset = np.zeros(3)
+        offset[0] = self.end_offset_horz * u_disp[0]
+        offset[1] = self.end_offset_horz * u_disp[1]
+        offset[2] = self.end_offset_vert
+        end_position = self.target_position + offset
+
+        grasp_velocity = np.zeros(3)
+        grasp_velocity[:2] = self.grasp_speed_horz * u_disp
+        grasp_velocity[2] = self.grasp_speed_vert
+
+        grasp_position = self.target_position - self.offset
+        pad_zeroes = [0]*((self.poly_order+1)//2 - 2)
+        fixed_ders_x = [self.position[0], self.velocity[0]] + pad_zeroes + [grasp_position[0], grasp_velocity[0], end_position[0], self.end_velocity[0]] + pad_zeroes
+        fixed_ders_y = [self.position[1], self.velocity[1]] + pad_zeroes + [grasp_position[1], grasp_velocity[1], end_position[1], self.end_velocity[1]] + pad_zeroes
+        fixed_ders_z = [self.position[2], self.velocity[2]] + pad_zeroes + [grasp_position[2], grasp_velocity[2], end_position[2], self.end_velocity[2]] + pad_zeroes
+        fixed_ders = [fixed_ders_x, fixed_ders_y, fixed_ders_z]
+        coeffs_x, coeffs_y, coeffs_z, seg_times = self.solve_grasp_trajectory(fixed_ders, self.grasp_t_guess)
+        self.grasp_t_guess = seg_times
+
+        polynomial_msg = MultiPolynomialTrajectory()
+        polynomial_msg.time_start = t0
+        polynomial_msg.time_end = t0 + sum(seg_times)
+        polynomial_msg.segment_times = seg_times
+        polynomial_msg.poly_order = self.poly_order
+        polynomial_msg.coeffs_x = coeffs_x
+        polynomial_msg.coeffs_y = coeffs_y
+        polynomial_msg.coeffs_z = coeffs_z
+        self.grasp_trajectory_publisher.publish(polynomial_msg)
+
+rospy.init_node('polynomial_generator')
+
+pg = PolynomialGenerator()
+
+rate = rospy.Rate(10)
+while not rospy.is_shutdown():
+    pg.update_waypoint_trajectory()
+    pg.update_grasp_trajectory()
+    rate.sleep()
+

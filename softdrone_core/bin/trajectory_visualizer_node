@@ -3,59 +3,72 @@ import rospy
 import numpy as np
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
-from softdrone_core.msg import PolynomialTrajectory, GraspTrajectory
+from softdrone_core.msg import MultiPolynomialTrajectory
 from softdrone_core.utils import get_trajectory_viz_markers
-from softdrone_core import InterpTrajectoryTracker
+from softdrone_core.polynomial_wrappers import multi_poly_trajectory_to_wrapper
 
-from softdrone.python.control.find_trajectory import PolynomialInfo, LengthInfo
+#def waypoint_trajectory_cb(msg):
+#    global viz_pub
+#    coeffs = [msg.coeffs_x, msg.coeffs_y, msg.coeffs_z]
+#    poly_for_eval = [np.polynomial.polynomial.Polynomial(c) for c in coeffs]
+#    poly_wrapper = PolynomialInfo(poly_for_eval, msg.time_end)
+#    times = np.linspace(0, msg.time_end - msg.time_start, 50)
+#    pos_list = [poly_wrapper.interp(t)[0] for t in times]
+#    pts = [Point() for _ in times]
+#    for p, r in zip(pts, pos_list):
+#        p.x = r[0]
+#        p.y = r[1]
+#        p.z = r[2]
+#    ma = get_trajectory_viz_markers(pts, 'waypoint_trajectory', 0, (1,0,0))
+#    viz_pub.publish(ma)
+#
+#def grasp_trajectory_cb(msg):
+#    global viz_pub
+#    poly_msg = msg.polynomial
+#    t_vals = np.linspace(0, poly_msg.time_end - poly_msg.time_start, 50)
+#    poly_x = np.polynomial.Polynomial(poly_msg.coeffs_x)
+#    poly_y = np.polynomial.Polynomial(poly_msg.coeffs_y)
+#    poly_z = np.polynomial.Polynomial(poly_msg.coeffs_z)
+#    polynomial = PolynomialInfo([poly_x, poly_y, poly_z], poly_msg.time_end - poly_msg.time_start)
+#
+#    length_msg = msg.lengths
+#    init_lengths = np.array(length_msg.init_lengths).reshape((4, 4))
+#    open_lengths = np.array(length_msg.open_lengths).reshape((4, 4))
+#    grasp_lengths = np.array(length_msg.grasp_lengths).reshape((4, 4))
+#    grasp_lengths = LengthInfo(init_lengths, open_lengths, grasp_lengths, length_msg.open_time, length_msg.grasp_time)
+#
+#    poly_wrapper = InterpTrajectoryTracker(polynomial, grasp_lengths, length_msg.gripper_latency, 0)
+#    grasp_traj = [poly_wrapper._run_normal(t) for t in t_vals]
+#    pts = [Point() for _ in t_vals]
+#    for p, r in zip(pts, grasp_traj):
+#        p.x = r.position[0]
+#        p.y = r.position[1]
+#        p.z = r.position[2]
+#    ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0))
+#    viz_pub.publish(ma)
 
-def waypoint_trajectory_cb(msg):
-    global viz_pub
-    coeffs = [msg.coeffs_x, msg.coeffs_y, msg.coeffs_z]
-    poly_for_eval = [np.polynomial.polynomial.Polynomial(c) for c in coeffs]
-    poly_wrapper = PolynomialInfo(poly_for_eval, msg.time_end)
-    times = np.linspace(0, msg.time_end - msg.time_start, 50)
-    pos_list = [poly_wrapper.interp(t)[0] for t in times]
-    pts = [Point() for _ in times]
-    for p, r in zip(pts, pos_list):
-        p.x = r[0]
-        p.y = r[1]
-        p.z = r[2]
-    ma = get_trajectory_viz_markers(pts, 'waypoint_trajectory', 0, (1,0,0))
-    viz_pub.publish(ma)
+def trajectory_viz_cb(viz_pub, name, marker_id, color, msg):
+    trajectory = multi_poly_trajectory_to_wrapper(msg)
 
-def grasp_trajectory_cb(msg):
-    global viz_pub
-    poly_msg = msg.polynomial
-    t_vals = np.linspace(0, poly_msg.time_end - poly_msg.time_start, 50)
-    poly_x = np.polynomial.Polynomial(poly_msg.coeffs_x)
-    poly_y = np.polynomial.Polynomial(poly_msg.coeffs_y)
-    poly_z = np.polynomial.Polynomial(poly_msg.coeffs_z)
-    polynomial = PolynomialInfo([poly_x, poly_y, poly_z], poly_msg.time_end - poly_msg.time_start)
-
-    length_msg = msg.lengths
-    init_lengths = np.array(length_msg.init_lengths).reshape((4, 4))
-    open_lengths = np.array(length_msg.open_lengths).reshape((4, 4))
-    grasp_lengths = np.array(length_msg.grasp_lengths).reshape((4, 4))
-    grasp_lengths = LengthInfo(init_lengths, open_lengths, grasp_lengths, length_msg.open_time, length_msg.grasp_time)
-
-    poly_wrapper = InterpTrajectoryTracker(polynomial, grasp_lengths, length_msg.gripper_latency, 0)
-    grasp_traj = [poly_wrapper._run_normal(t) for t in t_vals]
-    pts = [Point() for _ in t_vals]
-    for p, r in zip(pts, grasp_traj):
-        p.x = r.position[0]
-        p.y = r.position[1]
-        p.z = r.position[2]
-    ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0))
+    xv, yv, zv = trajectory.eval_full_trajectory()
+    pts = [Point() for _ in xv]
+    for p, x, y, z in zip(pts, xv, yv, zv):
+        p.x = x
+        p.y = y
+        p.z = z
+    ma = get_trajectory_viz_markers(pts, name, marker_id, color)
     viz_pub.publish(ma)
 
 
 rospy.init_node('polynomial_generator')
 
-rospy.Subscriber('~waypoint_polynomial', PolynomialTrajectory, waypoint_trajectory_cb, queue_size=1)
-rospy.Subscriber('~grasp_trajectory', GraspTrajectory, grasp_trajectory_cb, queue_size=1)
-
 viz_pub = rospy.Publisher('~trajectory_viz', MarkerArray, queue_size=1)
+waypoint_trajectory_cb = lambda msg: trajectory_viz_cb(viz_pub, 'waypoint_trajectory', 0, (1,0,0), msg)
+grasp_trajectory_cb = lambda msg: trajectory_viz_cb(viz_pub, 'grasp_trajectory', 2, (0,1,0), msg)
+
+rospy.Subscriber('~waypoint_polynomial', MultiPolynomialTrajectory, waypoint_trajectory_cb, queue_size=1)
+rospy.Subscriber('~grasp_trajectory', MultiPolynomialTrajectory, grasp_trajectory_cb, queue_size=1)
+
 
 rospy.spin()
 

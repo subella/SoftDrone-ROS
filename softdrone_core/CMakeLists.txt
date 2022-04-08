@@ -19,6 +19,7 @@ add_message_files(
   PolynomialTrajectory.msg
   LengthInfoMsg.msg
   GraspTrajectory.msg
+  MultiPolynomialTrajectory.msg
 )
 
 generate_messages(
