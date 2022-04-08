@@ -30,7 +30,8 @@ class PolynomialGenerator:
 
         self.average_polynomial_velocity = rospy.get_param("~average_polynomial_velocity", 0.8)
 
-        self.grasp_time = rospy.get_param("~grasp_time", 3.0)
+        self.grasp_time = rospy.get_param("~grasp_time")
+        self.use_hardcoded_grasp_time = rospy.get_param("~use_hardcoded_grasp_time")
         self.open_distance = rospy.get_param("~open_distance", 0.1)
         self.gripper_latency = rospy.get_param("~gripper_latency", 0.0)
         self.trajectory_settle_time = rospy.get_param("~trajectory_settle_time", 0.2)
@@ -145,7 +146,14 @@ class PolynomialGenerator:
         grasp_velocity[:2] = self.grasp_speed_horz * u_disp
         grasp_velocity[2] = self.grasp_speed_vert
 
-        current_grasp_time = np.linalg.norm(r_drone_to_target) / 0.5 # time = distance / speed
+
+        # This is a horrible, horrible hack that breaks our ability to replan
+        # but apparently is necessary because the gripper can't be commanded
+        # to close at a specific time.
+        if self.use_hardcoded_grasp_time:
+            current_grasp_time = self.grasp_time
+        else:
+            current_grasp_time = np.linalg.norm(r_drone_to_target) / 0.5 # time = distance / speed
         current_end_time = np.linalg.norm([self.end_offset_horz, self.end_offset_vert]) / 0.5
 
         try:
