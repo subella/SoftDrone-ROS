@@ -27,3 +27,5 @@ grasp_lockout_distance: 1.0
 initial_lengths: [190, 190, 208, 208]
 
 codegen_dir: '$(find softdrone_core)/codegen'
+
+average_polynomial_velocity: 0.5

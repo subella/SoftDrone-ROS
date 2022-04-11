@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(softdrone_core)
 
 find_package(catkin REQUIRED COMPONENTS
+    dynamic_reconfigure
     rospy
     std_msgs
     geometry_msgs
@@ -26,6 +27,9 @@ generate_messages(
   DEPENDENCIES
   std_msgs
 )
+
+
+generate_dynamic_reconfigure_options(cfg/polynomial_planner_node.cfg)
 
 catkin_package(CATKIN_DEPENDS message_runtime)
 #############

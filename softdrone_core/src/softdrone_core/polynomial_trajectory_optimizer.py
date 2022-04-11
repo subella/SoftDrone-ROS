@@ -175,7 +175,8 @@ def build_opt_coeffs(T_list, df, n_segs, order, order_to_minimize, q_scale_param
 
     return opt_coeffs, J, J_solo, J_jac, J_hess
 
-def build_opt_coeffs_solver_3d(n_segs, order, order_to_minimize):
+def build_opt_coeffs_solver_3d(n_segs, order, order_to_minimize, with_derivatives=False):
+
 
     n_fixed_at_endpoints = (order + 1)//2
     n_fixed = (n_segs - 1) * 2 + 2*n_fixed_at_endpoints
@@ -194,14 +195,17 @@ def build_opt_coeffs_solver_3d(n_segs, order, order_to_minimize):
     opt_coeffs_z, J_z, _, _, _ = build_opt_coeffs(T_list, df_z, n_segs, order, order_to_minimize, q_scale_params, extra_q_reg, k_t_scale, j_scale)
 
     J_full = J_x + J_y + J_z + cd.sum1(T_list)
-    J_jac = cd.jacobian(J_full, T_list)
-    J_hess = cd.jacobian(J_jac, T_list)
 
-    opt_coeffs_solver = cd.Function('opt_coeffs_solver', [T_list, df_x, df_y, df_z, q_scale_params, extra_q_reg, k_t_scale, j_scale], [opt_coeffs_x, opt_coeffs_y, opt_coeffs_z, J_full, J_jac, J_hess])
+    if with_derivatives:
+        J_jac = cd.jacobian(J_full, T_list)
+        J_hess = cd.jacobian(J_jac, T_list)
+        opt_coeffs_solver = cd.Function('opt_coeffs_solver', [T_list, df_x, df_y, df_z, q_scale_params, extra_q_reg, k_t_scale, j_scale], [opt_coeffs_x, opt_coeffs_y, opt_coeffs_z, J_full, J_jac, J_hess])
+    else:
+        opt_coeffs_solver = cd.Function('opt_coeffs_solver', [T_list, df_x, df_y, df_z, q_scale_params, extra_q_reg, k_t_scale, j_scale], [opt_coeffs_x, opt_coeffs_y, opt_coeffs_z, J_full])
     return opt_coeffs_solver
 
 
-def optimize_with_times(n_segs, order, order_to_minimize, ders_fixed, seg_times, q_scale_params, extra_q_reg, k_t_scale, j_scale, opt_coeffs_solver):
+def optimize_with_times(ders_fixed, seg_times, q_scale_params, extra_q_reg, k_t_scale, j_scale, opt_coeffs_solver):
 
     rel_decrease = np.inf
     J_last = np.inf
@@ -234,14 +238,27 @@ def optimize_with_times(n_segs, order, order_to_minimize, ders_fixed, seg_times,
         seg_times += update_der
         seg_times = np.array(seg_times)
         seg_times[seg_times < tmin] = tmin
-
+    print('\nn_iters: ', ix)
+    print('seg_times: ', seg_times)
     return np.array(coeffs_x), np.array(coeffs_y), np.array(coeffs_z), seg_times
 
-def generate_3d_solver(n_segs, order, order_to_minimize, output_directory):
 
-    solver = build_opt_coeffs_solver_3d(n_segs, order, order_to_minimize)
+def wrap_solver(solver, T_guess, dfx, dfy, dfz, q_scale_params, extra_q_reg, k_t_scale, j_scale):
+    cx, cy, cz, J = solver(T_guess, dfx, dfy, dfz, q_scale_params, extra_q_reg, k_t_scale, j_scale)
+    cx = cx.toarray().flatten().tolist()
+    cy = cy.toarray().flatten().tolist()
+    cz = cz.toarray().flatten().tolist()
+    J = J.toarray().flatten().tolist()
+    return cx, cy, cz, J
 
-    fn_base = 'polyopt_mx_3d_order%d_segs%d' % (order, n_segs)
+def generate_3d_solver(n_segs, order, order_to_minimize, output_directory, with_derivatives):
+
+    solver = build_opt_coeffs_solver_3d(n_segs, order, order_to_minimize, with_derivatives)
+
+    if with_derivatives:
+        fn_base = 'polyopt_mx_3d_order%d_segs%d_with_derivatives' % (order, n_segs)
+    else:
+        fn_base = 'polyopt_mx_3d_order%d_segs%d' % (order, n_segs)
     file_out_base = os.path.join(output_directory, fn_base)
     c_out_fn = file_out_base + '.c'
     so_out_fn = file_out_base + '.so'

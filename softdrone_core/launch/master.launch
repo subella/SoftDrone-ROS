@@ -127,6 +127,7 @@
     <group if="$(arg launch_polynomial_planner_node)">
         <remap from="~pose" to="/mavros/local_position/pose"/>
         <remap from="~twist" to="/mavros/local_position/twist"/>
+        <remap from="~accel" to="/mavros/local_position/accel"/>
         <remap from="~waypoint" to="/grasp_state_machine_node/waypoint"/>
         <remap from="~target_pose" to="tracker_node/target_global_pose_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/polynomial_planner_node.launch" />

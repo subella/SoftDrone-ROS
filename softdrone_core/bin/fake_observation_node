@@ -7,8 +7,6 @@ import tf
 import tf2_ros
 import tf2_geometry_msgs
 
-use_noise = True
-
 R_pos = 0.1
 R_rot = 0.05
 drone_pos = np.zeros(3)

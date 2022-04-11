@@ -24,6 +24,6 @@ control_rate: 100
 trajectory_settle_time: 2.0
 
 replan_during_grasp_trajectory: False
-replan_during_stages: True
+replan_during_stages: False
 require_grasp_confirmation: True
 enable_gpio_grasp: False

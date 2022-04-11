@@ -517,7 +517,8 @@ class GraspStateMachine:
             self._home_position[2] + self._takeoff_offset,
             yaw=self._desired_yaw * self._get_elapsed_ratio(GraspDroneState.HOVER)
         )
-        return self._has_elapsed(GraspDroneState.HOVER)
+        trajectory_staleness = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
+        return self._has_elapsed(GraspDroneState.HOVER) and trajectory_staleness < 0.1
 
     def _handle_moving_to_start(self):
         """Move from the takeoff position to the start of the grasp."""
@@ -530,7 +531,9 @@ class GraspStateMachine:
         t_now = rospy.Time.now().to_sec()
         elapsed = t_now - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
-        if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - curr_poly.end_point) < .1: # TODO: make parameter
+        if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - curr_poly.end_point) < .01: # TODO: make parameter
+            print('curr_poly.t_max: ', curr_poly.t_max)
+            print('elapsed: ', elapsed, 'dist: ', np.linalg.norm(self._current_position - curr_poly.end_point))
             return True
 
         pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
