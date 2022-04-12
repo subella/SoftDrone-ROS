@@ -226,7 +226,7 @@ def optimize_with_times(ders_fixed, seg_times, q_scale_params, extra_q_reg, k_t_
         J_last = J
         if rel_decrease < .01:
             break
-        if ix == 100:
+        if ix == 20:
             break
         ix += 1
 
@@ -240,7 +240,11 @@ def optimize_with_times(ders_fixed, seg_times, q_scale_params, extra_q_reg, k_t_
         seg_times[seg_times < tmin] = tmin
     print('\nn_iters: ', ix)
     print('seg_times: ', seg_times)
-    return np.array(coeffs_x), np.array(coeffs_y), np.array(coeffs_z), seg_times
+    #return np.array(coeffs_x), np.array(coeffs_y), np.array(coeffs_z), seg_times
+    cx = coeffs_x.toarray().flatten().tolist()
+    cy = coeffs_y.toarray().flatten().tolist()
+    cz = coeffs_z.toarray().flatten().tolist()
+    return cx, cy, cz, seg_times, J
 
 
 def wrap_solver(solver, T_guess, dfx, dfy, dfz, q_scale_params, extra_q_reg, k_t_scale, j_scale):

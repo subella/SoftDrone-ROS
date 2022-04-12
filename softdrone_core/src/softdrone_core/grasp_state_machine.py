@@ -153,6 +153,8 @@ class GraspStateMachine:
         )
 
         self._waypoint_pub = rospy.Publisher("~waypoint", PoseStamped, queue_size=1)
+        self._starting_grasp_pub = rospy.Publisher("~starting_grasp", Bool, queue_size=1)
+        self._need_publish_hold_grasp_time = True
 
         control_rate = rospy.get_param("~control_rate")
         if control_rate < 20.0:
@@ -551,6 +553,12 @@ class GraspStateMachine:
 
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
+
+        if self._need_publish_hold_grasp_time:
+            bool_msg = Bool()
+            bool_msg.data = True
+            self._starting_grasp_pub.publish(bool_msg)
+            self._need_publish_hold_grasp_time = False
 
         if self._replan_during_stages:
             self._update_grasp_trajectory()

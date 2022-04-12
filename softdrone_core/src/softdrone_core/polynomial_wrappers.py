@@ -84,9 +84,6 @@ class MultiPolynomialWrapper:
     def eval_global_pva_t(self, t, clip_to_tmax=True):
         """ Evaluate the position, velocity, and acceleration at time t """
 
-        #print(self.speedup)
-        print('t_wall: ', t - self.t_start_global)
-        print('t_scale: ', (t - self.t_start_global) * self.speedup)
         p = self.eval_global_t(t, der=0, clip_to_tmax=True)
         v = self.eval_global_t(t, der=1, clip_to_tmax=True)
         a = self.eval_global_t(t, der=2, clip_to_tmax=True)

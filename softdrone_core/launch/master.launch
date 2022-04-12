@@ -130,6 +130,7 @@
         <remap from="~accel" to="/mavros/local_position/accel"/>
         <remap from="~waypoint" to="/grasp_state_machine_node/waypoint"/>
         <remap from="~target_pose" to="tracker_node/target_global_pose_estimate"/>
+        <remap from="~starting_grasp" to="grasp_state_machine_node/starting_grasp"/>
         <include file="$(find softdrone_core)/launch/nodes/polynomial_planner_node.launch" />
     </group>
 
