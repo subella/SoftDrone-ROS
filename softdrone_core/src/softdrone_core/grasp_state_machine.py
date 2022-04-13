@@ -4,9 +4,10 @@ from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
 import tf
 
-from softdrone_core.msg import PolynomialTrajectory, LengthInfoMsg, GraspTrajectory
+from softdrone_core.msg import PolynomialTrajectory, LengthInfoMsg, GraspTrajectory, GraspCommand
 from softdrone_core.utils import get_trajectory_viz_markers
 from softdrone_core import InterpTrajectoryTracker
+from softdrone_core.srv import SendGraspCommand, SendGraspCommandRequest
 
 import geometry_msgs.msg
 import mavros_msgs.msg
@@ -151,11 +152,13 @@ class GraspStateMachine:
         self._enable_gpio_grasp = rospy.get_param("~enable_gpio_grasp")
 
         if self._enable_gpio_grasp:
-            rospy.wait_for_service('close_gripper')
-            rospy.wait_for_service('open_gripper')
+            #rospy.wait_for_service('close_gripper')
+            #rospy.wait_for_service('open_gripper')
+            rospy.wait_for_service('cmd_gripper')
 
-            self._client_close_gripper = rospy.ServiceProxy('close_gripper', std_srvs.srv.Empty)
-            self._client_open_gripper = rospy.ServiceProxy('open_gripper', std_srvs.srv.Empty)
+            #self._client_close_gripper = rospy.ServiceProxy('close_gripper', std_srvs.srv.Empty)
+            #self._client_open_gripper = rospy.ServiceProxy('open_gripper', std_srvs.srv.Empty)
+            self._gripper_client = rospy.ServiceProxy('cmd_gripper', SendGraspCommand)
 
         rospy.Subscriber("~state", mavros_msgs.msg.State, self._state_callback, queue_size=10)
         rospy.Subscriber("~pose", PoseStamped, self._pose_callback, queue_size=10)
@@ -592,7 +595,12 @@ class GraspStateMachine:
         self._update_grasp_start_point()
         settle_pos = self._grasp_start_pos
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
-        return self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
+        proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
+        if proceed:
+            grasp_cmd = SendGraspCommandRequest()
+            grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
+            self._gripper_client(grasp_cmd)
+        return proceed
 
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
@@ -618,7 +626,10 @@ class GraspStateMachine:
             lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
                 try:
-                    self._client_close_gripper()
+                    #self._client_close_gripper()
+                    grasp_cmd = SendGraspCommandRequest()
+                    grasp_cmd.cmd = GraspCommand.CLOSE
+                    self._gripper_client(grasp_cmd)
                 except rospy.ServiceException as e:
                     print("Service call failed to close gripper: %s"%e)
 
@@ -680,7 +691,11 @@ class GraspStateMachine:
         self._send_lengths(self._open_lengths, scale=False)
         if self._enable_gpio_grasp:
             try:
-                self._client_open_gripper()
+                #self._client_open_gripper()
+                grasp_cmd = SendGraspCommandRequest()
+                grasp_cmd.cmd = GraspCommand.DEFAULT
+                self._gripper_client(grasp_cmd)
+
             except rospy.ServiceException as e:
                 print("Service call failed to open gripper: %s"%e)
         return self._has_elapsed(GraspDroneState.DROP)
