@@ -238,8 +238,8 @@ def optimize_with_times(ders_fixed, seg_times, q_scale_params, extra_q_reg, k_t_
         seg_times += update_der
         seg_times = np.array(seg_times)
         seg_times[seg_times < tmin] = tmin
-    print('\nn_iters: ', ix)
-    print('seg_times: ', seg_times)
+    #print('\nn_iters: ', ix)
+    #print('seg_times: ', seg_times)
     #return np.array(coeffs_x), np.array(coeffs_y), np.array(coeffs_z), seg_times
     cx = coeffs_x.toarray().flatten().tolist()
     cy = coeffs_y.toarray().flatten().tolist()

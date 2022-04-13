@@ -7,7 +7,7 @@ import tf
 import tf2_ros
 import tf2_geometry_msgs
 
-R_pos = 0.1
+R_pos = 0.001
 R_rot = 0.05
 drone_pos = np.zeros(3)
 drone_yaw = 0.0

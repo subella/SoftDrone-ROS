@@ -91,6 +91,7 @@ class GraspStateMachine:
         self._target_position = np.array([3.,3.,0.])
         self._target_yaw = 0.0
         self._settle_after_pos = np.array([0.,0.,0.])
+        self._waypoint = np.array([0.,0.,0.])
 
         self._target_grasp_angle = rospy.get_param("~target_grasp_angle")
         self._grasp_start_horz_offset = rospy.get_param("~grasp_start_horz_offset")
@@ -196,6 +197,7 @@ class GraspStateMachine:
 
     def _update_waypoint(self, pos, yaw):
         """ Publish a waypoint to plan a polynomial trajectory to """
+        self._waypoint = pos
         quat = tf.transformations.quaternion_from_euler(0, 0, yaw)
         msg = PoseStamped()
         msg.header.stamp = rospy.Time.now()
@@ -336,10 +338,17 @@ class GraspStateMachine:
         # TODO(nathan) should enable commanding yaw rate, but not important yet
         msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_YAW_RATE
 
-        msg.position.x = position[0]
-        msg.position.y = position[1]
-        msg.position.z = position[2]
+
         msg.yaw = yaw
+
+        if position is not None:
+            msg.position.x = position[0]
+            msg.position.y = position[1]
+            msg.position.z = position[2]
+        else:
+            msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PX
+            msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PY
+            msg.type_mask |= mavros_msgs.msg.PositionTarget.IGNORE_PZ
 
         if velocity is not None:
             msg.velocity.x = velocity[0]
@@ -538,8 +547,10 @@ class GraspStateMachine:
             print('elapsed: ', elapsed, 'dist: ', np.linalg.norm(self._current_position - curr_poly.end_point))
             return True
 
-        pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
-        self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
+        #pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
+        #self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
+        vel = self._get_v_to_waypoint()
+        self._send_target(self._waypoint, velocity=vel, yaw=self._desired_yaw)
         return False
 
     def _handle_settle_before(self):
@@ -550,6 +561,102 @@ class GraspStateMachine:
         settle_pos = self._grasp_start_pos
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
         return self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
+
+    def compute_control_law_in(self, target_pos, target_yaw, drone_pos):
+        k_x = 1.
+        k_z = 1.
+
+        r_to_target = target_pos - drone_pos
+        r_planar_to_target = r_to_target[:2]
+        r_vertical_to_target = r_to_target[2]
+
+        x = np.linalg.norm(r_planar_to_target)
+        z = np.linalg.norm(r_vertical_to_target)
+
+        z_eqi = np.clip(.1*x**2, 0, 5)
+
+        vx = k_x*x
+        vz = k_z * (z_eqi - z)
+
+
+        vx = np.clip(vx, -1, 1)
+        vz = np.clip(vz, -1, 1)
+        print('\nin')
+        print('x: ', x)
+        print('z: ', z)
+        print('vx: ', vx)
+        print('vz: ', vz)
+
+
+        target_dir = np.array([np.cos(target_yaw), np.sin(target_yaw)])
+        target_dir_3d = np.array([np.cos(target_yaw), np.sin(target_yaw), 0])
+
+
+        if x > .001:
+            u_planar_to_target = r_planar_to_target / x
+            u_planar_to_target_3d = r_to_target / x
+            u_planar_to_target_3d[2] = 0
+            cross_uv = np.cross(u_planar_to_target_3d, target_dir_3d)
+            lat_vec = np.cross(u_planar_to_target_3d, cross_uv)
+            print('lat_vec: ', lat_vec)
+        else:
+            u_planar_to_target = np.array([0,0])
+            lat_vec = np.zeros(3)
+
+        k_lat = 2.
+        v_cmd_xy = vx * u_planar_to_target + .5 * target_dir + k_lat * lat_vec[:2]
+        
+        return [v_cmd_xy[0], v_cmd_xy[1], vz]
+
+
+
+    def compute_control_law_out(self, target_pos, target_yaw, drone_pos):
+        k_x = 1.
+        k_z = 1.
+
+        r_to_target = target_pos - drone_pos
+        r_planar_to_target = r_to_target[:2]
+        r_vertical_to_target = r_to_target[2]
+
+        x = np.linalg.norm(r_planar_to_target)
+        z = np.linalg.norm(r_vertical_to_target)
+
+        z_eqi = np.clip(.1*x**2, 0, 5)
+
+        vx = -k_x*x
+        vz = k_z * (z_eqi - z)
+
+
+        vx = np.clip(vx, -1, 1)
+        vz = np.clip(vz, -1, 1)
+        print('\nout')
+        print('x: ', x)
+        print('z: ', z)
+        print('vx: ', vx)
+        print('vz: ', vz)
+
+
+        target_dir = np.array([np.cos(target_yaw), np.sin(target_yaw)])
+        target_dir_3d = np.array([np.cos(target_yaw), np.sin(target_yaw), 0])
+
+
+        if x > .001:
+            u_planar_to_target = r_planar_to_target / x
+            u_planar_to_target_3d = r_to_target / x
+            u_planar_to_target_3d[2] = 0
+            cross_uv = np.cross(u_planar_to_target_3d, target_dir_3d)
+            lat_vec = np.cross(u_planar_to_target_3d, cross_uv)
+            print('lat_vec: ', lat_vec)
+        else:
+            u_planar_to_target = np.array([0,0])
+            lat_vec = np.zeros(3)
+
+        k_lat = 1.
+        v_cmd_xy = vx * u_planar_to_target + .5 * target_dir - k_lat * lat_vec[:2]
+        
+        return [v_cmd_xy[0], v_cmd_xy[1], vz]
+
+        
 
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
@@ -565,36 +672,60 @@ class GraspStateMachine:
             self._update_waypoint_trajectory()
             self._update_waypoint(self._grasp_trajectory_tracker.end_point, self._desired_yaw)
 
-        if not self._replan_during_grasp_trajectory:
-            # results in not replanning after starting to follow the grasp trajectory
-            self._grasp_attempted = True
+        #if not self._replan_during_grasp_trajectory:
+        #    # results in not replanning after starting to follow the grasp trajectory
+        #    self._grasp_attempted = True
+
+
+        target_pos = self._target_position
+        drone_pos = self._current_position
+        target_yaw = self._target_yaw
+        if not self._grasp_attempted:
+            vx, vy, vz = self.compute_control_law_in(target_pos, target_yaw, drone_pos)
+        else:
+            if np.linalg.norm(target_pos - drone_pos) < 1:
+                vx, vy, vz = self.compute_control_law_out(target_pos, target_yaw, drone_pos)
+            else:
+                self._update_waypoint(self._grasp_trajectory_tracker.end_point, 0)
+                vx, vy, vz = self._get_v_to_waypoint()
 
         self._settle_after_pos = self._grasp_trajectory_tracker.end_point # TODO: move this
         t_now = rospy.Time.now().to_sec()
         elapsed = t_now - self._last_grasp_trajectory_update
-        des_p, des_v, des_a = self._grasp_trajectory_tracker.eval_global_pva_t(t_now)
+        #des_p, des_v, des_a = self._grasp_trajectory_tracker.eval_global_pva_t(t_now)
+
         if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
 
-        if self._enable_gpio_grasp:
-            lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
-            if lat_target_dist < self._grasp_start_distance:
-                try:
-                    self._client_close_gripper()
-                except rospy.ServiceException as e:
-                    print("Service call failed to close gripper: %s"%e)
+        #if self._enable_gpio_grasp:
+        #    lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
+        #    if lat_target_dist < self._grasp_start_distance:
+        #        try:
+        #            self._client_close_gripper()
+        #        except rospy.ServiceException as e:
+        #            print("Service call failed to close gripper: %s"%e)
 
         self._send_target(
-            des_p,
+            self._current_position,
             yaw=self._desired_yaw,
-            velocity=des_p,
-            acceleration=des_a,
+            velocity=[vx,vy,vz],
             is_grasp=True,
             use_ground_effect=elapsed < self._ground_effect_stop_time,
         )
 
+        #self._send_target(
+        #    des_p,
+        #    yaw=self._desired_yaw,
+        #    velocity=des_v,
+        #    acceleration=des_a,
+        #    is_grasp=True,
+        #    use_ground_effect=elapsed < self._ground_effect_stop_time,
+        #)
+
+        print('cur pos: ', self._current_position)
+        print('settle after pos:', self._settle_after_pos)
         finished = np.linalg.norm(self._current_position - self._settle_after_pos) < .2
         return finished
 
@@ -633,9 +764,17 @@ class GraspStateMachine:
         if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - curr_poly.end_point) < .1: # TODO: make parameter
             return True
 
-        pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
-        self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
+        #pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
+        #self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
+        vel = self._get_v_to_waypoint()
+        self._send_target(self._drop_position, velocity=vel, yaw=self._desired_yaw)
         return False
+
+    def _get_v_to_waypoint(self):
+        r_to_waypoint = self._waypoint - self._current_position
+        u_to_waypoint = r_to_waypoint / (np.linalg.norm(r_to_waypoint) + .0001)
+        v_desired = u_to_waypoint * 0.8
+        return v_desired
 
     def _handle_drop(self):
         """Wait while we drop the target."""
@@ -664,8 +803,10 @@ class GraspStateMachine:
         if elapsed >= curr_poly.t_max:
             return True
 
-        pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
-        self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
+        #pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
+        #self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
+        vel = self._get_v_to_waypoint()
+        self._send_target(self._home_position, velocity=vel, yaw=self._desired_yaw)
         return False
 
     def _handle_hover_before_land(self):

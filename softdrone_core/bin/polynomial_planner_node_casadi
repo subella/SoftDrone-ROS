@@ -4,7 +4,7 @@ import tf
 import time
 import numpy as np
 import os
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, TwistStamped, Point, AccelStamped
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, TwistStamped, Point, AccelWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from softdrone_core.msg import MultiPolynomialTrajectory, LengthInfoMsg, GraspTrajectory
@@ -56,7 +56,7 @@ class PolynomialGenerator:
 
         rospy.Subscriber('~pose', PoseStamped, self.set_pose_cb)
         rospy.Subscriber('~twist', TwistStamped, self.set_twist_cb)
-        rospy.Subscriber('~accel', AccelStamped, self.set_accel_cb)
+        rospy.Subscriber('~accel', AccelWithCovarianceStamped, self.set_accel_cb)
         rospy.Subscriber('~waypoint', PoseStamped, self.set_waypoint_cb)
         rospy.Subscriber('~target_pose', PoseWithCovarianceStamped, self.set_target_pose_cb)
         rospy.Subscriber('~starting_grasp', Bool, self.grasp_started_cb)
@@ -178,7 +178,7 @@ class PolynomialGenerator:
         self.angular_velocity = np.array([omega_x, omega_y, omega_z])
 
     def set_accel_cb(self, msg):
-        accel = msg.accel
+        accel = msg.accel.accel
         ax = accel.linear.x
         ay = accel.linear.y
         az = accel.linear.z
@@ -266,10 +266,10 @@ class PolynomialGenerator:
         if self.use_optimizer:
 
             if self.grasp_time_global is not None:
-                print('\n\n\n using saved grasp time')
-                print('grasp time global: ', self.grasp_time_global)
-                print('t0', t0)
-                print('\n\n\n')
+                #print('\n\n\n using saved grasp time')
+                #print('grasp time global: ', self.grasp_time_global)
+                #print('t0', t0)
+                #print('\n\n\n')
 
                 dt = self.grasp_time_global - t0
                 if dt < .01:
@@ -284,7 +284,7 @@ class PolynomialGenerator:
 
             
             coeffs_x, coeffs_y, coeffs_z, segment_times, J = optimize_with_times(fixed_ders, seg_times_in, q_scale_params, self.extra_q_reg, self.k_t_scale, self.j_scale, self.grasp_trajectory_evaluator)
-            print('optimized segment times: ', segment_times)
+            #print('optimized segment times: ', segment_times)
             dist_nominal = np.linalg.norm(r_drone_to_target) + np.linalg.norm(end_position - grasp_position)
             t_scale = (dist_nominal / self.average_grasp_velocity) / sum(segment_times)
             #t_scale = 1.
