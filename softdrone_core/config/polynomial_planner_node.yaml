@@ -7,7 +7,7 @@ gripper_latency: 0.0
 
 grasp_target: [0.257, -3.463, 0.989]
 start_position: [-2.0, 0.0, 2.0]
-offset: [0, 0, -0.25]
+offset: [0, 0, -0.22]
 open_distance: 0.2
 grasp_velocity: [0.2, 0.0, -0.035]
 grasp_speed_horz: 0.2
@@ -26,5 +26,5 @@ grasp_lockout_distance: 1.0
 initial_lengths: [190, 190, 208, 208]
 
 # Time into the future when the grasp should occur
-grasp_time: 5.0
+grasp_time: 4.
 use_hardcoded_grasp_time: True

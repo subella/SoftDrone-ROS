@@ -189,7 +189,6 @@ class GraspStateMachine:
             rospy.Duration(1.0 / control_rate), self._timer_callback
         )
 
-
     def _do_grasp_cb(self, msg):
         self._grasp_start_ok = True
 
