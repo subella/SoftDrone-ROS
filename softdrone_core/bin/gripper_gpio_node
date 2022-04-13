@@ -4,27 +4,26 @@ import rospy
 import std_srvs.srv
 import RPi.GPIO as GPIO
 from std_msgs.msg import Bool
+from softdrone_core.srv import SendGraspCommand
 
 class GripperNode:
     """Node to hold gripper data."""
 
     def __init__(self):
-        """Setup Publishers/Services"""
-        self.pub_in = rospy.Publisher('input_state', Bool, queue_size = 10)
-        self.pub_out = rospy.Publisher('output_state', Bool, queue_size = 10)
-
-        self._close_serv = rospy.Service("close_gripper", std_srvs.srv.Empty, self._close_callback)
-        self._open_serv = rospy.Service("open_gripper", std_srvs.srv.Empty, self._open_callback)
+        """Setup Service"""
+        self._cmd_serv = rospy.Service("cmd_gripper", SendGraspCommand, self._cmd_callback)
 
         """GPIOs"""
-        self._pin_out = rospy.get_param("/gpio_input_pin", 29)
-        self._pin_in = rospy.get_param("/gpio_output_pin", 31)
+        #The commands are encoded as a 2 digit binary number AB where LOW is 0 and HIGH is 1
+        self._pin_out_a = rospy.get_param("/gpio_output_pin_a", 29)
+        self._pin_out_b = rospy.get_param("/gpio_output_pin_b", 31)
         
-        #Output - True: close gripper, False: open gripper
-        self._output_signal = False
-
-        #Input - True: gripper closed/closing, False: gripper open/opening
-        self._input_signal = False
+        #Command sent to gripper
+        #0: default
+        #1: open
+        #2: open_asymmetric
+        #3: close
+        self._output_signal = 0
 
     def __enter__(self):
         return self
@@ -32,44 +31,57 @@ class GripperNode:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         return exc_type is None
 
-    def _open_callback(self, req):
+    def _cmd_callback(self, req):
         """Handle an open request."""
-        self._output_signal = False
-        resp = std_srvs.srv.EmptyResponse()
-        return resp
-
-    def _close_callback(self, req):
-        """Handle an open request."""
-        self._output_signal = True
-        resp = std_srvs.srv.EmptyResponse()
-        return resp
+        self._output_signal = req.cmd.cmd
+        if req.cmd.cmd < 0:
+            return False
+        if req.cmd.cmd > 3:
+            return False
+        return True
 
     def spin(self):
         GPIO.setmode(GPIO.BOARD) #use board pin numbers
-        GPIO.setup(self._pin_out, GPIO.OUT)
-        GPIO.setup(self._pin_in, GPIO.IN)
+        GPIO.setup(self._pin_out_a, GPIO.OUT)
+        GPIO.setup(self._pin_out_b, GPIO.OUT)
 
-        GPIO.output(self._pin_out, GPIO.LOW)
+        GPIO.output(self._pin_out_a, GPIO.LOW)
+        GPIO.output(self._pin_out_b, GPIO.LOW)
 
         """Send signal as long as ros is ok."""
         rate = rospy.Rate(50.0)
         counter=0
         while not rospy.is_shutdown():
             #send signal to gpios
-            if self._output_signal==True:
-                GPIO.output(self._pin_out, GPIO.HIGH)
+            if self._output_signal==0:
+                GPIO.output(self._pin_out_a, GPIO.LOW)
+                GPIO.output(self._pin_out_b, GPIO.LOW)
+            elif self._output_signal==1:
+                GPIO.output(self._pin_out_a, GPIO.LOW)
+                GPIO.output(self._pin_out_b, GPIO.HIGH)
+            elif self._output_signal==2:
+                GPIO.output(self._pin_out_a, GPIO.HIGH)
+                GPIO.output(self._pin_out_b, GPIO.LOW)
+            elif self._output_signal==3:
+                GPIO.output(self._pin_out_a, GPIO.HIGH)
+                GPIO.output(self._pin_out_b, GPIO.HIGH)
             else:
-                GPIO.output(self._pin_out, GPIO.LOW)
-            self.pub_out.publish(self._output_signal)
+                GPIO.output(self._pin_out_a, GPIO.LOW)
+                GPIO.output(self._pin_out_b, GPIO.LOW)
+                print("Invalid command for gripper GPIOs! Sending default command.")
 
-            #receive signals from gpios
-            if(GPIO.input(self._pin_in) == GPIO.HIGH):
-                self._input_signal=True
-            else:
-                self._input_signal=False
-            self.pub_in.publish(self._input_signal)
+            #prints for debugging
+            # if self._output_signal==0:
+            #     print("Counter: ", counter, ", Sending: ", self._output_signal, "DEFAULT")
+            # elif self._output_signal==1:
+            #     print("Counter: ", counter, ", Sending: ", self._output_signal, "OPEN")
+            # elif self._output_signal==2:
+            #     print("Counter: ", counter, ", Sending: ", self._output_signal, "OPEN_ASYMMETRIC")
+            # elif self._output_signal==3:
+            #     print("Counter: ", counter, ", Sending: ", self._output_signal, "CLOSE")
+            # else:
+            #     print("Invalid command for gripper GPIOs! Sending default command.")
 
-            # print("Counter: ", counter, ", Sending: ", self._output_signal)
             counter = counter+1
             if(counter > 1000):
                 counter=0

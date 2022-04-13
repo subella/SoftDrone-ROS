@@ -19,6 +19,12 @@ add_message_files(
   PolynomialTrajectory.msg
   LengthInfoMsg.msg
   GraspTrajectory.msg
+  GraspCommand.msg
+)
+
+add_service_files(
+  FILES
+  SendGraspCommand.srv
 )
 
 generate_messages(

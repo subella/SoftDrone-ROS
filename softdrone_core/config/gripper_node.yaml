@@ -1,5 +1,5 @@
 port: "dev/arduino0"
 baud_rate: 57600
-gpio_input_pin: 29
-gpio_output_pin: 31
+gpio_output_pin_a: 29
+gpio_output_pin_b: 31
 enable_gpio_grasp: True
