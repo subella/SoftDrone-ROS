@@ -596,9 +596,13 @@ class GraspStateMachine:
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
         proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
         if proceed:
-            grasp_cmd = SendGraspCommandRequest()
+            grasp_cmd = GraspCommand()
             grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
-            self._gripper_client(grasp_cmd)
+            try:
+                rospy.logwarn("Called open gripper!")
+                self._gripper_client(grasp_cmd)
+            except rospy.ServiceException as e:
+                print("Service call failed to open gripper: %s"%e)
         return proceed
 
     def _handle_executing_mission(self):
@@ -625,10 +629,10 @@ class GraspStateMachine:
             lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
                 try:
-                    #self._client_close_gripper()
-                    grasp_cmd = SendGraspCommandRequest()
+                    grasp_cmd = GraspCommand()
                     grasp_cmd.cmd = GraspCommand.CLOSE
                     self._gripper_client(grasp_cmd)
+                    rospy.logwarn("Called close gripper!")
                 except rospy.ServiceException as e:
                     print("Service call failed to close gripper: %s"%e)
 
@@ -690,8 +694,7 @@ class GraspStateMachine:
         self._send_lengths(self._open_lengths, scale=False)
         if self._enable_gpio_grasp:
             try:
-                #self._client_open_gripper()
-                grasp_cmd = SendGraspCommandRequest()
+                grasp_cmd = GraspCommand()
                 grasp_cmd.cmd = GraspCommand.DEFAULT
                 self._gripper_client(grasp_cmd)
 

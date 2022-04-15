@@ -3,12 +3,12 @@ grasp_start_horz_offset: 2.0
 grasp_start_vert_offset: 1.0
 
 fixed_grasp_start_point: True
-grasp_start_pos: [-2.0, 0.5, 1.0]
+grasp_start_pos: [-2.0, 0.5, 1.2]
 grasp_start_theta: 0.0
 
 # Lateral distance from target when the drone should start closing gripper
 # Set this to a very large number to force the grasp state machine to call the gripper close service immediately upon starting the "execute mission" state
-grasp_start_distance: 100
+grasp_start_distance: .30
 
 drop_position: [0.0, 1.0, 1.0]
 takeoff_offset: 1.0
