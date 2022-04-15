@@ -140,7 +140,7 @@ class GraspStateMachine:
             self._client_open_gripper = rospy.ServiceProxy('open_gripper', Empty)
 
         rospy.Subscriber("~state", mavros_msgs.msg.State, self._state_callback, queue_size=10)
-        rospy.Subscriber("~pose", PoseStamped, self._pose_callback, queue_size=10)
+        rospy.Subscriber("~pose", PoseStamped, self._pose_callback, queue_size=2)
 
         rospy.Subscriber("~waypoint_polynomial", MultiPolynomialTrajectory, self._waypoint_trajectory_cb)
         rospy.Subscriber("~grasp_trajectory", MultiPolynomialTrajectory, self._grasp_trajectory_cb)
@@ -542,7 +542,7 @@ class GraspStateMachine:
         t_now = rospy.Time.now().to_sec()
         elapsed = t_now - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
-        if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - curr_poly.end_point) < .01: # TODO: make parameter
+        if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - curr_poly.end_point) < .1: # TODO: make parameter
             print('curr_poly.t_max: ', curr_poly.t_max)
             print('elapsed: ', elapsed, 'dist: ', np.linalg.norm(self._current_position - curr_poly.end_point))
             return True
@@ -550,7 +550,8 @@ class GraspStateMachine:
         #pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
         #self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
         vel = self._get_v_to_waypoint()
-        self._send_target(self._waypoint, velocity=vel, yaw=self._desired_yaw)
+        #self._send_target(self._waypoint, velocity=vel, yaw=self._desired_yaw)
+        self._send_target(self._current_position, velocity=vel, yaw=self._desired_yaw)
         return False
 
     def _handle_settle_before(self):
@@ -563,8 +564,8 @@ class GraspStateMachine:
         return self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
 
     def compute_control_law_in(self, target_pos, target_yaw, drone_pos):
-        k_x = 1.
-        k_z = 1.
+        k_x = 0.2
+        k_z = 0.2
 
         r_to_target = target_pos - drone_pos
         r_planar_to_target = r_to_target[:2]
@@ -592,27 +593,28 @@ class GraspStateMachine:
         target_dir_3d = np.array([np.cos(target_yaw), np.sin(target_yaw), 0])
 
 
-        if x > .001:
+        if x > .1:
             u_planar_to_target = r_planar_to_target / x
             u_planar_to_target_3d = r_to_target / x
             u_planar_to_target_3d[2] = 0
             cross_uv = np.cross(u_planar_to_target_3d, target_dir_3d)
-            lat_vec = np.cross(u_planar_to_target_3d, cross_uv)
+            lat_speed = np.clip(x, 0, 1)
+            lat_vec = lat_speed*np.cross(u_planar_to_target_3d, cross_uv)
             print('lat_vec: ', lat_vec)
         else:
             u_planar_to_target = np.array([0,0])
             lat_vec = np.zeros(3)
 
         k_lat = 2.
-        v_cmd_xy = vx * u_planar_to_target + .5 * target_dir + k_lat * lat_vec[:2]
+        v_cmd_xy = vx * u_planar_to_target + .1 * target_dir + k_lat * lat_vec[:2]
         
         return [v_cmd_xy[0], v_cmd_xy[1], vz]
 
 
 
     def compute_control_law_out(self, target_pos, target_yaw, drone_pos):
-        k_x = 1.
-        k_z = 1.
+        k_x = 0.2
+        k_z = 0.6
 
         r_to_target = target_pos - drone_pos
         r_planar_to_target = r_to_target[:2]
@@ -640,12 +642,13 @@ class GraspStateMachine:
         target_dir_3d = np.array([np.cos(target_yaw), np.sin(target_yaw), 0])
 
 
-        if x > .001:
+        if x > .2:
             u_planar_to_target = r_planar_to_target / x
             u_planar_to_target_3d = r_to_target / x
             u_planar_to_target_3d[2] = 0
             cross_uv = np.cross(u_planar_to_target_3d, target_dir_3d)
-            lat_vec = np.cross(u_planar_to_target_3d, cross_uv)
+            lat_speed = np.clip(x, 0, 1)
+            lat_vec = lat_speed*np.cross(u_planar_to_target_3d, cross_uv)
             print('lat_vec: ', lat_vec)
         else:
             u_planar_to_target = np.array([0,0])
@@ -772,9 +775,14 @@ class GraspStateMachine:
 
     def _get_v_to_waypoint(self):
         r_to_waypoint = self._waypoint - self._current_position
-        u_to_waypoint = r_to_waypoint / (np.linalg.norm(r_to_waypoint) + .0001)
-        v_desired = u_to_waypoint * 0.8
-        return v_desired
+        d_to_waypoint = np.linalg.norm(r_to_waypoint)
+        if d_to_waypoint < .1:
+            return np.array([0.,0.,0])
+        else:
+            u_to_waypoint = r_to_waypoint / (d_to_waypoint)
+            speed = np.clip(d_to_waypoint, 0.05, 0.8)
+            v_desired = u_to_waypoint * speed
+            return v_desired
 
     def _handle_drop(self):
         """Wait while we drop the target."""
@@ -796,11 +804,11 @@ class GraspStateMachine:
             self._update_grasp_trajectory()
             self._update_waypoint_trajectory()
 
-        self._update_waypoint(self._home_position, 0)
+        self._update_waypoint(self._home_position + np.array([0,0,self._takeoff_offset]), 0)
         t_now = rospy.Time.now().to_sec()
         elapsed = t_now - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
-        if elapsed >= curr_poly.t_max:
+        if elapsed >= curr_poly.t_max or np.linalg.norm(self._current_position - self._waypoint) < .2:
             return True
 
         #pos, vel, acc = curr_poly.eval_global_pva_t(t_now)
