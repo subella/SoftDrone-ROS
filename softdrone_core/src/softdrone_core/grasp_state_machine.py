@@ -594,7 +594,7 @@ class GraspStateMachine:
         self._update_grasp_start_point()
         settle_pos = self._grasp_start_pos
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
-        proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
+        proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok and (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update) < .1
         if proceed:
             grasp_cmd = GraspCommand()
             grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
