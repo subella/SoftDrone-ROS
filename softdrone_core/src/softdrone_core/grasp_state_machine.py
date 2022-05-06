@@ -568,7 +568,8 @@ class GraspStateMachine:
             self._home_position[2] + self._takeoff_offset,
             yaw=self._desired_yaw * self._get_elapsed_ratio(GraspDroneState.HOVER)
         )
-        return self._has_elapsed(GraspDroneState.HOVER)
+        proceed = self._has_elapsed(GraspDroneState.HOVER) and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update) < .1
+        return proceed
 
     def _handle_moving_to_start(self):
         """Move from the takeoff position to the start of the grasp."""
@@ -595,7 +596,7 @@ class GraspStateMachine:
         settle_pos = self._grasp_start_pos
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
         proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok and (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update) < .1
-        if proceed:
+        if proceed and self._enable_gpio_grasp:
             grasp_cmd = GraspCommand()
             grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
             try:
