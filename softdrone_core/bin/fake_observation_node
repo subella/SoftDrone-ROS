@@ -9,8 +9,8 @@ import tf2_geometry_msgs
 
 use_noise = True
 
-R_pos = 0.1
-R_rot = 0.05
+R_pos = 0.01
+R_rot = 0.01
 drone_pos = np.zeros(3)
 drone_yaw = 0.0
 target_pos = np.zeros(3)

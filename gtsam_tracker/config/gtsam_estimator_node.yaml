@@ -1,0 +1,9 @@
+process_covariance_translation: 1.0
+process_covariance_rotation: 1.0
+velocity_prior_var: 1.0
+angular_velocity_prior_var: 1.0
+transition_position_prior_cov: 1.0
+transition_rotation_prior_cov: 1.0
+transition_velocity_prior_cov: 1.0
+transition_angular_velocity_prior_cov: 1.0
+
