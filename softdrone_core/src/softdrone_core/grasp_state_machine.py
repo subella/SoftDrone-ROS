@@ -9,6 +9,7 @@ from softdrone_core.utils import get_trajectory_viz_markers
 from softdrone_core import InterpTrajectoryTracker
 from softdrone_core.srv import SendGraspCommand, SendGraspCommandRequest
 
+from nav_msgs.msg import Odometry
 import geometry_msgs.msg
 import mavros_msgs.msg
 import mavros_msgs.srv
@@ -20,6 +21,39 @@ import importlib
 import rospy
 import enum
 import sys
+
+def target_body_pva_to_global(b_pos, b_vel, b_acc, target_position, target_yaw, target_vel, target_omegas, target_acc=None):
+    g_pos = np.zeros(3)
+    # rotate position to align with global frame
+    g_pos[0] = b_pos[0] * np.cos(target_yaw) - b_pos[1] * np.sin(target_yaw)
+    g_pos[1] = b_pos[0] * np.sin(target_yaw) + b_pos[1] * np.cos(target_yaw)
+    g_pos[2] = b_pos[2]
+
+    g_rel_pos = g_pos
+    g_pos = g_pos + target_position
+
+    g_vel = np.zeros(3)
+    # rotate velocity to align with global frame
+    g_vel[0] = b_vel[0] * np.cos(target_yaw) - b_vel[1] * np.sin(target_yaw)
+    g_vel[1] = b_vel[0] * np.sin(target_yaw) + b_vel[1] * np.cos(target_yaw)
+    g_vel[2] = b_vel[2]
+    # correct for rotating frame
+    g_rel_vel = g_vel
+    g_vel = g_rel_vel + np.cross(target_omegas, g_rel_pos) + target_vel
+
+    g_acc = np.zeros(3)
+    g_acc[0] = b_acc[0] * np.cos(target_yaw) - b_acc[1] * np.sin(target_yaw)
+    g_acc[1] = b_acc[0] * np.sin(target_yaw) + b_acc[1] * np.cos(target_yaw)
+    g_acc[2] = b_acc[2]
+
+    # correct for centripetal and coriolis acceleration
+    g_acc = g_acc + np.cross(target_omegas, np.cross(target_omegas, g_rel_pos)) + 2 * np.cross(target_omegas, g_rel_vel)
+
+    # correct for einstein acceleration
+    if target_acc is not None:
+        g_acc = g_acc + target_acc
+
+    return g_pos, g_vel, g_acc
 
 
 class GraspDroneState(enum.Enum):
@@ -107,6 +141,10 @@ class GraspStateMachine:
         self._grasp_attempted = False
         self._target_position = np.array([3.,3.,0.])
         self._target_position_fixed = None
+
+        self._target_vel = np.zeros(3)
+        self._target_omegas = np.zeros(3)
+
         self._target_yaw = 0.0
         self._settle_after_pos = np.array([0.,0.,0.])
 
@@ -170,7 +208,8 @@ class GraspStateMachine:
         rospy.Subscriber("~waypoint_polynomial", PolynomialTrajectory, self._waypoint_trajectory_cb)
         rospy.Subscriber("~grasp_trajectory", GraspTrajectory, self._grasp_trajectory_cb)
 
-        rospy.Subscriber("~grasp_target", PoseWithCovarianceStamped, self._target_pose_cb)
+        #rospy.Subscriber("~grasp_target", PoseWithCovarianceStamped, self._target_pose_cb)
+        rospy.Subscriber("~grasp_target", Odometry, self._target_pose_cb)
 
         rospy.Subscriber("~do_grasp", Bool, self._do_grasp_cb)
 
@@ -197,13 +236,19 @@ class GraspStateMachine:
         self._grasp_start_ok = True
 
     def _target_pose_cb(self, msg):
-        msg = msg.pose
-        self._target_position[0] = msg.pose.position.x
-        self._target_position[1] = msg.pose.position.y
-        self._target_position[2] = msg.pose.position.z
-        quat = [msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w]
+        self._target_position[0] = msg.pose.pose.position.x
+        self._target_position[1] = msg.pose.pose.position.y
+        self._target_position[2] = msg.pose.pose.position.z
+        quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
         (r, p, y) = tf.transformations.euler_from_quaternion(quat)
         self._target_yaw = y
+
+        self._target_vel[0] = msg.twist.twist.linear.x
+        self._target_vel[1] = msg.twist.twist.linear.y
+        self._target_vel[2] = msg.twist.twist.linear.z
+        self._target_omegas[0] = msg.twist.twist.angular.x
+        self._target_omegas[1] = msg.twist.twist.angular.y
+        self._target_omegas[2] = msg.twist.twist.angular.z
 
     def _update_grasp_start_point(self):
         if not self._fixed_grasp_start_point:
@@ -627,6 +672,7 @@ class GraspStateMachine:
         self._settle_after_pos = self._grasp_trajectory_tracker.get_end() # TODO: move this
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw, self._target_vel, self._target_omegas)
         if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
@@ -644,10 +690,10 @@ class GraspStateMachine:
                     print("Service call failed to close gripper: %s"%e)
 
         self._send_target(
-            result.position,
+            g_pos,
             yaw=self._desired_yaw,
-            velocity=result.velocity,
-            acceleration=result.acceleration,
+            velocity=g_vel,
+            acceleration=g_acc,
             is_grasp=True,
             use_ground_effect=elapsed < self._ground_effect_stop_time,
         )
