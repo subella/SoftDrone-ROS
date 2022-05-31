@@ -51,7 +51,7 @@ class PolynomialGenerator:
         rospy.Subscriber('~twist', TwistStamped, self.set_twist_cb)
         rospy.Subscriber('~waypoint', PoseStamped, self.set_waypoint_cb)
         #rospy.Subscriber('~target_pose', PoseWithCovarianceStamped, self.set_target_pose_cb)
-        rospy.Subscriber('~target_odom', Odometry, self.self.set_target_pose_cb)
+        rospy.Subscriber('~target_odom', Odometry, self.set_target_pose_cb)
 
         self.waypoint_polynomial_publisher = rospy.Publisher('~waypoint_polynomial', PolynomialTrajectory, queue_size=1) 
         self.grasp_trajectory_publisher = rospy.Publisher('~grasp_trajectory', GraspTrajectory, queue_size=1) 

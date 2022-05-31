@@ -28,49 +28,23 @@ public:
         gtsam::Vector9 error_nav = predicted.localCoordinates(ns2, H1 ? &error_H_predicted : nullptr, &h3);
 
         if (H1) { // 12 x 9, last 3 rows are 0
-            //gtsam::Matrix h1(12,3);
-            //h1 << error_H_predicted * predicted_H_x1, 0, 0, 0,
-            //                                          0, 0, 0,
-            //                                          0, 0, 0;
-            //*H1 = h1;
-            //*H1 = error_H_predicted * predicted_H_x1;
             *H1 = (gtsam::Matrix(12,9) << error_H_predicted * predicted_H_x1, Eigen::MatrixXd::Zero(3,9)).finished();
         }
 
         if (H3) {
-            //gtsam::Matrix h3(12, 3);
-            //h3 << *H3, 0, 0, 0,
-            //           0, 0, 0,
-            //           0, 0, 0;
-            //*H3 = h3;
             *H3 = (gtsam::Matrix(12,9) << h3, Eigen::MatrixXd::Zero(3,9)).finished();
         }
 
         gtsam::Vector3 error_omegas = omegas2 - omegas1;
 
         if (H2) { // 12 x 3, last three rows are -identity
-            //gtsam::Matrix93 omega1_to_ns1 = error_H_predicted * predicted_H_x2;
-            //gtsam::Matrix h2(12, 3);
-            //h2 << omega1_to_ns1,   -1.0, 0.0, 0.0,
-            //                        0.0, -1.0, 0.0,
-            //                        0.0, 0.0, -1.0;
-            //*H2 = h2;
             *H2 = (gtsam::Matrix(12, 3) << error_H_predicted * predicted_H_x2, -Eigen::MatrixXd::Identity(3,3)).finished();
         }
 
         if (H4) {
-            //gtsam::Matrix zeros93 = Eigen::MatrixXd::Zero(9,3);
-            //gtsam::Matrix h_omega2(12, 3);
-            //h_omega2 << zeros93,   1.0, 0.0, 0.0,
-            //                       0.0, 1.0, 0.0,
-            //                       0.0, 0.0, 1.0;
-            //*H4 = h_omega2; // 12 x 3 total. First 9 rows are 0. last 3 rows are identity
             *H4 = (gtsam::Matrix(12,3) << Eigen::MatrixXd::Zero(9,3), Eigen::MatrixXd::Identity(3,3)).finished();
         }
 
-        //gtsam::Vector full_error(12);
-        //full_error << error_nav, error_omegas;
-        //return full_error.finished();
         return (gtsam::Vector(12) << error_nav, error_omegas).finished();
   }
 };
