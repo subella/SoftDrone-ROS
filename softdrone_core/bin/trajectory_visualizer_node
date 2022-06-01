@@ -46,7 +46,7 @@ def grasp_trajectory_cb(msg):
         p.x = r.position[0]
         p.y = r.position[1]
         p.z = r.position[2]
-    ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0))
+    ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0), frame_id='base_link')
     viz_pub.publish(ma)
 
 
