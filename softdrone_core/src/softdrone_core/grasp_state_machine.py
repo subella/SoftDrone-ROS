@@ -91,6 +91,7 @@ class GraspStateMachine:
         self._arm_time = None
         self._current_position = None
         self._home_position = None
+        self._land_position = None
 
         self._current_waypoint_polynomial = None
         self._grasp_trajectory_tracker = None
@@ -105,6 +106,7 @@ class GraspStateMachine:
         self._last_grasp_trajectory_update = None
         self._grasp_attempted = False
         self._target_position = np.array([3.,3.,0.])
+        self._target_position_fixed = None
         self._target_yaw = 0.0
         self._settle_after_pos = np.array([0.,0.,0.])
 
@@ -114,6 +116,8 @@ class GraspStateMachine:
         self._fixed_grasp_start_point = rospy.get_param("~fixed_grasp_start_point")
         self._grasp_start_pos = np.array(rospy.get_param("~grasp_start_pos"))
         self._grasp_start_theta = rospy.get_param("~grasp_start_theta")
+
+        self._land_offset = np.array(rospy.get_param("~land_offset"))
 
         self._grasp_start_distance = rospy.get_param("~grasp_start_distance")
 
@@ -445,6 +449,7 @@ class GraspStateMachine:
 
         if self._home_position is None:
             self._home_position = self._current_position.copy()
+            self._land_position = self._home_position + self._land_offset
 
     def _loiter_at_point(self, x, y, z, yaw=None):
         """Send a loiter command."""
@@ -596,6 +601,7 @@ class GraspStateMachine:
         settle_pos = self._grasp_start_pos
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
         proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok and (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update) < .1
+        self._target_position_fixed = self._target_position.copy()
         if proceed and self._enable_gpio_grasp:
             grasp_cmd = GraspCommand()
             grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
@@ -621,13 +627,13 @@ class GraspStateMachine:
         self._settle_after_pos = self._grasp_trajectory_tracker.get_end() # TODO: move this
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
-        if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
+        if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
 
         if self._enable_gpio_grasp:
-            lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
+            lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
                 try:
                     grasp_cmd = GraspCommand()
@@ -710,7 +716,7 @@ class GraspStateMachine:
             self._update_grasp_trajectory()
             self._update_waypoint_trajectory()
 
-        self._update_waypoint(self._home_position, 0)
+        self._update_waypoint(self._land_position, 0)
         elapsed = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
         if elapsed >= curr_poly._total_time:
@@ -725,9 +731,9 @@ class GraspStateMachine:
         yaw_scale = 0.8 - self._get_elapsed_ratio(GraspDroneState.HOVER_BEFORE_LAND)
         yaw_scale = 0.0 if yaw_scale < 0.0 else yaw_scale
         self._loiter_at_point(
-            self._home_position[0],
-            self._home_position[1],
-            self._home_position[2] + self._takeoff_offset,
+            self._land_position[0],
+            self._land_position[1],
+            self._land_position[2] + self._takeoff_offset,
             yaw=self._desired_yaw * yaw_scale,
         )
         return self._has_elapsed(GraspDroneState.HOVER_BEFORE_LAND)
@@ -738,11 +744,11 @@ class GraspStateMachine:
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = mavros_msgs.msg.PositionTarget.FRAME_LOCAL_NED
         msg.type_mask |= SetpointType.LAND
-        msg.position.x = self._home_position[0]
-        msg.position.y = self._home_position[1]
-        msg.position.z = self._home_position[2]  # this gets ignored
+        msg.position.x = self._land_position[0]
+        msg.position.y = self._land_position[1]
+        msg.position.z = self._land_position[2]  # this gets ignored
         self._target_pub.publish(msg)
-        # diff = abs(self._home_position[2] - self._current_position[2])
+        # diff = abs(self._land_position[2] - self._current_position[2])
         # return diff < self._land_threshold or self._has_elapsed(GraspDroneState.LAND)
         return self._has_elapsed(GraspDroneState.LAND)
 
