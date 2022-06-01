@@ -2,16 +2,16 @@
 
 namespace sdrone {
 
-GTSAMEstimator::GTSAMEstimator(){
+GTSAMEstimator::GTSAMEstimator() : GTSAMEstimator::GTSAMEstimator(10.0) {}
+
+GTSAMEstimator::GTSAMEstimator(bool lag) : lag_(lag) {
     result_ready_ = false;
-    lag_ = 5.0; // smoother lag (seconds)
     current_key_index_ = 0;
 
    // The Incremental version uses iSAM2 to perform the nonlinear optimization
     gtsam::ISAM2Params parameters;
     parameters.relinearizeThreshold = 0.0; // Set the relin threshold to zero such that the batch estimate is recovered
     parameters.relinearizeSkip = 1; // Relinearize every time
-    //smoother_(lag_, parameters);
     smoother_ = gtsam::IncrementalFixedLagSmoother(lag_, parameters);
 
 }

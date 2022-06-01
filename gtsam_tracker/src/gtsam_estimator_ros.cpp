@@ -3,7 +3,7 @@
 namespace sdrone {
 
 GTSAMNode::GTSAMNode(const ros::NodeHandle &nh) : nh_(nh), agent_sub_(nh_, "agent_odom", 1), target_rel_sub_(nh_, "estimated_relative_pose", 1), 
-sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_), tf_listener_(tf_buffer_){
+sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_), tf_listener_(tf_buffer_) {
     is_initialized_ = false;
     target_pose_pub_ = nh_.advertise<PoseWCovStamped>("target_global_pose_estimate", 1);
     target_odom_pub_ = nh_.advertise<Odom>("target_global_odom_estimate", 1);
@@ -15,7 +15,9 @@ sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_), tf_listener_(tf_buffer_){
     nh_.getParam("transition_velocity_prior_cov", transition_velocity_prior_cov_);
     nh_.getParam("transition_angular_velocity_prior_cov", transition_angular_velocity_prior_cov_);
     nh_.getParam("target_frame_id", target_frame_id_);
-    estimator_ = GTSAMEstimator();
+    double lag;
+    nh_.getParam("smoother_lag", lag);
+    estimator_ = GTSAMEstimator(lag);
 }
 
 void GTSAMNode::syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamped::ConstPtr &pwcs) {

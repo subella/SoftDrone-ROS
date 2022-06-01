@@ -4,4 +4,4 @@ transition_position_prior_cov: .01
 transition_rotation_prior_cov: .01
 transition_velocity_prior_cov: .1
 transition_angular_velocity_prior_cov: .1
-
+smoother_lag: 10.0

@@ -77,7 +77,7 @@
         <remap from="~pose" to="/mavros/local_position/pose"/>
         <remap from="~waypoint_polynomial" to="polynomial_planner_node/waypoint_polynomial"/>
         <remap from="~grasp_trajectory" to="polynomial_planner_node/grasp_trajectory"/>
-        <remap from="~grasp_target" to="/$(arg tracker_ns)/target_global_pose_estimate"/>
+        <remap from="~grasp_target" to="/$(arg tracker_ns)/target_global_odom_estimate"/>
         <remap from="~target" to="/mavros/setpoint_raw/local"/>
         <remap from="~lengths" to="gripper_node/lengths"/>
 

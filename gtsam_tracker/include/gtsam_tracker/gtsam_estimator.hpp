@@ -36,6 +36,7 @@ class GTSAMEstimator {
                             gtsam::noiseModel::Diagonal::shared_ptr transition_noise);
         void update_solution();
 
+        GTSAMEstimator(bool lag);
         GTSAMEstimator();
 
         gtsam::NavState current_nav_state_;
