@@ -1,0 +1,37 @@
+timestep: 0.01
+
+floors:
+  - name: "Floor"
+    config_file: "floor.yaml"
+    translation:
+      - 0
+      - 0
+      - 0
+    rotation:
+      - 0
+      - 0
+      - 0
+
+targets:
+  - name: "Target"
+    config_file: "target.yaml"
+    translation:
+      - 0
+      - 5
+      - 0
+    rotation:
+      - 0
+      - 0
+      - 0
+  
+# drones:
+#   - name: "Drone"
+#     config_file: "drone.yaml"
+#     translation: 
+#       - -20
+#       - 50
+#       - 0
+#     rotation:
+#       - 0
+#       - 0
+#       - 0

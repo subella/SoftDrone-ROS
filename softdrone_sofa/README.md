@@ -1,0 +1,37 @@
+# Soft Drone SOFA Simulation
+
+# 1. Installation
+
+## Prerequisities
+### A. Sofa Installation
+- Install the prebuilt Soft Robot plugin for SOFA from [here](https://project.inria.fr/softrobot/install-get-started-2/download/)
+- Add the runSofa command to path:
+```bash
+cd SOFA_v19.06.99_custom_Linux_v5.1/bin/
+path="$PWD"
+echo "export PATH=\"$path:\$PATH\"" >> ~/.bashrc
+source ~/.bashrc
+```
+### B. Virtual Environment (Optional)
+We strongly recommend setting a new virtual environment to avoid conflicts with system-wide installations:
+```bash
+sudo apt-get install virtualenv
+virtualenv -p python2.7 ./softdrone_venv
+source ./softdrone_venv/bin/activate
+```
+## Soft Drone Simulation Installation
+
+```bash
+git clone git@github.mit.edu:SPARK/softDrone.git
+cd softDrone/simulation
+# Install package in develop mode
+pip install -e .
+# (Optional, but highly recommended)
+pip install -r requirements.txt
+```
+
+# 2. Usage
+```bash
+cd simulation/examples
+runSofa drone_gripper.pyscn
+```

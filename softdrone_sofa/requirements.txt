@@ -1,0 +1,2 @@
+matplotlib==2.2.5
+seaborn==0.9.1

@@ -1,0 +1,4 @@
+timestep : 0.01
+use_target : False
+use_gripper : False
+controller : "Unity"

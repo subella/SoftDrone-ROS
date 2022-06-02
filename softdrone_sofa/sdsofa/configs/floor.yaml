@@ -1,0 +1,7 @@
+surfaceMeshFileName: "floor.obj"
+uniformScale: 1
+color:
+  - 1
+  - 1
+  - 0
+isAStaticObject: true

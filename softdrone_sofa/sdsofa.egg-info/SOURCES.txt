@@ -1,0 +1,7 @@
+README.md
+setup.py
+sdsofa.egg-info/PKG-INFO
+sdsofa.egg-info/SOURCES.txt
+sdsofa.egg-info/dependency_links.txt
+sdsofa.egg-info/requires.txt
+sdsofa.egg-info/top_level.txt

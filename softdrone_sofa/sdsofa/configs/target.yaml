@@ -1,0 +1,7 @@
+surfaceMeshFileName: "target.obj"
+uniformScale: 0.1
+color:
+  - 1
+  - 1
+  - 1
+isAStaticObject: false
