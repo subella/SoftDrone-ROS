@@ -43,10 +43,12 @@ def grasp_trajectory_cb(msg):
     grasp_traj = [poly_wrapper._run_normal(t) for t in t_vals]
     pts = [Point() for _ in t_vals]
     for p, r in zip(pts, grasp_traj):
+        if np.isnan(r.position[0]) or np.isnan(r.position[1]) or np.isnan(r.position[2]):
+            return
         p.x = r.position[0]
         p.y = r.position[1]
         p.z = r.position[2]
-    ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0), frame_id='base_link')
+    ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0), frame_id='target')
     viz_pub.publish(ma)
 
 

@@ -34,7 +34,7 @@ while not rospy.is_shutdown():
         x = xc + radius * np.cos(2.0*np.pi*t/period)
         y = yc + radius * np.sin(2.0*np.pi*t/period)
         #q = tf.transformations.quaternion_from_euler(0,0,theta)
-        angle = np.arctan2(y, x) + np.pi/2.
+        angle = np.arctan2(y-yc, x-xc) + np.pi/2.
         q = tf.transformations.quaternion_from_euler(0,0,angle)
     elif target_motion == 'stationary':
         x = xc

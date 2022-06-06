@@ -146,6 +146,7 @@ class GraspStateMachine:
         self._target_omegas = np.zeros(3)
 
         self._target_yaw = 0.0
+        self._target_yaw_fixed = 0.0
         self._settle_after_pos = np.array([0.,0.,0.])
 
         self._target_grasp_angle = rospy.get_param("~target_grasp_angle")
@@ -260,7 +261,7 @@ class GraspStateMachine:
             grasp_start_pos = self._target_position + offset_vector
             self._grasp_start_pos = grasp_start_pos
             self._grasp_start_theta = theta_approach + np.pi
-            self._desired_yaw = grasp_start_theta
+            self._desired_yaw = self._grasp_start_theta
         self._update_waypoint(self._grasp_start_pos, self._grasp_start_theta)
 
     def _update_waypoint(self, pos, yaw):
@@ -647,6 +648,7 @@ class GraspStateMachine:
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
         proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok and (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update) < .1
         self._target_position_fixed = self._target_position.copy()
+        self._target_yaw_fixed = self._target_yaw
         if proceed and self._enable_gpio_grasp:
             grasp_cmd = GraspCommand()
             grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
@@ -660,26 +662,30 @@ class GraspStateMachine:
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
 
-        if self._replan_during_stages:
-            self._update_grasp_trajectory()
-            self._update_waypoint_trajectory()
-            self._update_waypoint(self._grasp_trajectory_tracker.get_end(), self._desired_yaw)
+        #if self._replan_during_stages:
+            #self._update_grasp_trajectory()
+            #self._update_waypoint_trajectory()
+            #self._update_waypoint(self._grasp_trajectory_tracker.get_end(), self._desired_yaw)
+        theta_approach = self._target_yaw + self._target_grasp_angle
+        self._desired_yaw = theta_approach + np.pi
 
         if not self._replan_during_grasp_trajectory:
             # results in not replanning after starting to follow the grasp trajectory
             self._grasp_attempted = True
 
-        self._settle_after_pos = self._grasp_trajectory_tracker.get_end() # TODO: move this
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
         g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw, self._target_vel, self._target_omegas)
-        if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_yaw_fixed, self._target_vel, self._target_omegas)
+        self._settle_after_pos = g_pos
+        #if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
+        if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
 
         if self._enable_gpio_grasp:
-            lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2])
+            lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2]) # deal with "fixed"
             if lat_target_dist < self._grasp_start_distance:
                 try:
                     grasp_cmd = GraspCommand()

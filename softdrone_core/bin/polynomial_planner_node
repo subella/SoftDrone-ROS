@@ -45,7 +45,7 @@ class PolynomialGenerator:
         self.end_offset_vert = rospy.get_param("~end_offset_vert", 1.0)
         self.grasp_lockout_distance = np.array(rospy.get_param("~grasp_lockout_distance", 0.7))
 
-        self.offset = rospy.get_param("~offset", [0, 0, -0.2])
+        self.offset = np.array(rospy.get_param("~offset", [0, 0, -0.2]))
 
         rospy.Subscriber('~pose', PoseStamped, self.set_pose_cb)
         rospy.Subscriber('~twist', TwistStamped, self.set_twist_cb)
@@ -132,26 +132,27 @@ class PolynomialGenerator:
             # If we are close to the target, don't replan the trajectory
             return
 
-        theta = self.target_yaw
+        theta = -self.target_yaw
         drone_in_target_frame = self.position - self.target_position
-        drone_in_target_frame[0] = drone_in_target_frame[0]*np.cos(-theta) - drone_in_target_frame[1]*np.sin(-theta)
-        drone_in_target_frame[1] = drone_in_target_frame[0]*np.sin(-theta) + drone_in_target_frame[1]*np.cos(-theta)
+        drone_in_target_frame[0] = drone_in_target_frame[0]*np.cos(theta) - drone_in_target_frame[1]*np.sin(theta)
+        drone_in_target_frame[1] = drone_in_target_frame[0]*np.sin(theta) + drone_in_target_frame[1]*np.cos(theta)
 
         #r_drone_to_target = self.target_position - self.position
-        r_drone_to_target = -self.position
-        r_displacement_plane = r_drone_to_target[:2]
-        dist_plane = np.linalg.norm(r_displacement_plane)
-        u_disp = r_displacement_plane / dist_plane
-        offset = np.zeros(3)
-        offset[0] = self.end_offset_horz * u_disp[0]
-        offset[1] = self.end_offset_horz * u_disp[1]
-        offset[2] = self.end_offset_vert
-        end_position = offset
+        #r_drone_to_target = -self.position
+        #r_displacement_plane = r_drone_to_target[:2]
+        #dist_plane = np.linalg.norm(r_displacement_plane)
+        #u_disp = r_displacement_plane / dist_plane
+        #offset = np.zeros(3)
+        #offset[0] = self.end_offset_horz * u_disp[0]
+        #offset[1] = self.end_offset_horz * u_disp[1]
+        #offset[2] = self.end_offset_vert
+        #end_position = offset
         #end_position = self.target_position + offset
 
-        grasp_velocity = np.zeros(3)
-        grasp_velocity[:2] = self.grasp_speed_horz * u_disp
-        grasp_velocity[2] = self.grasp_speed_vert
+        #grasp_velocity = np.zeros(3)
+        #grasp_velocity[:2] = self.grasp_speed_horz * u_disp
+        #grasp_velocity[2] = self.grasp_speed_vert
+        grasp_velocity = np.array([self.grasp_speed_horz, 0., self.grasp_speed_vert])
 
 
         # This is a horrible, horrible hack that breaks our ability to replan
@@ -163,11 +164,15 @@ class PolynomialGenerator:
             current_grasp_time = np.linalg.norm(r_drone_to_target) / 0.5 # time = distance / speed
         current_end_time = np.linalg.norm([self.end_offset_horz, self.end_offset_vert]) / 0.5
 
+        drone_in_target_frame = np.array([-2, 0, 1]) ## TODO remove
+        end_position = np.array([2, 0, 1])
         try:
             polynomial, lengths = find_trajectory_for_interp(
-                start_position=self.position,
+                #start_position=self.position,
+                start_position=drone_in_target_frame,
                 grasp_axis=2, # TODO: Remove
-                grasp_position=self.target_position - self.offset,
+                #grasp_position=self.target_position - self.offset,
+                grasp_position = -self.offset,
                 grasp_target=self.target_position,
                 grasp_time=current_grasp_time,
                 grasp_velocity=grasp_velocity,
@@ -177,7 +182,8 @@ class PolynomialGenerator:
                 end_time=current_end_time,
                 end_position=end_position,
                 end_velocity=self.end_velocity,
-                start_velocity=self.velocity)
+                start_velocity=np.zeros(3))
+                #start_velocity=self.velocity)
         except Exception as ex:
             print('Error optimizing grasp trajectory!')
             print(ex)

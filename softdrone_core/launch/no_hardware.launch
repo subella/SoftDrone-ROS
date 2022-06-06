@@ -2,7 +2,7 @@
 <launch>
 
     <!-- Parameters for simulated target. Used if simulate_perception is true -->
-    <arg name="target_motion" default="stationary" doc="Simulated target motion type: {stationary, circle, rotating}"/>
+    <arg name="target_motion" default="circle" doc="Simulated target motion type: {stationary, circle, rotating}"/>
     <arg name="target_x" default="2" doc="Simulated target x center"/>
     <arg name="target_y" default="2" doc="Simulated target y center"/>
     <arg name="target_radius" default="1" doc="Simulated target circle radius"/>
@@ -15,9 +15,9 @@
         <arg name="launch_fake_target_node" value="true"/>
         <arg name="launch_polynomial_planner_node" value="true"/>
         <arg name="launch_grasp_state_machine_node" value="true"/>
-        <arg name="launch_tracker_node" value="true" />
+        <arg name="launch_gtsam_tracker_node" value="true" />
         <arg name="launch_robot_state_publisher" value="true" />
-        <arg name="launch_rviz" default="true"/>
+        <arg name="launch_rviz" default="false"/>
         <arg name="launch_trajectory_visualizer_node" default="true"/>
 
         <arg name="target_motion" value="$(arg target_motion)" />

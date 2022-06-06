@@ -73,6 +73,9 @@ void GTSAMEstimator::add_new_factors(Eigen::Vector3d target_position, Eigen::Vec
 void GTSAMEstimator::update_solution() {
 
     smoother_.update(new_factors_, new_values_, new_timestamps_);
+    for (int ix=0; ix < 10; ++ix) {
+        smoother_.update();
+    }
 
     if (current_key_index_ > 0) {
         gtsam::Values result = smoother_.calculateEstimate();
