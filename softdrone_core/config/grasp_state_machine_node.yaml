@@ -27,6 +27,6 @@ trajectory_settle_time: 2.0
 
 fixed_grasp_start_point: False
 replan_during_grasp_trajectory: False
-replan_during_stages: True
+replan_during_stages: False
 require_grasp_confirmation: True
 enable_gpio_grasp: False

@@ -675,11 +675,11 @@ class GraspStateMachine:
 
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
-        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw, self._target_vel, self._target_omegas)
-        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_yaw_fixed, self._target_vel, self._target_omegas)
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw, self._target_vel, self._target_omegas)
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_yaw_fixed, self._target_vel, self._target_omegas)
         self._settle_after_pos = g_pos
-        #if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
-        if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
+        if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
+        #if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
