@@ -1,18 +1,13 @@
-# import sys
-# import numpy as np
-# import yaml
-
+import os
+import sdsofa
 from stlib.scene import MainHeader, ContactHeader, Scene
-# from stlib.physics.rigid import Cube, Floor
-# from splib.animation import animate
-
-# from softdrone.sofa.models.sofa_models import Drone, Drone_Gripper
-# from softdrone.sofa.control.sofa_controllers import *
-# from softdrone.unity.unity_interface import UnityController
-# from softdrone.sofa.models.sofa_templates import Marker, RigidObject
-# from softdrone.utils.utils import get_file_path
-
+from sdsofa.utils.utils import abs_path 
 from sdsofa.utils.yaml_parser import create_scene_from_yaml
+
+def set_root_directory():
+    root_path = os.path.dirname(os.path.dirname(sdsofa.__file__))
+    if not os.environ.has_key('ROOT_PATH'):
+        os.environ['ROOT_PATH'] = root_path
 
 def create_default_settings(root_node):
     # Default Scene configuration
@@ -22,14 +17,15 @@ def create_default_settings(root_node):
     root_node.gravity = [0., -9.81, 0]
     root_node.createObject("FreeMotionAnimationLoop")
     root_node.createObject("GenericConstraintSolver", maxIterations=1e3, tolerance=1e-8)
-    ContactHeader(root_node, alarmDistance=1, contactDistance=0.75, frictionCoef=.2)
+    ContactHeader(root_node, alarmDistance=1, contactDistance=.75, frictionCoef=.2)
     root_node.createObject("LightManager")
     root_node.createObject("DirectionalLight", color=[1, 1, 1], direction=[0, -1, 0])
 
 # Called when ran with runSofa.
 def createScene(root_node):
     # Edit this to point to proper configuration.
-    config_file = "test_scene.yaml" 
+    set_root_directory()
+    config_file = "configs/scenes/test_scene.yaml"
     create_default_settings(root_node)
     create_scene_from_yaml(root_node, config_file)
     return root_node

@@ -1,0 +1,10 @@
+surface_mesh_file_name: "mesh/floor.obj"
+scale: 1
+color:
+  - 1
+  - 1
+  - 0
+is_static: true
+
+type: "Rigid"
+class: "Floor"
