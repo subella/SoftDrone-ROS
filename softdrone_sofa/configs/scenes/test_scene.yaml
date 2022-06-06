@@ -2,6 +2,7 @@ timestep: 0.01
 
 objects:
   - name: "Floor"
+    type: "Floor"
     config_file: "configs/objects/floor.yaml"
     translation:
       - 0
@@ -13,6 +14,7 @@ objects:
       - 0
 
   - name: "Target"
+    type: "Target"
     config_file: "configs/objects/target.yaml"
     translation:
       - 0
@@ -24,6 +26,7 @@ objects:
       - 0
   
   - name: "Drone"
+    type: "Drone"
     config_file: "configs/objects/drone.yaml"
     translation: 
       - -300
@@ -35,6 +38,7 @@ objects:
       - 0
 
   - name: "Finger"
+    type: "Finger"
     config_file: "configs/fingers/finger.yaml"
     translation: 
       - 300
@@ -45,3 +49,14 @@ objects:
       - 0
       - 0
 
+  - name: "Gripper"
+    type: "Gripper"
+    config_file: "configs/grippers/test_gripper.yaml"
+    translation: 
+      - 100
+      - 1000
+      - 0
+    rotation:
+      - 90
+      - 0
+      - 0

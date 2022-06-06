@@ -2,102 +2,192 @@ import yaml
 from sdsofa.models.base_models import Floor, Target, Drone, Finger
 from sdsofa.utils.utils import abs_path
 
-def read_yaml_to_dict(config_file):
-    config_file_path = abs_path(config_file)
-    with open(config_file_path, 'r') as f:
-        try:
-            params = yaml.safe_load(f)
-        except yaml.YAMLError as exc:
-            print(exc)
-    return params
+class FileParser(object):
+    def __init__(self, config_file):
+        self.sub_params = self.parse(config_file)
+        # self.child_parsers = create_children_parsers(keyword)
 
-def parse_rigid_kwargs(sub_params, kwargs):
-    if "scale" in sub_params.keys():
-        kwargs["uniformScale"] = sub_params["scale"]
-    if "volume" in sub_params.keys():
-        kwargs["volume"] = sub_params["volume"]
-    if "inertia_matrix" in sub_params.keys():
-        kwargs["inertiaMatrix"] = sub_params["inertia_matrix"]
-    if "color" in sub_params.keys():
-        kwargs["color"] = sub_params["color"]
-    if "contact_friction" in sub_params.keys():
-        kwargs["contactFriction"] = sub_params["contact_friction"]
-    if "is_static" in sub_params.keys():
-        kwargs["isAStaticObject"] = sub_params["is_static"]
-    return kwargs
+    def parse(self, config_file):
+        config_file_path = abs_path(config_file)
+        print config_file_path
+        with open(config_file_path, 'r') as f:
+            try:
+                params = yaml.safe_load(f)
+            except yaml.YAMLError as exc:
+                print(exc)
+        return params
+        
+class YAMLParser(FileParser):
+    def __init__(self, root_node, config_file, top_params=None):
+        super(YAMLParser, self).__init__(config_file)
+        self.root_node = root_node
+        self.top_params = top_params
+        self.children = []
+        if "objects" in self.sub_params:
+            for child_params in self.sub_params["objects"]:
+                if child_params["type"] == "Floor":
+                    ChildParser = FloorParser
+                elif child_params["type"] == "Target":
+                    ChildParser = TargetParser
+                elif child_params["type"] == "Drone":
+                    ChildParser = DroneParser
+                elif child_params["type"] == "Finger":
+                    ChildParser = FingerParser
+                elif child_params["type"] == "Gripper":
+                    ChildParser = GripperParser
+                else:
+                    continue
+                child_parser = ChildParser(root_node, child_params["config_file"], top_params, child_params)
+                self.children.append(child_parser)
 
-def parse_elastic_kwargs(sub_params, kwargs):
-    if "volume_mesh_file_name" in sub_params.keys():
-        kwargs["volumeMeshFileName"] = abs_path(sub_params["volume_mesh_file_name"])
-    if "collision_mesh_file_name" in sub_params.keys():
-        kwargs["collisionMesh"] = abs_path(sub_params["collision_mesh_file_name"])
-    if "scale" in sub_params.keys():
-        kwargs["scale"] = sub_params["scale"]
-    if "color" in sub_params.keys():
-        kwargs["surfaceColor"] = sub_params["color"]
-    if "poisson_ratio" in sub_params.keys():
-        kwargs["poissonRatio"] = sub_params["poisson_ratio"]
-    if "young_modulus" in sub_params.keys():
-        kwargs["youngModulus"] = sub_params["young_modulus"]
-    # TODO: it seems the built in stlib prefab doesn't use density
-    # if "density" in sub_params.keys():
-    #     kwargs["density"] = sub_params["density"]
-    if "collision_group" in sub_params.keys():
-        kwargs["collisionGroup"] = sub_params["collision_group"]
-    return kwargs
+        def format_kwargs(self):
+            pass
 
-def parse_common_kwargs(sub_params):
-    kwargs = {}
-    if "name" in sub_params.keys():
-        kwargs["name"] = sub_params["name"]
-    if "surface_mesh_file_name" in sub_params.keys():
-        kwargs["surfaceMeshFileName"] = abs_path(sub_params["surface_mesh_file_name"])
-    if "translation" in sub_params.keys():
-        kwargs["translation"] = sub_params["translation"]
-    if "rotation" in sub_params.keys():
-        kwargs["rotation"] = sub_params["rotation"]
-    if "mass" in sub_params.keys():
-        kwargs["totalMass"] = sub_params["mass"]
-    return kwargs
+        def create_object(self):
+            pass
 
-def parse_kwargs_from_params(sub_params):
-    kwargs = parse_common_kwargs(sub_params)
-    if sub_params["type"] == "Rigid":
-        kwargs = parse_rigid_kwargs(sub_params, kwargs)
-    elif sub_params["type"] == "Elastic":
-        kwargs = parse_elastic_kwargs(sub_params, kwargs)
-    return kwargs
+class SceneParser(YAMLParser):
+    def __init__(self, root_node, config_file, top_params=None):
+        super(SceneParser, self).__init__(root_node, config_file, top_params)
 
-def create_object(root_node, sub_params, obj_kwargs):
-    if sub_params["class"] == "Floor":
-        obj = Floor(root_node, **obj_kwargs)
-    elif sub_params["class"] == "Target":
-        obj = Target(root_node, **obj_kwargs)
-    elif sub_params["class"] == "Drone":
-        obj = Drone(root_node, **obj_kwargs)
-    elif sub_params["class"] == "Finger":
-        obj = Finger(root_node, **obj_kwargs)
-    return obj
+class ObjectParser(YAMLParser):
+    def __init__(self, root_node, config_file, parent_params=None, top_params=None):
+        super(ObjectParser, self).__init__(root_node, config_file, top_params)
+        self.parent_params = parent_params
+        self.object = None
+        self.base_kwargs = {}
+        self.object_kwargs = {}
+        self.format_kwargs()
+        self.create_object()
 
-def parse_and_create_object_list(root_node, obj_params_list):
-    if obj_params_list is None:
-        return None
-    obj_list = []
-    for obj_params in obj_params_list:
-        sub_params = read_yaml_to_dict(obj_params["config_file"])
-        # Add translation and positions to sub_params.
-        sub_params["name"] = obj_params["name"]
-        sub_params["translation"] = obj_params["translation"]
-        sub_params["rotation"] = obj_params["rotation"]
-        obj_kwargs = parse_kwargs_from_params(sub_params)
-        obj = create_object(root_node, sub_params, obj_kwargs)
-        obj_list.append(obj)
-    return obj_list
+    def format_kwargs(self):
+        # Parent Params
+        if self.parent_params is not None:
+            if "translation" in self.parent_params.keys():
+                self.base_kwargs["parent_pos_wrt_world"] = self.parent_params["translation"]
+            if "rotation" in self.parent_params.keys():
+                self.base_kwargs["parent_rot_wrt_world"] = self.parent_params["rotation"]
+        else:
+            self.base_kwargs["parent_pos_wrt_world"] = [0,0,0]
+            self.base_kwargs["parent_rot_wrt_world"] = [0,0,0]
+
+        # Top Level Params
+        if "name" in self.top_params.keys():
+            self.object_kwargs["name"] = self.top_params["name"]
+        if "translation" in self.top_params.keys():
+            self.object_kwargs["translation"] = self.top_params["translation"]
+        if "rotation" in self.top_params.keys():
+            self.object_kwargs["rotation"] = self.top_params["rotation"]
+
+    def create_object(self):
+        pass
+
+class RigidParser(ObjectParser):
+    def __init__(self, *args, **kwargs):
+        super(RigidParser, self).__init__(*args, **kwargs)
+
+    def format_kwargs(self):
+        super(RigidParser, self).format_kwargs()
+        # Sub Level Params
+        if "surface_mesh_file_name" in self.sub_params.keys():
+            self.object_kwargs["surfaceMeshFileName"] = abs_path(self.sub_params["surface_mesh_file_name"])
+        if "mass" in self.sub_params.keys():
+            self.object_kwargs["totalMass"] = self.sub_params["mass"]
+        if "scale" in self.sub_params.keys():
+            self.object_kwargs["uniformScale"] = self.sub_params["scale"]
+        if "volume" in self.sub_params.keys():
+            self.object_kwargs["volume"] = self.sub_params["volume"]
+        if "inertia_matrix" in self.sub_params.keys():
+            self.object_kwargs["inertiaMatrix"] = self.sub_params["inertia_matrix"]
+        if "color" in self.sub_params.keys():
+            self.object_kwargs["color"] = self.sub_params["color"]
+        if "contact_friction" in self.sub_params.keys():
+            self.object_kwargs["contactFriction"] = self.sub_params["contact_friction"]
+        if "is_static" in self.sub_params.keys():
+            self.object_kwargs["isAStaticObject"] = self.sub_params["is_static"]
+
+    def create_object(self):
+        self.object = BaseRigidObject(self.root_node, self.base_kwargs, self.object_kwargs)
+
+class FloorParser(RigidParser):
+    def __init__(self, *args, **kwargs):
+        super(FloorParser, self).__init__(*args, **kwargs)
+
+    def create_object(self):
+        self.object = Floor(self.root_node, self.base_kwargs, self.object_kwargs)
+
+class TargetParser(RigidParser):
+    def __init__(self, *args, **kwargs):
+        super(TargetParser, self).__init__(*args, **kwargs)
+
+    def create_object(self):
+        self.object = Target(self.root_node, self.base_kwargs, self.object_kwargs)
+
+class DroneParser(RigidParser):
+    def __init__(self, *args, **kwargs):
+        super(DroneParser, self).__init__(*args, **kwargs)
+
+    def create_object(self):
+        self.object = Drone(self.root_node, self.base_kwargs, self.object_kwargs)
+
+class ElasticParser(ObjectParser):
+    def __init__(self, *args, **kwargs):
+        super(ElasticParser, self).__init__(*args, **kwargs)
+
+    def format_kwargs(self):
+        super(ElasticParser, self).format_kwargs()
+        if "mass" in self.sub_params.keys():
+            self.object_kwargs["totalMass"] = self.sub_params["mass"]
+        if "surface_mesh_file_name" in self.sub_params.keys():
+            self.object_kwargs["surfaceMeshFileName"] = abs_path(self.sub_params["surface_mesh_file_name"])
+        if "volume_mesh_file_name" in self.sub_params.keys():
+            self.object_kwargs["volumeMeshFileName"] = abs_path(self.sub_params["volume_mesh_file_name"])
+        if "collision_mesh_file_name" in self.sub_params.keys():
+            self.object_kwargs["collisionMesh"] = abs_path(self.sub_params["collision_mesh_file_name"])
+        if "scale" in self.sub_params.keys():
+            self.object_kwargs["scale"] = self.sub_params["scale"]
+        if "color" in self.sub_params.keys():
+            self.object_kwargs["surfaceColor"] = self.sub_params["color"]
+        if "poisson_ratio" in self.sub_params.keys():
+            self.object_kwargs["poissonRatio"] = self.sub_params["poisson_ratio"]
+        if "young_modulus" in self.sub_params.keys():
+            self.object_kwargs["youngModulus"] = self.sub_params["young_modulus"]
+        # TODO: it seems the built in stlib prefab doesn't use density
+        # if "density" in self.sub_params.keys():
+        #     self.object_kwargs["density"] = self.sub_params["density"]
+        if "collision_group" in self.sub_params.keys():
+            self.object_kwargs["collisionGroup"] = self.sub_params["collision_group"]
+
+        def create_object(self):
+            self.object = BaseElasticObject(self.root_node, self.base_kwargs, self.object_kwargs)
+
+class FingerParser(ElasticParser):
+    def __init__(self, *args, **kwargs):
+        super(FingerParser, self).__init__(*args, **kwargs)
+
+    def create_object(self):
+        self.object = Finger(self.root_node, self.base_kwargs, self.object_kwargs)
+
+class GripperParser(ObjectParser):
+    def __init__(self, *args, **kwargs):
+        super(GripperParser, self).__init__(*args, **kwargs)
+
+    # def format_kwargs(self):
+    #     for finger in self.children:
+    #         print finger.top_params
+    #     # print self.top_params
+    #     # print self.sub_params
+
+    # def create_object(self):
+    #     self.object
+
 
 def create_scene_from_yaml(root_node, config_file):
-    params = read_yaml_to_dict(config_file)
-	# Configurable parameters
-    root_node.dt = params.get("timestep", 0.01)
+    scene_parser = SceneParser(root_node, config_file)
 
-    obj_params_list = params.get("objects", None)
-    obj_list = parse_and_create_object_list(root_node, obj_params_list)
+ #    params = read_yaml_to_dict(config_file)
+	# # Configurable parameters
+ #    root_node.dt = params.get("timestep", 0.01)
+
+ #    obj_params_list = params.get("objects", None)
+ #    obj_list = parse_and_create_object_list(root_node, obj_params_list)

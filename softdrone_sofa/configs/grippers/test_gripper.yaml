@@ -1,0 +1,48 @@
+objects:
+  - name: "Finger_1"
+    type: "Finger"
+    config_file: "configs/fingers/finger.yaml"
+    translation:
+      - 0
+      - 0
+      - 0
+    rotation:
+      - 0
+      - 0
+      - 0
+
+  - name: "Finger_2"
+    type: "Finger"
+    config_file: "configs/fingers/finger.yaml"
+    translation:
+      - 0
+      - 0
+      - 80
+    rotation:
+      - 0
+      - 0
+      - 0
+  
+  - name: "Finger_3"
+    type: "Finger"
+    config_file: "configs/fingers/finger.yaml"
+    translation: 
+      - -80
+      - 0
+      - 0
+    rotation:
+      - 0
+      - 180
+      - 0
+
+  - name: "Finger_4"
+    type: "Finger"
+    config_file: "configs/fingers/finger.yaml"
+    translation: 
+      - -80
+      - 0
+      - 80
+    rotation:
+      - 0
+      - 180
+      - 0

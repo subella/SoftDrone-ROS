@@ -1,7 +1,7 @@
 surface_mesh_file_name: "mesh/finger.obj"
 volume_mesh_file_name: "mesh/finger.vtk"
 # Yes, the collision mesh is an stl.
-collision_mesh_file_name: "mesh/finger.stl"
+collision_mesh_file_name: "mesh/finger.obj"
 scale: 1
 color:
   - 0
