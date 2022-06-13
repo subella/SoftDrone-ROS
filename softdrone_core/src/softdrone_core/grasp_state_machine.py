@@ -242,14 +242,15 @@ class GraspStateMachine:
         self._target_position[2] = msg.pose.pose.position.z
         quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
         (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+
         self._target_yaw = y
 
         self._target_vel[0] = msg.twist.twist.linear.x
         self._target_vel[1] = msg.twist.twist.linear.y
         self._target_vel[2] = msg.twist.twist.linear.z
-        self._target_omegas[0] = msg.twist.twist.angular.x
-        self._target_omegas[1] = msg.twist.twist.angular.y
-        self._target_omegas[2] = msg.twist.twist.angular.z
+        #self._target_omegas[0] = msg.twist.twist.angular.x
+        #self._target_omegas[1] = msg.twist.twist.angular.y
+        #self._target_omegas[2] = msg.twist.twist.angular.z
 
     def _update_grasp_start_point(self):
         if not self._fixed_grasp_start_point:
@@ -666,8 +667,9 @@ class GraspStateMachine:
             #self._update_grasp_trajectory()
             #self._update_waypoint_trajectory()
             #self._update_waypoint(self._grasp_trajectory_tracker.get_end(), self._desired_yaw)
-        theta_approach = self._target_yaw + self._target_grasp_angle
-        self._desired_yaw = theta_approach + np.pi
+        if not self._grasp_attempted:
+            theta_approach = self._target_yaw + self._target_grasp_angle
+            self._desired_yaw = theta_approach + np.pi
 
         if not self._replan_during_grasp_trajectory:
             # results in not replanning after starting to follow the grasp trajectory
@@ -675,17 +677,15 @@ class GraspStateMachine:
 
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
-        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw, self._target_vel, self._target_omegas)
-        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_yaw_fixed, self._target_vel, self._target_omegas)
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw, self._target_vel, self._target_omegas)
         self._settle_after_pos = g_pos
-        if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
-        #if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
+        if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
 
         if self._enable_gpio_grasp:
-            lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2]) # deal with "fixed"
+            lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
                 try:
                     grasp_cmd = GraspCommand()
@@ -780,8 +780,9 @@ class GraspStateMachine:
 
     def _handle_hover_before_land(self):
         """Use loiter command to hang out at hover setpoint."""
-        yaw_scale = 0.8 - self._get_elapsed_ratio(GraspDroneState.HOVER_BEFORE_LAND)
-        yaw_scale = 0.0 if yaw_scale < 0.0 else yaw_scale
+        #yaw_scale = 0.8 - self._get_elapsed_ratio(GraspDroneState.HOVER_BEFORE_LAND)
+        #yaw_scale = 0.0 if yaw_scale < 0.0 else yaw_scale
+        yaw_scale = 1.
         self._loiter_at_point(
             self._land_position[0],
             self._land_position[1],

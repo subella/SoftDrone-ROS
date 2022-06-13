@@ -26,5 +26,5 @@ grasp_lockout_distance: 1.0
 initial_lengths: [190, 190, 208, 208]
 
 # Time into the future when the grasp should occur
-grasp_time: 6.
+grasp_time: 4.
 use_hardcoded_grasp_time: True

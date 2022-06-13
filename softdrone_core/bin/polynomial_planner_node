@@ -164,8 +164,6 @@ class PolynomialGenerator:
             current_grasp_time = np.linalg.norm(r_drone_to_target) / 0.5 # time = distance / speed
         current_end_time = np.linalg.norm([self.end_offset_horz, self.end_offset_vert]) / 0.5
 
-        drone_in_target_frame = np.array([-2, 0, 1]) ## TODO remove
-        end_position = np.array([2, 0, 1])
         try:
             polynomial, lengths = find_trajectory_for_interp(
                 #start_position=self.position,

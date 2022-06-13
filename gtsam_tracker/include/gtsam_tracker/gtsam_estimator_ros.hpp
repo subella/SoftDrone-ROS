@@ -11,6 +11,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/console.h>
 #include <nav_msgs/Odometry.h>
@@ -58,6 +59,7 @@ class GTSAMNode {
 
         tf2_ros::Buffer tf_buffer_;
         tf2_ros::TransformListener tf_listener_;
+        tf2_ros::TransformBroadcaster transform_broadcaster_;
 
         void syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamped::ConstPtr &pwcs);
         void publishTargetEstimate(gtsam::NavState ns, gtsam::Matrix ns_cov, gtsam::Vector3 omegas, gtsam::Matrix omegas_cov);

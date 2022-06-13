@@ -59,7 +59,6 @@ void GTSAMNode::publishTargetEstimate(gtsam::NavState ns, gtsam::Matrix ns_cov, 
         }
     }
 
-    //gtsam::Quaternion quat = ns.attitude().quaternion()
     gtsam::Vector quat = ns.pose().rotation().quaternion();
 
     pwcs.pose.pose.orientation.w = quat(0);
@@ -92,6 +91,23 @@ void GTSAMNode::publishTargetEstimate(gtsam::NavState ns, gtsam::Matrix ns_cov, 
     }
     
     target_odom_pub_.publish(odom_msg);
+
+    geometry_msgs::TransformStamped transformStamped;
+    
+    transformStamped.header.stamp = ros::Time::now(); // TODO change to time observation was made
+    transformStamped.header.frame_id = "map";
+    transformStamped.child_frame_id = "target";
+    transformStamped.transform.translation.x = pwcs.pose.pose.position.x;
+    transformStamped.transform.translation.y = pwcs.pose.pose.position.y;
+    transformStamped.transform.translation.z = pwcs.pose.pose.position.z;
+
+    transformStamped.transform.rotation.x = pwcs.pose.pose.orientation.x;
+    transformStamped.transform.rotation.y = pwcs.pose.pose.orientation.y;
+    transformStamped.transform.rotation.z = pwcs.pose.pose.orientation.z;
+    transformStamped.transform.rotation.w = pwcs.pose.pose.orientation.w;
+    
+    transform_broadcaster_.sendTransform(transformStamped);
+
 }
 
 void GTSAMNode::updateFromRos(Belief6D obs, double time) {
