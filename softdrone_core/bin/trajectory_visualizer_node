@@ -49,6 +49,28 @@ def grasp_trajectory_cb(msg):
         p.y = r.position[1]
         p.z = r.position[2]
     ma = get_trajectory_viz_markers(pts, 'grasp_trajectory', 2, (0, 1, 0), frame_id='target')
+
+    init_marker = Marker()
+    init_marker.header.frame_id = 'target'
+    init_marker.header.stamp = rospy.Time.now()
+    init_marker.ns = 'grasp_trajectory_pts'
+    init_marker.id = 4
+    init_marker.type = Marker.SPHERE
+    init_marker.action = Marker.ADD
+    init_marker.pose.orientation.w = 1.0
+    init_marker.scale.x = 0.2
+    init_marker.scale.y = 0.2
+    init_marker.scale.z = 0.2
+    init_marker.color.a = 0.5
+    init_marker.color.r = 1
+    init_marker.color.g = 0
+    init_marker.color.b = 0
+    init_marker.pose.position.x = pts[0].x
+    init_marker.pose.position.y = pts[0].y
+    init_marker.pose.position.z = pts[0].z
+
+    ma.markers.append(init_marker)
+
     viz_pub.publish(ma)
 
 
