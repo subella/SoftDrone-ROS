@@ -148,6 +148,17 @@ class PolynomialGenerator:
         #offset[2] = self.end_offset_vert
         #end_position = offset
         #end_position = self.target_position + offset
+        u_disp = -drone_in_target_frame[:2] / np.linalg.norm(drone_in_target_frame[:2])
+        end_position = np.zeros(3)
+        end_position[0] = self.end_offset_horz * u_disp[0]
+        end_position[1] = self.end_offset_horz * u_disp[1]
+        end_position[2] = self.end_offset_vert
+        print('\n\n')
+        print('drone position:', self.position)
+        print('target position:', self.target_position)
+        print('drone_in_target_frame: ', drone_in_target_frame)
+        print('end_position: ', end_position)
+        print('\n\n')
 
         #grasp_velocity = np.zeros(3)
         #grasp_velocity[:2] = self.grasp_speed_horz * u_disp

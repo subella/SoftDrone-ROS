@@ -141,6 +141,7 @@
         <remap from="~twist" to="/mavros/local_position/twist"/>
         <remap from="~waypoint" to="/grasp_state_machine_node/waypoint"/>
         <remap from="~target_pose" to="$(arg tracker_ns)/target_global_pose_estimate"/>
+        <remap from="~target_odom" to="$(arg tracker_ns)/target_global_odom_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/polynomial_planner_node.launch" />
     </group>
 

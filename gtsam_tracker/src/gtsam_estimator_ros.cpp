@@ -101,10 +101,17 @@ void GTSAMNode::publishTargetEstimate(gtsam::NavState ns, gtsam::Matrix ns_cov, 
     transformStamped.transform.translation.y = pwcs.pose.pose.position.y;
     transformStamped.transform.translation.z = pwcs.pose.pose.position.z;
 
-    transformStamped.transform.rotation.x = pwcs.pose.pose.orientation.x;
-    transformStamped.transform.rotation.y = pwcs.pose.pose.orientation.y;
-    transformStamped.transform.rotation.z = pwcs.pose.pose.orientation.z;
-    transformStamped.transform.rotation.w = pwcs.pose.pose.orientation.w;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, ns.pose().rotation().yaw());
+    transformStamped.transform.rotation.x = q.x();
+    transformStamped.transform.rotation.y = q.y();
+    transformStamped.transform.rotation.z = q.z();
+    transformStamped.transform.rotation.w = q.w();
+
+    //transformStamped.transform.rotation.x = pwcs.pose.pose.orientation.x;
+    //transformStamped.transform.rotation.y = pwcs.pose.pose.orientation.y;
+    //transformStamped.transform.rotation.z = pwcs.pose.pose.orientation.z;
+    //transformStamped.transform.rotation.w = pwcs.pose.pose.orientation.w;
     
     transform_broadcaster_.sendTransform(transformStamped);
 
