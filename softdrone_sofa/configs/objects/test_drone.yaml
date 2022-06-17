@@ -1,0 +1,10 @@
+surface_mesh_file_name: "mesh/test_base.obj"
+scale: 1
+color:
+  - 1
+  - 0
+  - 0
+is_static: false
+
+type: "Rigid"
+class: "Floor"

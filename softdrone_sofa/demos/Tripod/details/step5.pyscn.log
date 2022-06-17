@@ -1,0 +1,20 @@
+
+--- NEW SESSION: 08/04/2019 11:34:12 ---
+/Model/Tripod/ActuatedArm0/ServoMotor.time = 47.92
+
+--- NEW SESSION: 08/04/2019 12:38:37 ---
+/Model/Tripod/ElasticBody/ElasticMaterialObject/rssffActuatedArm0.springColor = 0 1 0 1
+
+--- NEW SESSION: 08/04/2019 12:47:46 ---
+/Model/Tripod/ElasticBody/ElasticMaterialObject/rssffActuatedArm0.springColor = 0 1 0 1
+
+--- NEW SESSION: 10/04/2019 23:31:03 ---
+/Modelling/Tripod/ActuatedArm0/ServoMotor.time = 4.25
+
+--- NEW SESSION: 10/04/2019 23:37:14 ---
+/Modelling/Tripod/ActuatedArm0.time = 14.9
+/Modelling/Tripod/ActuatedArm0.angleIn = -0
+
+--- NEW SESSION: 10/04/2019 23:38:59 ---
+/Modelling/Tripod/ActuatedArm0.time = 5.85
+/Modelling/Tripod/ActuatedArm0.angleIn = -0.18

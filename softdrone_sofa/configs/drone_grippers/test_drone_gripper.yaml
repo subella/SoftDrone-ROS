@@ -1,0 +1,24 @@
+objects:
+  - name: "Drone"
+    type: "Drone"
+    config_file: "configs/objects/test_drone.yaml"
+    translation:
+      - -35
+      - 0
+      - 0
+    rotation:
+      - 0
+      - 0
+      - 0
+
+  - name: "Gripper"
+    type: "Gripper"
+    config_file: "configs/grippers/test_gripper.yaml"
+    translation: 
+      - 0
+      - -5
+      - 0
+    rotation:
+      - 0
+      - 0
+      - 0

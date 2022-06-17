@@ -1,0 +1,10 @@
+surface_mesh_file_name: "mesh/target.obj"
+scale: 1
+color:
+  - 0
+  - 0
+  - 1
+is_static: false
+
+type: "Rigid"
+class: "Target"

@@ -1,0 +1,16 @@
+
+--- NEW SESSION: 08/04/2019 13:09:02 ---
+/Tripod/RigidifiedStruture/RigidParts/rssff0.springColor = 0 1 0 1
+/Tripod/BoxROI1.orientedBox = -53.7019 23.65 56.9856 -27.7211 23.65 41.9856 -50.2211 23.65 3.01443 15
+
+--- NEW SESSION: 10/04/2019 23:37:54 ---
+/Modelling/Tripod/ActuatedArm0.time = 8.175
+/Modelling/Tripod/ActuatedArm0.angleIn = 1.58
+/Modelling/Tripod/ActuatedArm0.angleOut = 0.4945
+/Modelling/Tripod/ActuatedArm0/ServoMotor.time = 12.05
+/Modelling/Tripod/ActuatedArm0/ServoMotor.angleIn = 3.26
+/Modelling/Tripod/ActuatedArm0/ServoMotor.minAngle = -1.1425
+
+--- NEW SESSION: 10/04/2019 23:38:31 ---
+/Modelling/Tripod/ActuatedArm0.time = 4.275
+/Modelling/Tripod/ActuatedArm0.angleIn = 1.69

@@ -1,0 +1,37 @@
+
+--- NEW SESSION: 15/06/2022 13:58:36 ---
+/NeoHookean/EulerImplicitSolver.rayleighStiffness = 1
+
+--- NEW SESSION: 15/06/2022 14:06:17 ---
+/NeoHookean/ODEsolver.trapezoidalScheme = 1
+/NeoHookean/ODEsolver.solveConstraint = 1
+/NeoHookean/ODEsolver.solveConstraint = 0
+/NeoHookean/ODEsolver.verbose = 1
+/NeoHookean/ODEsolver.trapezoidalScheme = 0
+/NeoHookean/ODEsolver.firstOrder = 1
+/NeoHookean/ODEsolver.verbose = 0
+/NeoHookean/ODEsolver.trapezoidalScheme = 1
+/NeoHookean/ODEsolver.firstOrder = 0
+/NeoHookean/ODEsolver.trapezoidalScheme = 0
+/NeoHookean/ODEsolver.firstOrder = 1
+/NeoHookean/tetras/Cable/CableConstraint.cableLength = nan
+/NeoHookean/tetras/Cable/CableConstraint.force = nan
+/NeoHookean/tetras/Cable/CableConstraint.displacement = nan
+/NeoHookean/tetras/Cable/CableConstraint.value = 50
+/NeoHookean/tetras/Cable/CableConstraint.cableLength = nan
+/NeoHookean/tetras/Cable/CableConstraint.force = nan
+/NeoHookean/tetras/Cable/CableConstraint.displacement = nan
+
+--- NEW SESSION: 15/06/2022 14:08:28 ---
+/NeoHookean/ODEsolver.firstOrder = 1
+/NeoHookean/tetras/Cable/CableConstraint.cableLength = nan
+/NeoHookean/tetras/Cable/CableConstraint.force = 30
+/NeoHookean/tetras/Cable/CableConstraint.displacement = nan
+/NeoHookean/tetras/Cable/CableConstraint.valueType = force
+/NeoHookean/tetras/Cable/CableConstraint.value = 30
+
+--- NEW SESSION: 16/06/2022 10:45:12 ---
+/NeoHookean/ODEsolver.rayleighStiffness = 0.3
+
+--- NEW SESSION: 17/06/2022 12:17:41 ---
+/NeoHookean/tetras/Cable/CableConstraint.value = 2000

@@ -1,0 +1,233 @@
+
+--- NEW SESSION: 10/06/2022 14:43:31 ---
+/Modelling/Tripod/BoxROI0.orientedBox = -22.5 23.65 -75 -22.5 23.65 -45 22.5 23.65 -45 15
+
+--- NEW SESSION: 13/06/2022 12:37:47 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.21
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighMass = 0.1
+
+--- NEW SESSION: 13/06/2022 12:38:37 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 1
+
+--- NEW SESSION: 13/06/2022 12:55:19 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/MechanicalObject.constraint = 0 18 0 -0.043984 -0.969996 0.239109  1 0.00129546 -0.0289564 -0.222628  2 0.0428818 -0.000905634 0.000362553  3 -0.107081 0.00559107 -0.0196804  4 -0.106799 0.0180264 0.0387857  5 -0.0907691 0.0241809 -0.00613065  6 -0.147724 0.0606824 0.0014846  7 -0.217854 0.158073 -0.146713  8 0.659488 0.642903 -0.880439  9 0.701549 0.80175 0.867408  10 -0.245325 0.183006 0.0897161  11 -0.146475 0.0586271 -0.00925503  12 -0.101413 0.0270844 0.0293213  13 -0.0970324 0.0148353 0.0228685  14 -0.106028 0.00503381 0.00581504  15 0.0337917 -0.000439966 -0.0239685  16 0.0163694 -0.0283814 0.248298  17 -0.852933 -18.4512 -4.45271  
+
+
+--- NEW SESSION: 13/06/2022 13:06:20 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 305.843
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 3738.2
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 240.524
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 250
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/MechanicalObject.rest_position = 14.91 -4 5 7.23 -36.08 10 -12.06 -62.81 10 -40.41 -79.59 10 -73.17 -82.9 10 -103.95 -71.28 10 -125.48 -46.47 10 -131.27 -14.19 10 -118.31 15.55 10 -118.31 15.55 -10 -131.27 -14.19 -10 -125.48 -46.47 -10 -103.95 -71.28 -10 -73.17 -82.9 -10 -40.41 -79.59 -10
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/MechanicalObject.constraint = 0 18 0 -0.13622 -0.947833 0.288195  1 0.0117701 -0.039535 -0.190132  2 0.0116814 -0.0036144 -0.0256968  3 -0.0189071 -0.00028838 -0.0789657  4 -0.0346475 0.0085384 -0.0744778  5 1.04441 0.50989 0.154419  6 -1.29651 -0.226432 0.506264  7 0.757389 -0.2254 -0.753024  8 0.610352 0.696882 -0.0431316  9 -0.00652748 0.0287961 -0.0509094  10 -0.664009 1.01193 -0.243826  11 0.108825 0.034543 0.148607  12 -0.230838 0.116834 0.149318  13 -0.141429 0.0230562 0.0556674  14 -0.0853821 0.00167644 0.0277541  15 0.0368331 0.00526278 0.0287024  16 -0.0257039 0.00134775 0.173343  17 1.11924 -18.9175 -1.37002  
+
+
+--- NEW SESSION: 13/06/2022 13:34:36 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable.time = 2629.33
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 346.367
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 22370.8
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 200
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 200
+
+--- NEW SESSION: 13/06/2022 13:46:51 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 150
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 155.852
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 18585.8
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 390.515
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 400
+
+--- NEW SESSION: 13/06/2022 13:52:56 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.2
+
+--- NEW SESSION: 13/06/2022 14:00:05 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 397.522
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 50
+
+--- NEW SESSION: 13/06/2022 14:02:58 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.2
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 296.543
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 7584.93
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 249.824
+
+--- NEW SESSION: 13/06/2022 14:04:56 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.2
+
+--- NEW SESSION: 13/06/2022 14:07:27 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+
+--- NEW SESSION: 13/06/2022 14:12:48 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 112.495
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 433.872
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+
+--- NEW SESSION: 13/06/2022 14:31:28 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.youngModulus = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.youngModulus = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 217.46
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 0
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 328.907
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 0
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 544.571
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 1.79551
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 0
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 544.454
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 1.91291
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 0
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 206.376
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 339.991
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 100000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 100000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 247.438
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 298.929
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 182.709
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 363.658
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.youngModulus = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 348.377
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 197.99
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 303.43
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 242.937
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 90.4345
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 455.932
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 49.5663
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 496.8
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 307.177
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 239.19
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.drawHeterogeneousTetra = 0
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.plasticYieldThreshold = 7.9301
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.plasticYieldThreshold = 24.6901
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.plasticCreep = 0.9
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/forcefield.gatherPt =  
+
+--- NEW SESSION: 13/06/2022 15:51:44 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 50
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 50
+
+--- NEW SESSION: 13/06/2022 16:59:19 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 544.501
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 100
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 1.86541
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 100
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 479.069
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 10000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 67.2976
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 10000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 361.389
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 184.978
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+
+--- NEW SESSION: 13/06/2022 17:02:45 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 242.289
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 304.078
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.05
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0
+
+--- NEW SESSION: 13/06/2022 17:07:48 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.01
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+
+--- NEW SESSION: 13/06/2022 17:08:32 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.01
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 455.678
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 90.6885
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.valueType = force
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 455.678
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 90.6886
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 30000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 398.954
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 147.413
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 50000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 278.27
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 80000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 268.097
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 80000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 289.031
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 257.336
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 160000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 160000
+
+--- NEW SESSION: 14/06/2022 15:53:52 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 496.084
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 50.2824
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 800
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 800
+
+--- NEW SESSION: 14/06/2022 15:57:42 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+
+--- NEW SESSION: 14/06/2022 16:01:15 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/integration.rayleighStiffness = 0.1
+
+--- NEW SESSION: 14/06/2022 16:30:24 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 3e+06
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 3e+06
+
+--- NEW SESSION: 14/06/2022 16:30:45 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = 546.286
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = 0.0805852
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 0.5
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = 20000
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 20000
+
+--- NEW SESSION: 14/06/2022 16:33:23 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = -118.377
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = -1.17097e-10
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 0
+
+--- NEW SESSION: 14/06/2022 17:25:10 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 10
+
+--- NEW SESSION: 14/06/2022 17:29:54 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject.time = 71.04
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.cableLength = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.force = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.displacement = nan
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/Cable/CableConstraint.value = 20
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.trapezoidalScheme = 1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 0.1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.vdamping = 1
+
+--- NEW SESSION: 15/06/2022 11:16:48 ---
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.trapezoidalScheme = 1
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 100
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighMass = 100
+/Modelling/Tripod/ElasticBody/ElasticMaterialObject/EulerImplicitSolver.rayleighStiffness = 0

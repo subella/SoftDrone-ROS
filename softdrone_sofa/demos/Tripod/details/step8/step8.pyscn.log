@@ -1,0 +1,46 @@
+
+--- NEW SESSION: 13/04/2019 15:56:30 ---
+/Tripod/RigidifiedStructure/RigidParts/RigidifiedParticules/ElasticMaterialObject.time = 13.01
+/Tripod/RigidifiedStructure/RigidParts/actuators/effector.directions = 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1
+/Tripod/RigidifiedStructure/RigidParts/actuators/effector.limitShiftToTarget = 0
+/Tripod/RigidifiedStructure/RigidParts/actuators/effector.directions = 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1
+/Tripod/RigidifiedStructure/RigidParts/actuators.time = 43.03
+/Tripod/RigidifiedStructure/RigidParts/actuators/effector.directions = 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1
+/QP.info = #Actuators: 3
+#Contacts: 0
+#Effectors: 3
+Last 
+/QP.epsilon = 1e-07
+/QP.info = #Actuators: 3
+#Contacts: 0
+#Effectors: 3
+Last 
+/QP.epsilon = 1e-07
+/QP.info = #Actuators: 3
+#Contacts: 0
+#Effectors: 3
+Last 
+/QP.epsilon = 1e-07
+/QP.countdown = 1
+/QP.printLog = 1
+/QP.info = #Actuators: 3
+#Contacts: 0
+#Effectors: 3
+Last 
+
+--- NEW SESSION: 13/04/2019 16:09:12 ---
+/QP.info = #Actuators: 3
+#Contacts: 0
+#Effectors: 3
+Last 
+/QP.epsilon = 0
+/QP.printLog = 1
+/QP.countdown = 0
+/QP.info = #Actuators: 3
+#Contacts: 0
+#Effectors: 3
+Last 
+/Tripod/RigidifiedStructure/RigidParts/actuators/effector.directions = 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0 0 0 0 1
+
+--- NEW SESSION: 13/04/2019 16:48:24 ---
+/SerialPortBridgeGeneric.packetOut = 134 109 146

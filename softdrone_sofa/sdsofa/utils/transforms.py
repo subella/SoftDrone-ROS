@@ -1,33 +1,55 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-
 class Pose(object):
-	def __init__(self, translation=[0,0,0], rotation=[0,0,0]):
-		self.translation = translation
-		self.rotation = rotation
+    def __init__(self, 
+                 translation=None, 
+                 rotation=None,
+                 tf_matrix=None):
 
-	def make_homo(self):
-		r = np.array(R.from_euler('xyz', self.rotation, degrees=True).as_dcm())
-		t = np.array(self.translation).reshape(3,1)
-		T = np.hstack((r, t))
-		T = np.vstack((T, [0,0,0,1]))
-		return T
+        if translation is not None and rotation is not None:
+            self.init_from_euler(translation, rotation)
+        elif tf_matrix is not None:
+            self.init_from_tf_matrix(tf_matrix)
+        else:
+            self.tf_matrix = np.eye((4))
 
-	def update_from_homo(self, T):
-		r = T[:3,:3]
-		t = T[:3,3]
+    def init_from_euler(self, translation, rotation):
+        r = np.array(R.from_euler('xyz', rotation, degrees=True).as_dcm())
+        t = np.array(translation).reshape(3,1)
+        T = np.hstack((r, t))
+        self.tf_matrix = np.vstack((T, [0,0,0,1]))
 
-		self.translation = t.T
-		self.rotation = R.from_matrix(r).as_euler('zyx')
+    def init_from_tf_matrix(self, tf_matrix):
+        self.tf_matrix = tf_matrix
 
-def child_to_world(child_wrt_parent, parent_wrt_world):
-	print parent_wrt_world.make_homo()
-	print child_wrt_parent.make_homo()
-	child_wrt_world = parent_wrt_world.make_homo().dot(child_wrt_parent.make_homo())
-	r = child_wrt_world[:3,:3]
-	t = child_wrt_world[:3,3]
+    def get_translation(self):
+        translation = self.tf_matrix[:3,3].T
+        return translation.tolist()
 
-	translation = t.T
-	rotation = R.from_dcm(r).as_euler('xyz', degrees=True)
-	return translation, rotation
+    def get_rotation(self):
+        r = self.tf_matrix[:3,:3]
+        rotation = R.from_dcm(r).as_euler('xyz', degrees=True)
+        return rotation.tolist()
+
+def pose_from_dict(params):
+    return Pose(translation=params["translation"],
+                rotation=params["rotation"])
+
+def make_tf_list(tf_list, parser):
+    if parser.parent is None:
+        return tf_list
+    tf_list.append(pose_from_dict(parser.top_params))
+    return make_tf_list(tf_list, parser.parent)
+
+def point_to_world(tf_list, point_wrt_child=Pose()):
+    child_wrt_world = Pose()
+    for pose in tf_list[::-1]:
+        child_wrt_world.tf_matrix = child_wrt_world.tf_matrix.dot(pose.tf_matrix)
+    point_wrt_world = Pose()    
+    point_wrt_world.tf_matrix = child_wrt_world.tf_matrix.dot(point_wrt_child.tf_matrix)
+    return point_wrt_world.get_translation(), point_wrt_world.get_rotation()
+
+
+
+

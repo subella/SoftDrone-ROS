@@ -1,0 +1,33 @@
+import Sofa
+
+import os
+path = os.path.dirname(os.path.abspath(__file__))+'/mesh/'
+
+def createScene(rootNode):
+
+        rootNode.createObject('VisualStyle', displayFlags='showForceFields showBehaviorModels')
+
+        
+        rootNode.createObject('RequiredPlugin', pluginName='CGALPlugin')
+        rootNode.createObject('RequiredPlugin', pluginName='SofaExporter')
+        rootNode.createObject('RequiredPlugin', pluginName='SoftRobots')
+        
+        
+        rootNode.findData('gravity').value='-9810 0 0';
+        
+        node = rootNode.createChild('node')
+        node.createObject('MeshSTLLoader', name='loader', filename="/home/subella/catkin_ws2/src/SoftDrone-ROS/softdrone_sofa/mesh/finger.stl")
+        
+        node.createObject('MeshGenerationFromPolyhedron', name='gen',inputPoints='@mesh.position', inputTriangles='@mesh.triangles', drawTetras='1')
+        
+        node.createObject('Mesh', position='@gen.outputPoints', tetrahedra='@gen.outputTetras')
+        node.createObject('VTKExporter', filename='bunny', edges='0', tetras='1', exportAtBegin='1')
+        node.createObject('MeshGenerationFromPolyhedron',
+                                inputPoints='@mesh.position',
+                                inputTriangles='@mesh.triangles',
+                                drawTetras='1',
+                                facetSize='0.35',
+                                facetApproximation='0.1',
+                                cellRatio='2',
+                                cellSize='0.5' )
+

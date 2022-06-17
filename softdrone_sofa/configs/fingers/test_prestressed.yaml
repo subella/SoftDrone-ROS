@@ -1,0 +1,15 @@
+surface_mesh_file_name: "mesh/fingerAssy_30x35.stl"
+volume_mesh_file_name: "mesh/fingerAssy_30x35.vtk"
+collision_mesh_file_name: "mesh/fingerAssy_30x35.stl"
+eyelet_locations_file_name: "mesh/finger_30x35_eyelets.json"
+scale: 1
+color:
+  - 0
+  - 1
+  - 0
+poisson_ratio: 0.25
+young_modulus: 1000
+density: 1000
+
+type: "Elastic"
+class: "Finger"

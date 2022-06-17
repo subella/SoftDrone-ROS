@@ -1,7 +1,7 @@
 objects:
   - name: "Finger_1"
     type: "Finger"
-    config_file: "configs/fingers/finger.yaml"
+    config_file: "configs/fingers/test_finger.yaml"
     translation:
       - 0
       - 0
@@ -13,7 +13,7 @@ objects:
 
   - name: "Finger_2"
     type: "Finger"
-    config_file: "configs/fingers/finger.yaml"
+    config_file: "configs/fingers/test_finger.yaml"
     translation:
       - 0
       - 0
@@ -25,7 +25,7 @@ objects:
   
   - name: "Finger_3"
     type: "Finger"
-    config_file: "configs/fingers/finger.yaml"
+    config_file: "configs/fingers/test_finger.yaml"
     translation: 
       - -80
       - 0
@@ -37,7 +37,7 @@ objects:
 
   - name: "Finger_4"
     type: "Finger"
-    config_file: "configs/fingers/finger.yaml"
+    config_file: "configs/fingers/test_finger.yaml"
     translation: 
       - -80
       - 0
