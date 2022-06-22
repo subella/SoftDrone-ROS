@@ -2,7 +2,7 @@ target_grasp_angle: 0
 grasp_start_horz_offset: 2.0
 grasp_start_vert_offset: 1.0
 
-grasp_start_pos: [-1.0, 0.5, 0.8]
+grasp_start_pos: [-1.0, 0.7, 0.8]
 grasp_start_theta: 0.0
 
 land_offset: [-1.0, 0.5, 0.0]
@@ -29,4 +29,4 @@ fixed_grasp_start_point: True
 replan_during_grasp_trajectory: False
 replan_during_stages: False
 require_grasp_confirmation: True
-enable_gpio_grasp: False
+enable_gpio_grasp: True

@@ -22,29 +22,21 @@ import rospy
 import enum
 import sys
 
-def target_body_pva_to_global(b_pos, b_vel, b_acc, target_position, target_yaw, target_vel, target_omegas, target_acc=None):
-    g_pos = np.zeros(3)
+def target_body_pva_to_global(b_pos, b_vel, b_acc, target_position, target_rotation, target_vel, target_omegas, target_acc=None):
+
     # rotate position to align with global frame
-    g_pos[0] = b_pos[0] * np.cos(target_yaw) - b_pos[1] * np.sin(target_yaw)
-    g_pos[1] = b_pos[0] * np.sin(target_yaw) + b_pos[1] * np.cos(target_yaw)
-    g_pos[2] = b_pos[2]
+    g_pos = np.dot(target_rotation, b_pos)
 
     g_rel_pos = g_pos
     g_pos = g_pos + target_position
 
-    g_vel = np.zeros(3)
     # rotate velocity to align with global frame
-    g_vel[0] = b_vel[0] * np.cos(target_yaw) - b_vel[1] * np.sin(target_yaw)
-    g_vel[1] = b_vel[0] * np.sin(target_yaw) + b_vel[1] * np.cos(target_yaw)
-    g_vel[2] = b_vel[2]
+    g_vel = np.dot(target_rotation, b_vel)
     # correct for rotating frame
     g_rel_vel = g_vel
     g_vel = g_rel_vel + np.cross(target_omegas, g_rel_pos) + target_vel
 
-    g_acc = np.zeros(3)
-    g_acc[0] = b_acc[0] * np.cos(target_yaw) - b_acc[1] * np.sin(target_yaw)
-    g_acc[1] = b_acc[0] * np.sin(target_yaw) + b_acc[1] * np.cos(target_yaw)
-    g_acc[2] = b_acc[2]
+    g_acc = np.dot(target_rotation, b_acc)
 
     # correct for centripetal and coriolis acceleration
     g_acc = g_acc + np.cross(target_omegas, np.cross(target_omegas, g_rel_pos)) + 2 * np.cross(target_omegas, g_rel_vel)
@@ -141,12 +133,15 @@ class GraspStateMachine:
         self._grasp_attempted = False
         self._target_position = np.array([3.,3.,0.])
         self._target_position_fixed = None
+        self._stop_updating_target_position = False
 
         self._target_vel = np.zeros(3)
         self._target_omegas = np.zeros(3)
 
         self._target_yaw = 0.0
         self._target_yaw_fixed = 0.0
+        self._target_rotation = np.eye(3)
+        self._target_rotation_fixed = np.eye(3)
         self._settle_after_pos = np.array([0.,0.,0.])
 
         self._target_grasp_angle = rospy.get_param("~target_grasp_angle")
@@ -237,23 +232,27 @@ class GraspStateMachine:
         self._grasp_start_ok = True
 
     def _target_pose_cb(self, msg):
-        self._target_position[0] = msg.pose.pose.position.x
-        self._target_position[1] = msg.pose.pose.position.y
-        self._target_position[2] = msg.pose.pose.position.z
-        quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
-        (r, p, y) = tf.transformations.euler_from_quaternion(quat)
 
-        self._target_yaw = y
+        if not self._stop_updating_target_position:
+            self._target_position[0] = msg.pose.pose.position.x
+            self._target_position[1] = msg.pose.pose.position.y
+            self._target_position[2] = msg.pose.pose.position.z
+            quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+            (r, p, y) = tf.transformations.euler_from_quaternion(quat)
 
-        self._target_vel[0] = msg.twist.twist.linear.x
-        self._target_vel[1] = msg.twist.twist.linear.y
-        self._target_vel[2] = msg.twist.twist.linear.z
-        #self._target_omegas[0] = msg.twist.twist.angular.x
-        #self._target_omegas[1] = msg.twist.twist.angular.y
-        #self._target_omegas[2] = msg.twist.twist.angular.z
+            self._target_yaw = y
+            self._target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
+
+            self._target_vel[0] = msg.twist.twist.linear.x
+            self._target_vel[1] = msg.twist.twist.linear.y
+            self._target_vel[2] = msg.twist.twist.linear.z
+            #self._target_omegas[0] = msg.twist.twist.angular.x
+            #self._target_omegas[1] = msg.twist.twist.angular.y
+            #self._target_omegas[2] = msg.twist.twist.angular.z
 
     def _update_grasp_start_point(self):
         if not self._fixed_grasp_start_point:
+            # TODO: update for nonplanar target?
             theta_approach = self._target_yaw + self._target_grasp_angle
             offset_vector = np.zeros(3)
             offset_vector[0] = np.cos(theta_approach) * self._grasp_start_horz_offset
@@ -650,6 +649,7 @@ class GraspStateMachine:
         proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok and (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update) < .1
         self._target_position_fixed = self._target_position.copy()
         self._target_yaw_fixed = self._target_yaw
+        self._target_rotation_fixed = self._target_rotation
         if proceed and self._enable_gpio_grasp:
             grasp_cmd = GraspCommand()
             grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
@@ -679,12 +679,13 @@ class GraspStateMachine:
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
         #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw, self._target_vel, self._target_omegas)
-        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_yaw_fixed, self._target_vel, self._target_omegas)
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation_fixed, self._target_vel, self._target_omegas)
         self._settle_after_pos = g_pos
         if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
+            self._stop_updating_target_position = True
 
         if self._enable_gpio_grasp:
             lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])

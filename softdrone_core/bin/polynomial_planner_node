@@ -25,6 +25,7 @@ class PolynomialGenerator:
         self.waypoint_yaw = 0.
         self.target_position = np.array([3.,3.,0.])
         self.target_yaw = 0.
+        self.target_rotation = np.eye(3)
         self.target_velocity = np.array([0.,0.,0.]) # Not used yet. Eventually for moving target
 
 
@@ -65,6 +66,7 @@ class PolynomialGenerator:
         quat = [msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w]
         (r, p, y) = tf.transformations.euler_from_quaternion(quat)
         self.target_yaw = y
+        self.target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
 
     def get_coeffs(self, start, end, average_vel, safety_factor):
         distance = np.linalg.norm(start - end)
@@ -132,10 +134,17 @@ class PolynomialGenerator:
             # If we are close to the target, don't replan the trajectory
             return
 
-        theta = -self.target_yaw
-        drone_in_target_frame = self.position - self.target_position
-        drone_in_target_frame[0] = drone_in_target_frame[0]*np.cos(theta) - drone_in_target_frame[1]*np.sin(theta)
-        drone_in_target_frame[1] = drone_in_target_frame[0]*np.sin(theta) + drone_in_target_frame[1]*np.cos(theta)
+        #theta = -self.target_yaw
+        theta = self.target_yaw
+        print('polynomial planner node theta: ', theta)
+        #drone_in_target_frame = self.position - self.target_position
+        #drone_in_target_frame[0] = drone_in_target_frame[0]*np.cos(theta) - drone_in_target_frame[1]*np.sin(theta)
+        #drone_in_target_frame[1] = drone_in_target_frame[0]*np.sin(theta) + drone_in_target_frame[1]*np.cos(theta)
+
+        drone_in_target_frame_pre_rotation = self.position - self.target_position
+        drone_in_target_frame = np.dot(self.target_rotation.T, drone_in_target_frame_pre_rotation[:,None])
+        drone_in_target_frame = np.squeeze(drone_in_target_frame)
+
 
         #r_drone_to_target = self.target_position - self.position
         #r_drone_to_target = -self.position
@@ -148,11 +157,12 @@ class PolynomialGenerator:
         #offset[2] = self.end_offset_vert
         #end_position = offset
         #end_position = self.target_position + offset
-        u_disp = -drone_in_target_frame[:2] / np.linalg.norm(drone_in_target_frame[:2])
+        u_disp = -drone_in_target_frame_pre_rotation[:2] / np.linalg.norm(drone_in_target_frame_pre_rotation[:2])
         end_position = np.zeros(3)
         end_position[0] = self.end_offset_horz * u_disp[0]
         end_position[1] = self.end_offset_horz * u_disp[1]
         end_position[2] = self.end_offset_vert
+        end_position_target_frame = np.squeeze(np.dot(self.target_rotation.T, end_position[:,None]))
         print('\n\n')
         print('drone position:', self.position)
         print('target position:', self.target_position)
@@ -160,11 +170,13 @@ class PolynomialGenerator:
         print('end_position: ', end_position)
         print('\n\n')
 
-        #grasp_velocity = np.zeros(3)
-        #grasp_velocity[:2] = self.grasp_speed_horz * u_disp
-        #grasp_velocity[2] = self.grasp_speed_vert
-        grasp_velocity = np.array([self.grasp_speed_horz, 0., self.grasp_speed_vert])
+        grasp_velocity = np.zeros(3)
+        grasp_velocity[:2] = self.grasp_speed_horz * u_disp
+        grasp_velocity[2] = self.grasp_speed_vert
+        grasp_velocity_target_frame = np.squeeze(np.dot(self.target_rotation.T, grasp_velocity[:,None]))
+        #grasp_velocity = np.array([self.grasp_speed_horz, 0., self.grasp_speed_vert])
 
+        grasp_offset_target_frame = np.dot(self.target_rotation.T, -self.offset)
 
         # This is a horrible, horrible hack that breaks our ability to replan
         # but apparently is necessary because the gripper can't be commanded
@@ -175,28 +187,48 @@ class PolynomialGenerator:
             current_grasp_time = np.linalg.norm(r_drone_to_target) / 0.5 # time = distance / speed
         current_end_time = np.linalg.norm([self.end_offset_horz, self.end_offset_vert]) / 0.5
 
-        try:
-            polynomial, lengths = find_trajectory_for_interp(
-                #start_position=self.position,
-                start_position=drone_in_target_frame,
-                grasp_axis=2, # TODO: Remove
-                #grasp_position=self.target_position - self.offset,
-                grasp_position = -self.offset,
-                grasp_target=self.target_position,
-                grasp_time=current_grasp_time,
-                grasp_velocity=grasp_velocity,
-                grasp_acceleration=np.array([0.,0.,0.]),
-                open_distance=self.open_distance,
-                use_offline_lengths=True,
-                end_time=current_end_time,
-                end_position=end_position,
-                end_velocity=self.end_velocity,
-                start_velocity=np.zeros(3))
-                #start_velocity=self.velocity)
-        except Exception as ex:
-            print('Error optimizing grasp trajectory!')
-            print(ex)
-            return
+
+        polynomial, lengths = find_trajectory_for_interp(
+            #start_position=self.position,
+            start_position=drone_in_target_frame,
+            grasp_axis=2, # TODO: Remove
+            #grasp_position=self.target_position - self.offset,
+            #grasp_position = -self.offset,
+            grasp_position = grasp_offset_target_frame,
+            grasp_target=self.target_position,
+            grasp_time=current_grasp_time,
+            grasp_velocity=grasp_velocity_target_frame,
+            grasp_acceleration=np.array([0.,0.,0.]),
+            open_distance=self.open_distance,
+            use_offline_lengths=True,
+            end_time=current_end_time,
+            end_position=end_position_target_frame,
+            end_velocity=self.end_velocity,
+            start_velocity=np.zeros(3))
+            #start_velocity=self.velocity)
+
+        #try:
+        #    polynomial, lengths = find_trajectory_for_interp(
+        #        #start_position=self.position,
+        #        start_position=drone_in_target_frame,
+        #        grasp_axis=2, # TODO: Remove
+        #        #grasp_position=self.target_position - self.offset,
+        #        grasp_position = -self.offset,
+        #        grasp_target=self.target_position,
+        #        grasp_time=current_grasp_time,
+        #        grasp_velocity=grasp_velocity,
+        #        grasp_acceleration=np.array([0.,0.,0.]),
+        #        open_distance=self.open_distance,
+        #        use_offline_lengths=True,
+        #        end_time=current_end_time,
+        #        end_position=end_position,
+        #        end_velocity=self.end_velocity,
+        #        start_velocity=np.zeros(3))
+        #        #start_velocity=self.velocity)
+        #except Exception as ex:
+        #    print('Error optimizing grasp trajectory!')
+        #    print(ex)
+        #    return
 
         coeffs = [p.coef for p in polynomial._polynomials]
 

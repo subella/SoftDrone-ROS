@@ -102,11 +102,16 @@ void GTSAMNode::publishTargetEstimate(gtsam::NavState ns, gtsam::Matrix ns_cov, 
     transformStamped.transform.translation.z = pwcs.pose.pose.position.z;
 
     tf2::Quaternion q;
-    q.setRPY(0, 0, ns.pose().rotation().yaw());
-    transformStamped.transform.rotation.x = q.x();
-    transformStamped.transform.rotation.y = q.y();
-    transformStamped.transform.rotation.z = q.z();
-    transformStamped.transform.rotation.w = q.w();
+    //std::cout << "tf yaw from gtsam: " << ns.pose().rotation().yaw() << std::endl;
+    //q.setRPY(ns.pose().rotation.roll(), ns.pose().rotation().pitch(), ns.pose().rotation().yaw());
+    //transformStamped.transform.rotation.x = q.x();
+    //transformStamped.transform.rotation.y = q.y();
+    //transformStamped.transform.rotation.z = q.z();
+    //transformStamped.transform.rotation.w = q.w();
+    transformStamped.transform.rotation.w = quat(0);
+    transformStamped.transform.rotation.x = quat(1);
+    transformStamped.transform.rotation.y = quat(2);
+    transformStamped.transform.rotation.z = quat(3);
 
     //transformStamped.transform.rotation.x = pwcs.pose.pose.orientation.x;
     //transformStamped.transform.rotation.y = pwcs.pose.pose.orientation.y;
