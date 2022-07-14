@@ -17,7 +17,7 @@ rise_offset: [0.0, 0.0, 1.0]
 open_lengths: [190, 190, 208, 208]
 land_threshold: 0.001
 dist_threshold: 0.2
-grasp_attempted_tolerance: 1
+grasp_attempted_tolerance: .2
 average_polynomial_velocity: 0.8
 desired_yaw: 0
 ground_effect_stop_time: 10.0

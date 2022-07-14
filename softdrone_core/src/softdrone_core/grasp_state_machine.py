@@ -287,7 +287,8 @@ class GraspStateMachine:
         poly_z = np.polynomial.polynomial.Polynomial(msg.coeffs_z)
         polys = [poly_x, poly_y, poly_z]
         polynomial_info = PolynomialInfo(polys, msg.time_end - msg.time_start)
-        self._last_waypoint_polynomial_update = msg.time_start
+        #self._last_waypoint_polynomial_update = msg.time_start
+        self._last_waypoint_polynomial_update = rospy.Time.now().to_sec()
         self._current_waypoint_polynomial = polynomial_info
 
     def _waypoint_trajectory_cb(self, msg):
@@ -304,6 +305,11 @@ class GraspStateMachine:
         if self._grasp_attempted:
             return
         poly_msg = msg.polynomial
+
+        dt = poly_msg.time_end - poly_msg.time_start
+        poly_msg.time_start = rospy.Time.now().to_sec()
+        poly_msg.time_end = poly_msg.time_start + dt
+
         poly_x = np.polynomial.Polynomial(poly_msg.coeffs_x)
         poly_y = np.polynomial.Polynomial(poly_msg.coeffs_y)
         poly_z = np.polynomial.Polynomial(poly_msg.coeffs_z)
@@ -647,6 +653,7 @@ class GraspStateMachine:
         settle_pos = self._grasp_start_pos
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
         proceed = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok and (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update) < .1
+        print('\n\n\nproceed:', self._has_elapsed(GraspDroneState.SETTLE_BEFORE), '  ', self._grasp_start_ok, ' ', (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update), '\n\n\n')
         self._target_position_fixed = self._target_position.copy()
         self._target_yaw_fixed = self._target_yaw
         self._target_rotation_fixed = self._target_rotation
@@ -751,6 +758,7 @@ class GraspStateMachine:
         """Wait while we drop the target."""
         self._update_grasp_trajectory()
         self._update_waypoint_trajectory()
+        self._update_waypoint(self._land_position, 0)
         drop_pos = self._drop_position
         self._loiter_at_point(drop_pos[0], drop_pos[1], drop_pos[2])
         self._send_lengths(self._open_lengths, scale=False)

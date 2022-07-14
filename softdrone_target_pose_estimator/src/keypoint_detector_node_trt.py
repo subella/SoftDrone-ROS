@@ -25,19 +25,20 @@ def image_callback(msg):
         img = bridge.imgmsg_to_cv2(msg, "bgr8")
         socket.send(img)
         kps = recv_array(socket)
-        kps_msg = Keypoints2D()
-        kps_msg.header.stamp = msg.header.stamp
-        for kp in kps:
-            kp_msg = Keypoint2D()
-            kp_msg.x = kp[0]
-            kp_msg.y = kp[1]
-            kps_msg.keypoints_2D.append(kp_msg)
-        kps_pub.publish(kps_msg)
+        if np.any(kps):
+            kps_msg = Keypoints2D()
+            kps_msg.header.stamp = msg.header.stamp
+            for kp in kps:
+                kp_msg = Keypoint2D()
+                kp_msg.x = kp[0]
+                kp_msg.y = kp[1]
+                kps_msg.keypoints_2D.append(kp_msg)
+            kps_pub.publish(kps_msg)
 
-        for kp in kps:
-            img = cv2.circle(img, (kp[0], kp[1]), 2, (255,0,0),2)
+            for kp in kps:
+                img = cv2.circle(img, (kp[0], kp[1]), 2, (255,0,0),2)
 
-        annotated_img_pub.publish(bridge.cv2_to_imgmsg(img))
+            annotated_img_pub.publish(bridge.cv2_to_imgmsg(img))
 
     except CvBridgeError, e:
         print(e)

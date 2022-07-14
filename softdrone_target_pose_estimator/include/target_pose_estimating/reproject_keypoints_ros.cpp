@@ -19,7 +19,7 @@ ReprojectKeypointsROS(const ros::NodeHandle& nh)
     it_(nh_),
     keypoints_2D_sub_(nh_, "keypoints_2d_in", 1),
     depth_img_sub_(it_, "depth_img_in", 1),
-    sync_(SyncPolicy(10), keypoints_2D_sub_, depth_img_sub_)
+    sync_(SyncPolicy(100), keypoints_2D_sub_, depth_img_sub_)
 {
   sync_.registerCallback(boost::bind(&ReprojectKeypointsROS::keypoints2DCallback, this, _1, _2));
   rgb_cam_info_sub_ = nh_.subscribe("rgb_cam_info_in", 1, &ReprojectKeypointsROS::rgbCamInfoCallback, this);
