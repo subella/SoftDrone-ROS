@@ -1,58 +1,57 @@
+#!/usr/bin/env python
 import rospy
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
+import numpy as np
 import cv2
-
-def detect_keypoints(cv2_image):
-    ar = float(image.width) / float(image.height)
-    quad = get_quad(0.0, (0, 0), 1.0, aspect_ratio=ar)
-    image = transform_image(image, self.image_shape, quad)
-    data = self.transform(image).cuda()[None, ...]
-    cmap, paf = model(data)
-    cmap, paf = cmap.cpu(), paf.cpu()
-    object_counts, objects, peaks = self.parse_objects(cmap, paf)
-    object_counts, objects, peaks = int(object_counts[0]), objects[0], peaks[0]
-    
-    for i in range(object_counts):
-        kps = [0]*(33*3)
-        cnt = 0
-        for j in range(33):
-            k = object[j]
-            if k >= 0:
-                peak = peaks[j][k]
-                if ar > 1.0: # w > h w/h
-                    x = peak[1]
-                    y = (peak[0] - 0.5) * ar + 0.5
-                else:
-                    x = (peak[1] - 0.5) / ar + 0.5
-                    y = peak[0]
-
-                x = round(float(img['width'] * x))
-                y = round(float(img['height'] * y))
-                kps[j * 3 + 0] = x
-                kps[j * 3 + 1] = y
-                kps[j * 3 + 2] = 2
-                # r = 2
-                # drawing.ellipse((x-r, y-r, x+r, y+r), fill=(255,0,0,0))
+from sensor_msgs.msg import Image as ImageMsg
+from cv_bridge import CvBridge, CvBridgeError
+from PIL import Image
+import os
+import zmq
+import base64
+from softdrone_target_pose_estimator.msg import Keypoints2D, Keypoint2D
 
 
+def recv_array(socket, flags=0, copy=True, track=False):
+    """recv a numpy array"""
+    md = socket.recv_json(flags=flags)
+    msg = socket.recv(flags=flags, copy=copy, track=track)
+    #buf = memoryview(msg)
+    A = np.frombuffer(msg, dtype=md['dtype'])
+    return A.reshape(md['shape'])
 
 def image_callback(msg):
-    print("Received an image!")
+    bridge = CvBridge()
     try:
-        # Convert your ROS Image message to OpenCV2
-        cv2_img = bridge.imgmsg_to_cv2(msg, "bgr8")
+        img = bridge.imgmsg_to_cv2(msg, "bgr8")
+        socket.send(img)
+        kps = recv_array(socket)
+        kps_msg = Keypoints2D()
+        kps_msg.header.stamp = msg.header.stamp
+        for kp in kps:
+            kp_msg = Keypoint2D()
+            kp_msg.x = kp[0]
+            kp_msg.y = kp[1]
+            kps_msg.keypoints_2D.append(kp_msg)
+        kps_pub.publish(kps_msg)
+
+        for kp in kps:
+            img = cv2.circle(img, (kp[0], kp[1]), 2, (255,0,0),2)
+
+        annotated_img_pub.publish(bridge.cv2_to_imgmsg(img))
+
     except CvBridgeError, e:
         print(e)
-    else:
-        detect_keypoints(cv2_image)
 
 def main():
-    bridge = CvBridge()
-    rospy.init_node('image_listener')
-    image_topic = "rgb_img_in"
-    rospy.Subscriber(image_topic, Image, image_callback)
+    image_topic = "/target_cam/color/image_raw"
+    rospy.Subscriber(image_topic, ImageMsg, image_callback)
     rospy.spin()
 
 if __name__ == '__main__':
+    rospy.init_node('keypoint_detector')
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.connect('tcp://localhost:5555')
+    kps_pub = rospy.Publisher('~keypoints_out', Keypoints2D)
+    annotated_img_pub = rospy.Publisher('~annotated_img_out', ImageMsg)
     main()
