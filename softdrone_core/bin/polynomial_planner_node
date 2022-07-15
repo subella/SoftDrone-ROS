@@ -9,6 +9,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from softdrone_core.msg import PolynomialTrajectory, LengthInfoMsg, GraspTrajectory
 from softdrone_core.utils import get_trajectory_viz_markers
 from softdrone_core import InterpTrajectoryTracker
+from std_msgs.msg import Bool
 
 from softdrone.python.control.find_trajectory import find_coeffs, find_trajectory_for_interp, PolynomialInfo
 
@@ -54,8 +55,18 @@ class PolynomialGenerator:
         #rospy.Subscriber('~target_pose', PoseWithCovarianceStamped, self.set_target_pose_cb)
         rospy.Subscriber('~target_odom', Odometry, self.set_target_pose_cb)
 
+        rospy.Subscriber('~grasp_trajectory_request', Bool, self.grasp_request_cb)
+        rospy.Subscriber('~waypoint_trajectory_request', Bool, self.waypoint_request_cb)
+
         self.waypoint_polynomial_publisher = rospy.Publisher('~waypoint_polynomial', PolynomialTrajectory, queue_size=1) 
         self.grasp_trajectory_publisher = rospy.Publisher('~grasp_trajectory', GraspTrajectory, queue_size=1) 
+
+
+    def waypoint_request_cb(self, msg):
+        self.update_waypoint_trajectory()
+
+    def grasp_request_cb(self, msg):
+        self.update_grasp_trajectory()
 
     def set_target_pose_cb(self, msg):
         msg = msg.pose
@@ -134,29 +145,14 @@ class PolynomialGenerator:
             # If we are close to the target, don't replan the trajectory
             return
 
-        #theta = -self.target_yaw
         theta = self.target_yaw
         print('polynomial planner node theta: ', theta)
-        #drone_in_target_frame = self.position - self.target_position
-        #drone_in_target_frame[0] = drone_in_target_frame[0]*np.cos(theta) - drone_in_target_frame[1]*np.sin(theta)
-        #drone_in_target_frame[1] = drone_in_target_frame[0]*np.sin(theta) + drone_in_target_frame[1]*np.cos(theta)
 
         drone_in_target_frame_pre_rotation = self.position - self.target_position
         drone_in_target_frame = np.dot(self.target_rotation.T, drone_in_target_frame_pre_rotation[:,None])
         drone_in_target_frame = np.squeeze(drone_in_target_frame)
 
 
-        #r_drone_to_target = self.target_position - self.position
-        #r_drone_to_target = -self.position
-        #r_displacement_plane = r_drone_to_target[:2]
-        #dist_plane = np.linalg.norm(r_displacement_plane)
-        #u_disp = r_displacement_plane / dist_plane
-        #offset = np.zeros(3)
-        #offset[0] = self.end_offset_horz * u_disp[0]
-        #offset[1] = self.end_offset_horz * u_disp[1]
-        #offset[2] = self.end_offset_vert
-        #end_position = offset
-        #end_position = self.target_position + offset
         u_disp = -drone_in_target_frame_pre_rotation[:2] / np.linalg.norm(drone_in_target_frame_pre_rotation[:2])
         end_position = np.zeros(3)
         end_position[0] = self.end_offset_horz * u_disp[0]
@@ -189,11 +185,8 @@ class PolynomialGenerator:
 
 
         polynomial, lengths = find_trajectory_for_interp(
-            #start_position=self.position,
             start_position=drone_in_target_frame,
             grasp_axis=2, # TODO: Remove
-            #grasp_position=self.target_position - self.offset,
-            #grasp_position = -self.offset,
             grasp_position = grasp_offset_target_frame,
             grasp_target=self.target_position,
             grasp_time=current_grasp_time,
@@ -205,30 +198,6 @@ class PolynomialGenerator:
             end_position=end_position_target_frame,
             end_velocity=self.end_velocity,
             start_velocity=np.zeros(3))
-            #start_velocity=self.velocity)
-
-        #try:
-        #    polynomial, lengths = find_trajectory_for_interp(
-        #        #start_position=self.position,
-        #        start_position=drone_in_target_frame,
-        #        grasp_axis=2, # TODO: Remove
-        #        #grasp_position=self.target_position - self.offset,
-        #        grasp_position = -self.offset,
-        #        grasp_target=self.target_position,
-        #        grasp_time=current_grasp_time,
-        #        grasp_velocity=grasp_velocity,
-        #        grasp_acceleration=np.array([0.,0.,0.]),
-        #        open_distance=self.open_distance,
-        #        use_offline_lengths=True,
-        #        end_time=current_end_time,
-        #        end_position=end_position,
-        #        end_velocity=self.end_velocity,
-        #        start_velocity=np.zeros(3))
-        #        #start_velocity=self.velocity)
-        #except Exception as ex:
-        #    print('Error optimizing grasp trajectory!')
-        #    print(ex)
-        #    return
 
         coeffs = [p.coef for p in polynomial._polynomials]
 
@@ -256,9 +225,4 @@ rospy.init_node('polynomial_generator')
 
 pg = PolynomialGenerator()
 
-rate = rospy.Rate(1)
-while not rospy.is_shutdown():
-    pg.update_waypoint_trajectory()
-    pg.update_grasp_trajectory()
-    rate.sleep()
-
+rospy.spin()
