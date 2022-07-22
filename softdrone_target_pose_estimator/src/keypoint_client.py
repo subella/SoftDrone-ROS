@@ -37,13 +37,15 @@ def detect_keypoints(cv2_image, model):
     cv2_image = cv2_image[:,:,::-1]
     image_shape = (640, 360)
     image = Image.fromarray(cv2_image).convert("RGB")
-    ar = float(image.width) / float(image.height)
+    #ar = float(image.width) / float(image.height)
+    ar = 1.0
     quad = get_quad(0.0, (0, 0), 1.0, aspect_ratio=ar)
     image = transform_image(image, image_shape, quad)
+    #image.save("img.png")
     data = transform(image).cuda()[None, ...]
-    cmap, paf = model(data)
-    cmap, paf = cmap.cpu(), paf.cpu()
-    object_counts, objects, peaks = parse_objects(cmap, paf)
+    cmap = model(data)
+    cmap = cmap.cpu()
+    object_counts, objects, peaks = parse_objects(cmap, cmap)
     object_counts, objects, peaks = int(object_counts[0]), objects[0], peaks[0]
 
     kps = [0]*(33*3)
@@ -69,7 +71,7 @@ def detect_keypoints(cv2_image, model):
     return np.array(kps).reshape((33,3))
 
 if __name__=="__main__":
-    OPTIMIZED_MODEL = 'softdrone3.pth'
+    OPTIMIZED_MODEL = 'softdrone5.pth'
     model = TRTModule()
     model.load_state_dict(torch.load(OPTIMIZED_MODEL))
     print("Model loaded!")

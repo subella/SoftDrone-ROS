@@ -108,9 +108,9 @@
     </group>
 
     <group if="$(arg launch_d455)">
-        <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+        <include file="$(find softdrone_core)/launch/nodes/d455.launch">
             <arg name="camera" value="target_cam"/>
-            <arg name="device_type" value="d455"/>
+            <!--<arg name="device_type" value="d455"/>-->
 
             <!--<arg name="depth_width" value="1280"/>
             <arg name="depth_height" value="800"/>
@@ -167,7 +167,7 @@
 
     <group if="$(arg launch_reproject_keypoints_node)">
         <remap from="~keypoints_2d_in" to="keypoint_detector_node/keypoints_out"/>
-        <remap from="~depth_img_in" to="target_cam/aligned_depth_to_color/image_raw"/>
+        <remap from="~depth_img_in" to="target_cam/depth/image_rect_raw"/>
         <remap from="~rgb_cam_info_in" to="target_cam/color/camera_info"/>
         <include file="$(find softdrone_core)/launch/nodes/reproject_keypoints_node.launch" />
     </group>
