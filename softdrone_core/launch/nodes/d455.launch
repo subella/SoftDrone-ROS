@@ -86,4 +86,16 @@
         <param name="/$(arg camera)/rgb_camera/enable_auto_white_balance" value="$(arg enable_auto_white_balance_rgb)" />
     </group>
 
+    <node pkg="nodelet" type="nodelet" name="nodelet_manager_depth"
+          args="manager"
+          output="screen"
+          required="true"/>    <node pkg="nodelet" type="nodelet" name="depth_rectifier"
+          args="load depth_image_proc/register nodelet_manager_depth --no-bond"
+          output="screen"
+          required="true">
+        <remap from="rgb/camera_info" to="/target_cam/color/camera_info"/>
+        <remap from="depth/image_rect" to="/target_cam/depth/image_rect_raw"/>
+        <remap from="depth/camera_info" to="/target_cam/depth/camera_info"/>
+    </node>
+
 </launch>

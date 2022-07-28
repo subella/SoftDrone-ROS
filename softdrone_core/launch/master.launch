@@ -109,6 +109,7 @@
 
     <group if="$(arg launch_d455)">
         <include file="$(find softdrone_core)/launch/nodes/d455.launch">
+        <!--<include file="$(find realsense2_camera)/launch/rs_rgbd.launch">-->
             <arg name="camera" value="target_cam"/>
             <!--<arg name="device_type" value="d455"/>-->
 
@@ -126,6 +127,8 @@
         <remap from="/nav_cam/odom/sample" to="/mavros/odometry/out"/>
         <include file="$(find realsense2_camera)/launch/rs_t265.launch">
             <arg name="publish_odom_tf" value="false"/>
+            <arg name="enable_fisheye1" value="false"/>
+            <arg name="enable_fisheye2" value="false"/>
             <arg name="camera" value="nav_cam"/>
         </include>
     </group>
@@ -170,7 +173,7 @@
 
     <group if="$(arg launch_reproject_keypoints_node)">
         <remap from="~keypoints_2d_in" to="keypoint_detector_node/keypoints_out"/>
-        <remap from="~depth_img_in" to="target_cam/depth/image_rect_raw"/>
+        <remap from="~depth_img_in" to="/depth_registered/image_rect"/>
         <remap from="~rgb_cam_info_in" to="target_cam/color/camera_info"/>
         <include file="$(find softdrone_core)/launch/nodes/reproject_keypoints_node.launch" />
     </group>

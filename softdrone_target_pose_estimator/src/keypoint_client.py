@@ -98,7 +98,9 @@ if __name__=="__main__":
             buf = memoryview(msg)
             img_flat = np.frombuffer(buf, np.uint8)
             img = img_flat.reshape((720, 1280, 3))
+            start_time = time.time()
             kps = detect_keypoints(img, model)
+            print(time.time() - start_time)
             #kps = np.zeros((33,3), dtype=int)
             send_array(footage_socket, kps)
         except KeyboardInterrupt:
