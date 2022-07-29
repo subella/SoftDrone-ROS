@@ -9,6 +9,7 @@ from softdrone_core import InterpTrajectoryTracker
 
 from softdrone.python.control.find_trajectory import PolynomialInfo, LengthInfo
 
+
 def waypoint_trajectory_cb(msg):
     global viz_pub
     coeffs = [msg.coeffs_x, msg.coeffs_y, msg.coeffs_z]
@@ -24,8 +25,18 @@ def waypoint_trajectory_cb(msg):
     ma = get_trajectory_viz_markers(pts, 'waypoint_trajectory', 0, (1,0,0))
     viz_pub.publish(ma)
 
-def grasp_trajectory_cb(msg):
-    global viz_pub
+
+viz_msg = None
+
+def pub_grasp_trajectory_viz():
+    global viz_pub, viz_msg
+    if viz_msg is None:
+        return
+
+    viz_pub.publish(viz_msg)
+
+def update_grasp_traj(msg):
+    global viz_msg
     poly_msg = msg.polynomial
     t_vals = np.linspace(0, poly_msg.time_end - poly_msg.time_start, 50)
     poly_x = np.polynomial.Polynomial(poly_msg.coeffs_x)
@@ -70,8 +81,8 @@ def grasp_trajectory_cb(msg):
     init_marker.pose.position.z = pts[0].z
 
     ma.markers.append(init_marker)
+    viz_msg = ma
 
-    viz_pub.publish(ma)
 
 
 rospy.init_node('polynomial_generator')
@@ -81,5 +92,7 @@ rospy.Subscriber('~grasp_trajectory', GraspTrajectory, grasp_trajectory_cb, queu
 
 viz_pub = rospy.Publisher('~trajectory_viz', MarkerArray, queue_size=1)
 
-rospy.spin()
-
+rate = rospy.Rate(5)
+while not rospy.is_shutdown():
+    pub_grasp_trajectory_viz()
+    rate.sleep()
