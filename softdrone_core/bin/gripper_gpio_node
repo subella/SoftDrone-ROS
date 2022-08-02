@@ -3,7 +3,7 @@
 import rospy
 import std_srvs.srv
 import RPi.GPIO as GPIO
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Int8
 from softdrone_core.srv import SendGraspCommand
 
 class GripperNode:
@@ -12,6 +12,7 @@ class GripperNode:
     def __init__(self):
         """Setup Service"""
         self._cmd_serv = rospy.Service("cmd_gripper", SendGraspCommand, self._cmd_callback)
+        self._cmd_sub = rospy.Subscriber("cmd_gripper_sub", Int8, self._cmd_sub_callback)
 
         """GPIOs"""
         #The commands are encoded as a 2 digit binary number AB where LOW is 0 and HIGH is 1
@@ -39,6 +40,12 @@ class GripperNode:
         if req.cmd.cmd > 3:
             return False
         return True
+
+    def _cmd_sub_callback(self, msg):
+        if msg.data < 0 or msg.data > 3:
+            rospy.logerr("Gripper cmd must be 0 <= cmd <= 3. Got %d" % msg.data)
+            return
+        self._output_signal = msg.data
 
     def spin(self):
         GPIO.setmode(GPIO.BOARD) #use board pin numbers

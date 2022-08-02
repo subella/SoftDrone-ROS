@@ -13,7 +13,7 @@ from nav_msgs.msg import Odometry
 import geometry_msgs.msg
 import mavros_msgs.msg
 import mavros_msgs.srv
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Int8
 import std_srvs.srv
 import std_msgs.msg
 import numpy as np
@@ -195,7 +195,8 @@ class GraspStateMachine:
 
         if self._enable_gpio_grasp:
             rospy.wait_for_service('cmd_gripper')
-            self._gripper_client = rospy.ServiceProxy('cmd_gripper', SendGraspCommand)
+            #self._gripper_client = rospy.ServiceProxy('cmd_gripper', SendGraspCommand)
+            self._gripper_pub = rospy.Publisher('cmd_gripper_sub', Int8)
 
         rospy.Subscriber("~state", mavros_msgs.msg.State, self._state_callback, queue_size=10)
         rospy.Subscriber("~pose", PoseStamped, self._pose_callback, queue_size=10)
@@ -683,11 +684,14 @@ class GraspStateMachine:
         self._target_yaw_fixed = self._target_yaw
         self._target_rotation_fixed = self._target_rotation
         if proceed and self._enable_gpio_grasp:
-            grasp_cmd = GraspCommand()
-            grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
+            #grasp_cmd = GraspCommand()
+            #grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
+            grasp_cmd = Int8()
+            grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
             try:
                 rospy.logwarn("Called open gripper!")
-                self._gripper_client(grasp_cmd)
+                #self._gripper_client(grasp_cmd)
+                self._gripper_pub.publish(grasp_cmd)
             except rospy.ServiceException as e:
                 print("Service call failed to open gripper: %s"%e)
         return proceed
@@ -719,9 +723,12 @@ class GraspStateMachine:
             lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
                 try:
-                    grasp_cmd = GraspCommand()
-                    grasp_cmd.cmd = GraspCommand.CLOSE
-                    self._gripper_client(grasp_cmd)
+                    #grasp_cmd = GraspCommand()
+                    #grasp_cmd.cmd = GraspCommand.CLOSE
+                    grasp_cmd = Int8()
+                    grasp_cmd.data = GraspCommand.CLOSE
+                    #self._gripper_client(grasp_cmd)
+                    self._gripper_pub.publish(grasp_cmd)
                     rospy.logwarn("Called close gripper!")
                 except rospy.ServiceException as e:
                     print("Service call failed to close gripper: %s"%e)
@@ -789,9 +796,12 @@ class GraspStateMachine:
         self._send_lengths(self._open_lengths, scale=False)
         if self._enable_gpio_grasp:
             try:
-                grasp_cmd = GraspCommand()
-                grasp_cmd.cmd = GraspCommand.DEFAULT
-                self._gripper_client(grasp_cmd)
+                #grasp_cmd = GraspCommand()
+                #grasp_cmd.cmd = GraspCommand.DEFAULT
+                grasp_cmd = Int8()
+                grasp_cmd.data = GraspCommand.DEFAULT
+                #self._gripper_client(grasp_cmd)
+                self._gripper_pub.publish(grasp_cmd)
 
             except rospy.ServiceException as e:
                 print("Service call failed to open gripper: %s"%e)
