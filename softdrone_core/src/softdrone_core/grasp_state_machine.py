@@ -636,7 +636,6 @@ class GraspStateMachine:
         """Use loiter command to hang out at hover setpoint."""
 
         self._update_grasp_trajectory()
-        self._update_waypoint_trajectory()
 
         self._update_grasp_start_point()
         self._loiter_at_point(
@@ -649,6 +648,7 @@ class GraspStateMachine:
         req_traj = self._has_elapsed(GraspDroneState.HOVER)
         if req_traj:
             self._request_wp_once()
+            self._update_waypoint_trajectory()
         proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update) < .1
         return proceed
 
@@ -748,7 +748,6 @@ class GraspStateMachine:
         """Use loiter command to stop after executing the grasp."""
 
         self._update_grasp_trajectory()
-        self._update_waypoint_trajectory()
 
         self._update_waypoint(self._drop_position, 0)
         settle_pos = self._settle_after_pos
@@ -756,6 +755,7 @@ class GraspStateMachine:
         req_traj = self._has_elapsed(GraspDroneState.SETTLE_AFTER)
         if req_traj:
             self._request_wp_once()
+            self._update_waypoint_trajectory()
         proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update) < .1
         return proceed
 
@@ -789,7 +789,6 @@ class GraspStateMachine:
     def _handle_drop(self):
         """Wait while we drop the target."""
         self._update_grasp_trajectory()
-        self._update_waypoint_trajectory()
         self._update_waypoint(self._land_position, 0)
         drop_pos = self._drop_position
         self._loiter_at_point(drop_pos[0], drop_pos[1], drop_pos[2])
@@ -808,6 +807,7 @@ class GraspStateMachine:
         req_traj = self._has_elapsed(GraspDroneState.DROP)
         if req_traj:
             self._request_wp_once()
+            self._update_waypoint_trajectory()
         proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update) < .1
         return proceed
 
