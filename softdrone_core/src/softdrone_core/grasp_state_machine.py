@@ -129,6 +129,8 @@ class GraspStateMachine:
         self._waiting_on_waypoint_request = False
         self._waiting_on_grasp_trajectory_request = False
 
+        self._last_waypoint_polynomial_recv_from_planner = rospy.Time.now().to_sec()
+        self._last_grasp_polynomial_recv_from_planner = rospy.Time.now().to_sec()
         ## Note these next two times are curently set in the callbacks when we receive
         # the polynomials, but they should probably be set by timestamps from the 
         # trajectory generator node
@@ -310,11 +312,13 @@ class GraspStateMachine:
 
     def _waypoint_trajectory_cb(self, msg):
         self._waiting_on_waypoint_request = False
+        self._last_waypoint_polynomial_recv_from_planner = rospy.Time.now().to_sec()
         self._last_received_waypoint_msg = msg
 
 
     def _grasp_trajectory_cb(self, msg):
         self._waiting_on_grasp_trajectory_request = False
+        self._last_grasp_polynomial_recv_from_planner = rospy.Time.now().to_sec()
         self._last_received_trajectory_msg = msg
 
     def _update_grasp_trajectory(self):
@@ -649,7 +653,7 @@ class GraspStateMachine:
         if req_traj:
             self._request_wp_once()
             self._update_waypoint_trajectory()
-        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update) < .1
+        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_recv_from_planner) < .1
         return proceed
 
     def _handle_moving_to_start(self):
@@ -679,7 +683,7 @@ class GraspStateMachine:
         req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
         if req_traj:
             self._request_grasp_trajectory_once()
-        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_grasp_trajectory_update) < .1
+        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_grasp_polynomial_recv_from_planner) < .1
         self._target_position_fixed = self._target_position.copy()
         self._target_yaw_fixed = self._target_yaw
         self._target_rotation_fixed = self._target_rotation
@@ -756,7 +760,7 @@ class GraspStateMachine:
         if req_traj:
             self._request_wp_once()
             self._update_waypoint_trajectory()
-        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update) < .1
+        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_recv_from_planner) < .1
         return proceed
 
     def _handle_rise(self):
@@ -808,7 +812,7 @@ class GraspStateMachine:
         if req_traj:
             self._request_wp_once()
             self._update_waypoint_trajectory()
-        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update) < .1
+        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_recv_from_planner) < .1
         return proceed
 
     def _handle_moving_to_home(self):
