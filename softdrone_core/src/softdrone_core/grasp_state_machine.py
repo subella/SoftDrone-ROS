@@ -687,7 +687,7 @@ class GraspStateMachine:
             #grasp_cmd = GraspCommand()
             #grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
             grasp_cmd = Int8()
-            grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
+            grasp_cmd.data = GraspCommand.OPEN
             try:
                 rospy.logwarn("Called open gripper!")
                 #self._gripper_client(grasp_cmd)
@@ -710,25 +710,27 @@ class GraspStateMachine:
 
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
-        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
         #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation_fixed, self._target_vel, self._target_omegas)
         self._settle_after_pos = g_pos
-        if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
+        #if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
+        if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
             self._stop_updating_target_position = True
 
         if self._enable_gpio_grasp:
-            lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
+            #lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
+            lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
                 try:
                     #grasp_cmd = GraspCommand()
                     #grasp_cmd.cmd = GraspCommand.CLOSE
                     grasp_cmd = Int8()
-                    grasp_cmd.data = GraspCommand.CLOSE
+                    grasp_cmd.data = GraspCommand.DEFAULT
                     #self._gripper_client(grasp_cmd)
-                    self._gripper_pub.publish(grasp_cmd)
                     rospy.logwarn("Called close gripper!")
                 except rospy.ServiceException as e:
                     print("Service call failed to close gripper: %s"%e)

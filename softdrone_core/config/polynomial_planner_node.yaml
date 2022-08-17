@@ -7,7 +7,7 @@ gripper_latency: 0.0
 
 grasp_target: [0.257, -3.463, 0.989]
 start_position: [-2.0, 0.0, 2.0]
-offset: [0.00, 0, -0.3]
+offset: [0.00, 0, -0.23]
 open_distance: 0.2
 grasp_velocity: [0.2, 0.0, -0.03]
 grasp_speed_horz: 0.1

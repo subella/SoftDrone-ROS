@@ -9,7 +9,7 @@ land_offset: [-1.0, 0.5, 0.0]
 
 # Lateral distance from target when the drone should start closing gripper
 # Set this to a very large number to force the grasp state machine to call the gripper close service immediately upon starting the "execute mission" state
-grasp_start_distance: .05
+grasp_start_distance: .15
 
 drop_position: [0.0, 1.0, 1.0]
 takeoff_offset: 1.0
