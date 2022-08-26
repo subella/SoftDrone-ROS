@@ -88,7 +88,8 @@ def update_grasp_traj(msg):
 rospy.init_node('polynomial_generator')
 
 rospy.Subscriber('~waypoint_polynomial', PolynomialTrajectory, waypoint_trajectory_cb, queue_size=1)
-rospy.Subscriber('~grasp_trajectory', GraspTrajectory, grasp_trajectory_cb, queue_size=1)
+#rospy.Subscriber('~grasp_trajectory', GraspTrajectory, grasp_trajectory_cb, queue_size=1)
+rospy.Subscriber('~grasp_trajectory', GraspTrajectory, update_grasp_traj, queue_size=1)
 
 viz_pub = rospy.Publisher('~trajectory_viz', MarkerArray, queue_size=1)
 

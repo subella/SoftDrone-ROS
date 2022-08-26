@@ -144,6 +144,8 @@ class GraspStateMachine:
         self._target_vel = np.zeros(3)
         self._target_omegas = np.zeros(3)
 
+        self._target_cov = np.eye(6)
+
         self._target_yaw = 0.0
         self._target_yaw_fixed = 0.0
         self._target_rotation = np.eye(3)
@@ -259,6 +261,9 @@ class GraspStateMachine:
             self._target_position[2] = msg.pose.pose.position.z
             quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
             (r, p, y) = tf.transformations.euler_from_quaternion(quat)
+
+            self._target_cov = msg.pose.covariance.reshape((6,6))
+            print('\n\nTarget cov det: %f\n\n' % (np.linalg.det(self._target_cov)))
 
             self._target_yaw = y
             self._target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
