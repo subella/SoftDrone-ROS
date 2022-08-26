@@ -522,7 +522,7 @@ class GraspStateMachine:
             ]
         )
 
-        if self._home_position is None:
+        if self._home_position is None and np.all(self._current_position):
             self._home_position = self._current_position.copy()
             self._land_position = self._home_position + self._land_offset
 
@@ -683,7 +683,7 @@ class GraspStateMachine:
         req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
         if req_traj:
             self._request_grasp_trajectory_once()
-        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_grasp_polynomial_recv_from_planner) < .1
+        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_grasp_polynomial_recv_from_planner) < .1 and self._grasp_trajectory_tracker is not None
         self._target_position_fixed = self._target_position.copy()
         self._target_yaw_fixed = self._target_yaw
         self._target_rotation_fixed = self._target_rotation
@@ -735,6 +735,7 @@ class GraspStateMachine:
                     grasp_cmd = Int8()
                     grasp_cmd.data = GraspCommand.DEFAULT
                     #self._gripper_client(grasp_cmd)
+                    self._gripper_pub.publish(grasp_cmd)
                     rospy.logwarn("Called close gripper!")
                 except rospy.ServiceException as e:
                     print("Service call failed to close gripper: %s"%e)

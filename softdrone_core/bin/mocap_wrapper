@@ -27,6 +27,7 @@ class MocapTranslator:
                 geometry_msgs.msg.PoseStamped,
                 self._mocap_callback,
                 tcp_nodelay=True,
+                queue_size=1
             )
             self._latest_pose = None
             self._distance_threshold = rospy.get_param("~dist_threshold", 1.0)
@@ -56,16 +57,18 @@ class MocapTranslator:
                 )
                 dist = np.linalg.norm(t_curr - t_prev)
                 if dist > self._distance_threshold:
-                    rospy.logerror("Rejected mocap: {}".format(dist))
+                    rospy.logerr("Rejected mocap: {}".format(dist))
                     return
+            else:
+                rospy.logerr("Rejected message, too old")
 
         self._latest_pose = msg
 
     def _timer_callback(self, event):
         """Send latest pose periodically if it exists."""
         if self._latest_pose is not None:
-            #self._pose_pub.publish(self._latest_pose)
-            pass
+            #self._latest_pose.header.stamp = rospy.Time.now()
+            self._pose_pub.publish(self._latest_pose)
 
 
 def start_mocap_node_process():
