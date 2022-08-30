@@ -2,9 +2,10 @@
 
 namespace sdrone {
 
-GTSAMNode::GTSAMNode(const ros::NodeHandle &nh) : nh_(nh), agent_sub_(nh_, "agent_odom", 1), target_rel_sub_(nh_, "estimated_relative_pose", 1), 
+GTSAMNode::GTSAMNode(const ros::NodeHandle &nh) : nh_(nh), agent_sub_(nh_, "agent_odom", 1), target_rel_sub_(nh_, "estimated_relative_pose", 1),
 sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_), tf_listener_(tf_buffer_) {
     is_initialized_ = false;
+    reset_sub_ = nh_.subscribe("reset_target_estimator", 1, &GTSAMNode::reset_callback, this);
     target_pose_pub_ = nh_.advertise<PoseWCovStamped>("target_global_pose_estimate", 1);
     target_odom_pub_ = nh_.advertise<Odom>("target_global_odom_estimate", 1);
     sync_.registerCallback(boost::bind(&GTSAMNode::syncCallback, this, _1, _2));
@@ -15,9 +16,14 @@ sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_), tf_listener_(tf_buffer_) {
     nh_.getParam("transition_velocity_prior_cov", transition_velocity_prior_cov_);
     nh_.getParam("transition_angular_velocity_prior_cov", transition_angular_velocity_prior_cov_);
     nh_.getParam("target_frame_id", target_frame_id_);
-    double lag;
-    nh_.getParam("smoother_lag", lag);
-    estimator_ = GTSAMEstimator(lag);
+    nh_.getParam("smoother_lag", lag_);
+    estimator_ = GTSAMEstimator(lag_);
+}
+
+void GTSAMNode::reset_callback(const Bool::ConstPtr &reset_msg) {
+    if (reset_msg->data) {
+        estimator_ = GTSAMEstimator(lag_);
+    }
 }
 
 void GTSAMNode::syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamped::ConstPtr &pwcs) {

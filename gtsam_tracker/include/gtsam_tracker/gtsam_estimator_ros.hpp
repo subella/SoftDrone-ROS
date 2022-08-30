@@ -9,6 +9,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <std_msgs/Bool.h>
 
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -25,6 +26,7 @@ namespace sdrone {
 class GTSAMNode {
     public:
         typedef geometry_msgs::PoseWithCovarianceStamped PoseWCovStamped;
+        typedef std_msgs::Bool Bool;
         typedef nav_msgs::Odometry Odom;
         typedef message_filters::sync_policies::ApproximateTime<Odom, PoseWCovStamped> SyncPolicy;
 
@@ -35,6 +37,7 @@ class GTSAMNode {
 
         std::string frame_id_;
 
+        ros::Subscriber reset_sub_;
         message_filters::Subscriber<Odom> agent_sub_;
         message_filters::Subscriber<PoseWCovStamped> target_rel_sub_;
         
@@ -46,6 +49,7 @@ class GTSAMNode {
         ros::Publisher target_odom_pub_;
 
         bool is_initialized_;
+        double lag_;
 
         std::string target_frame_id_;
         double process_covariance_trans_;
@@ -61,6 +65,7 @@ class GTSAMNode {
         tf2_ros::TransformListener tf_listener_;
         tf2_ros::TransformBroadcaster transform_broadcaster_;
 
+        void reset_callback(const Bool::ConstPtr &bool_msg);
         void syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamped::ConstPtr &pwcs);
         void publishTargetEstimate(gtsam::NavState ns, gtsam::Matrix ns_cov, gtsam::Vector3 omegas, gtsam::Matrix omegas_cov);
         void updateFromRos(Belief6D obs, double time);
