@@ -219,6 +219,10 @@ class GraspStateMachine:
             "~lengths", std_msgs.msg.Int64MultiArray, queue_size=10
         )
 
+        self._tracker_reset_pub = rospy.Publisher(
+                "~tracker_reset", Bool, queue_size=1
+        )
+
         self._waypoint_request_pub = rospy.Publisher('~waypoint_trajectory_request', Bool, queue_size=1, latch=True)
         self._grasp_request_pub = rospy.Publisher('~grasp_trajectory_request', Bool, queue_size=1, latch=True)
 
@@ -674,6 +678,9 @@ class GraspStateMachine:
         elapsed = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
         if elapsed >= curr_poly._total_time:
+            reset_msg = Bool()
+            reset_msg.data = True
+            self._tracker_reset_pub.publish(reset_msg)
             return True
 
         pos, vel, acc = curr_poly.interp(elapsed)
