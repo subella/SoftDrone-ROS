@@ -262,8 +262,10 @@ class GraspStateMachine:
             quat = [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
             (r, p, y) = tf.transformations.euler_from_quaternion(quat)
 
-            self._target_cov = msg.pose.covariance.reshape((6,6))
-            print('\n\nTarget cov det: %f\n\n' % (np.linalg.det(self._target_cov)))
+            self._target_cov = np.array(msg.pose.covariance).reshape((6,6))
+            print('Target cov det: %f\n\n' % (np.linalg.det(self._target_cov)*1e6))
+            #print('Target cov : {}\n\n'.format(self._target_cov))
+            #print('\n\nTarget cov ros: {}\n\n'.format(msg.pose.covariance))
 
             self._target_yaw = y
             self._target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
@@ -692,17 +694,19 @@ class GraspStateMachine:
         self._target_position_fixed = self._target_position.copy()
         self._target_yaw_fixed = self._target_yaw
         self._target_rotation_fixed = self._target_rotation
-        if proceed and self._enable_gpio_grasp:
-            #grasp_cmd = GraspCommand()
-            #grasp_cmd.cmd = GraspCommand.OPEN_ASYMMETRIC
-            grasp_cmd = Int8()
-            grasp_cmd.data = GraspCommand.OPEN
-            try:
-                rospy.logwarn("Called open gripper!")
-                #self._gripper_client(grasp_cmd)
-                self._gripper_pub.publish(grasp_cmd)
-            except rospy.ServiceException as e:
-                print("Service call failed to open gripper: %s"%e)
+        grasp_cmd = Int8()
+        grasp_cmd.data = GraspCommand.OPEN_PARTIAL
+        self._gripper_pub.publish(grasp_cmd)
+        #if proceed and self._enable_gpio_grasp:
+        #    grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
+        #    try:
+        #        rospy.logwarn("Called open gripper!")
+        #        self._gripper_pub.publish(grasp_cmd)
+        #    except rospy.ServiceException as e:
+        #        print("Service call failed to open gripper: %s"%e)
+        #else:
+        #    grasp_cmd.data = GraspCommand.OPEN_PARTIAL
+
         return proceed
 
     def _handle_executing_mission(self):
@@ -725,6 +729,11 @@ class GraspStateMachine:
         self._settle_after_pos = g_pos
         #if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
         if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
+            if not self._grasp_attempted:
+                grasp_cmd = Int8()
+                grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
+                self._gripper_pub.publish(grasp_cmd)
+                rospy.loginfo("Called open asymmetric gripper!")
             # stop updating the grasp trajectory after we attempt the grasp. If we didn't do this, we would
             # keep going back to the grasp point
             self._grasp_attempted = True
@@ -734,16 +743,10 @@ class GraspStateMachine:
             #lat_target_dist = np.linalg.norm(self._target_position[:2] - self._current_position[:2])
             lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
-                try:
-                    #grasp_cmd = GraspCommand()
-                    #grasp_cmd.cmd = GraspCommand.CLOSE
-                    grasp_cmd = Int8()
-                    grasp_cmd.data = GraspCommand.DEFAULT
-                    #self._gripper_client(grasp_cmd)
-                    self._gripper_pub.publish(grasp_cmd)
-                    rospy.logwarn("Called close gripper!")
-                except rospy.ServiceException as e:
-                    print("Service call failed to close gripper: %s"%e)
+                grasp_cmd = Int8()
+                grasp_cmd.data = GraspCommand.CLOSE
+                self._gripper_pub.publish(grasp_cmd)
+                rospy.loginfo("Called close gripper!")
 
         self._send_target(
             g_pos,
