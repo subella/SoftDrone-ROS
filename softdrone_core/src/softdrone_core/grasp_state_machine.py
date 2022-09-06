@@ -408,7 +408,7 @@ class GraspStateMachine:
                 continue
             if state == GraspDroneState.SETTLE_BEFORE:
                 self._state_durations[state] = rospy.Duration(
-                    rospy.get_param("~mission_settle_duration", 2.0)
+                    rospy.get_param("~mission_settle_duration", 15.)
                 )
                 continue
             if state == GraspDroneState.SETTLE_AFTER:
@@ -724,18 +724,18 @@ class GraspStateMachine:
             #theta_approach = self._target_yaw_fixed + self._target_grasp_angle
             self._desired_yaw = theta_approach + np.pi
 
-        if not self._replan_during_grasp_trajectory:
+        #if not self._replan_during_grasp_trajectory:
             # results in not replanning after starting to follow the grasp trajectory
-            self._grasp_attempted = True
+        #    self._grasp_attempted = True
 
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
-        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
-        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
         #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation_fixed, self._target_vel, self._target_omegas)
         self._settle_after_pos = g_pos
         #if np.linalg.norm(self._target_position - self._current_position) < self._grasp_attempted_tolerance:
-        if np.linalg.norm(self._target_position_fixed - self._current_position) < self._grasp_attempted_tolerance:
+        if np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2]) < self._grasp_attempted_tolerance:
             if not self._grasp_attempted:
                 grasp_cmd = Int8()
                 grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
@@ -820,7 +820,7 @@ class GraspStateMachine:
                 #grasp_cmd = GraspCommand()
                 #grasp_cmd.cmd = GraspCommand.DEFAULT
                 grasp_cmd = Int8()
-                grasp_cmd.data = GraspCommand.DEFAULT
+                grasp_cmd.data = GraspCommand.CLOSE
                 #self._gripper_client(grasp_cmd)
                 self._gripper_pub.publish(grasp_cmd)
 

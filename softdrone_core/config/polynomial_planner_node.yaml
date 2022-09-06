@@ -1,7 +1,7 @@
 dist_threshold: 0.35
 hover_duration: 3.5
 start_settle_duration: 7.0
-mission_settle_duration: 6.0
+#mission_settle_duration: 6.0
 gripper_latency: 0.0
 
 
@@ -10,8 +10,8 @@ start_position: [-2.0, 0.0, 2.0]
 offset: [0.00, -0.025, -0.3]
 open_distance: 0.2
 #grasp_velocity: [0.2, 0.0, -0.029]
-grasp_velocity: [0.2, 0.0, 0.0]
-grasp_speed_horz: 0.1
+grasp_velocity: [0.0, 0.0, 0.0]
+grasp_speed_horz: 0
 grasp_speed_vert: 0
 ground_effect_stop_time: 5.5
 
