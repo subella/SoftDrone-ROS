@@ -198,7 +198,7 @@ class GraspStateMachine:
         self._enable_gpio_grasp = rospy.get_param("~enable_gpio_grasp")
 
         if self._enable_gpio_grasp:
-            rospy.wait_for_service('cmd_gripper')
+            #rospy.wait_for_service('cmd_gripper')
             #self._gripper_client = rospy.ServiceProxy('cmd_gripper', SendGraspCommand)
             self._gripper_pub = rospy.Publisher('cmd_gripper_sub', Int8)
 
@@ -267,7 +267,7 @@ class GraspStateMachine:
             (r, p, y) = tf.transformations.euler_from_quaternion(quat)
 
             self._target_cov = np.array(msg.pose.covariance).reshape((6,6))
-            print('Target cov det: %f\n\n' % (np.linalg.det(self._target_cov)*1e6))
+            #print('Target cov det: %f\n\n' % (np.linalg.det(self._target_cov)*1e6))
             #print('Target cov : {}\n\n'.format(self._target_cov))
             #print('\n\nTarget cov ros: {}\n\n'.format(msg.pose.covariance))
 
