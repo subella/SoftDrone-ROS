@@ -37,14 +37,11 @@ def send_array(socket, A, flags=0, copy=True, track=False):
     return socket.send(A, flags, copy=copy, track=track)
 
 def detect_keypoints(cv2_image, model):
-    cv2_image = cv2_image[:,:,::-1]
-    #image_shape = (640, 360)
     orig_image = Image.fromarray(cv2_image).convert("RGB")
     orig_image = orig_image.crop((0, 
                                   0.5 * orig_image.height,
                                   orig_image.width, 
                                   orig_image.height))
-            
     resize_factor = np.sqrt((orig_image.width * orig_image.height) / IMAGE_AREA)
     image_shape = (int(orig_image.width / resize_factor), int(orig_image.height / resize_factor))
     #ar = float(image.width) / float(image.height)
@@ -104,15 +101,16 @@ if __name__=="__main__":
    
     while True:
         try:
+            start_time = time.time()
             msg = footage_socket.recv()
             buf = memoryview(msg)
             img_flat = np.frombuffer(buf, np.uint8)
             img = img_flat.reshape((720, 1280, 3))
-            start_time = time.time()
             kps = detect_keypoints(img, model)
-            print(time.time() - start_time)
             #kps = np.zeros((33,3), dtype=int)
             send_array(footage_socket, kps)
+            print("Total time: ")
+            print(time.time() - start_time)
         except KeyboardInterrupt:
             cv2.destroyAllWindows()
             break

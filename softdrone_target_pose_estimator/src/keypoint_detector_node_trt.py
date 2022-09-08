@@ -20,9 +20,8 @@ def recv_array(socket, flags=0, copy=True, track=False):
     return A.reshape(md['shape'])
 
 def image_callback(msg):
-    bridge = CvBridge()
     try:
-        img = bridge.imgmsg_to_cv2(msg, "bgr8")
+        img = bridge.imgmsg_to_cv2(msg, "rgb8")
         socket.send(img)
         kps = recv_array(socket)
         if np.any(kps):
@@ -51,6 +50,7 @@ def main():
 if __name__ == '__main__':
     rospy.init_node('keypoint_detector')
     context = zmq.Context()
+    bridge = CvBridge()
     socket = context.socket(zmq.REQ)
     socket.connect('tcp://localhost:5555')
     kps_pub = rospy.Publisher('~keypoints_out', Keypoints2D)
