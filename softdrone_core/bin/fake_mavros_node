@@ -17,9 +17,9 @@ R_twist = 0.1
 
 last_odom_in = Odometry()
 
-x = 0
-y = 0
-z = 0
+x = .1
+y = .1
+z = .01
 yaw = 0
 pitch = 0
 roll = 0

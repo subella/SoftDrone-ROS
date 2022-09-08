@@ -32,7 +32,9 @@ def pub_grasp_trajectory_viz():
     global viz_pub, viz_msg
     if viz_msg is None:
         return
-
+    
+    viz_msg.markers[0].header.stamp = rospy.Time.now()
+    viz_msg.markers[1].header.stamp = rospy.Time.now()
     viz_pub.publish(viz_msg)
 
 def update_grasp_traj(msg):
