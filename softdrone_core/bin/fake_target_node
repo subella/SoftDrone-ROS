@@ -4,6 +4,7 @@ import numpy as np
 from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped
 import tf
 import tf2_ros
+from nav_msgs.msg import Odometry
 
 
 #self._takeoff_offset = rospy.get_param("~takeoff_offset", 1.0)
@@ -18,7 +19,8 @@ theta = rospy.get_param("~theta", 0.0)
 
 circumference = 2.0*np.pi*radius
 
-target_pub = rospy.Publisher("~target_global", PoseWithCovarianceStamped, queue_size=1)
+#target_pub = rospy.Publisher("~target_global", PoseWithCovarianceStamped, queue_size=1)
+target_pub = rospy.Publisher("~target_global", Odometry, queue_size=1)
 tf_broadcaster = tf2_ros.TransformBroadcaster()
 target_transform = TransformStamped()
 target_transform.header.frame_id = "map"
@@ -45,16 +47,29 @@ while not rospy.is_shutdown():
         y = yc
         theta = speed * t * 2*np.pi
         q = tf.transformations.quaternion_from_euler(0,0,theta)
+    
+    odom_msg = Odometry()
+    odom_msg.header.stamp = rospy.Time.now()
+    odom_msg.header.frame_id = 'map'
+    odom_msg.child_frame_id = 'target'
+    odom_msg.pose.pose.position.x = x
+    odom_msg.pose.pose.position.y = y 
+    odom_msg.pose.pose.position.z = height
+    odom_msg.pose.pose.orientation.x = q[0]
+    odom_msg.pose.pose.orientation.y = q[1] 
+    odom_msg.pose.pose.orientation.z = q[2] 
+    odom_msg.pose.pose.orientation.w = q[3]
+    #odom_pub.publish(odom_msg)
 
-    msg.header.stamp = rospy.Time.now()
-    msg.header.frame_id = 'map'
-    msg.pose.pose.position.x = x
-    msg.pose.pose.position.y = y
-    msg.pose.pose.position.z = height
-    msg.pose.pose.orientation.x = q[0]
-    msg.pose.pose.orientation.y = q[1]
-    msg.pose.pose.orientation.z = q[2]
-    msg.pose.pose.orientation.w = q[3]
+    #msg.header.stamp = rospy.Time.now()
+    #msg.header.frame_id = 'map'
+    #msg.pose.pose.position.x = x
+    #msg.pose.pose.position.y = y
+    #msg.pose.pose.position.z = height
+    #msg.pose.pose.orientation.x = q[0]
+    #msg.pose.pose.orientation.y = q[1]
+    #msg.pose.pose.orientation.z = q[2]
+    #msg.pose.pose.orientation.w = q[3]
 
     target_transform.header.stamp = rospy.Time.now()
     target_transform.transform.translation.x = x
@@ -66,6 +81,6 @@ while not rospy.is_shutdown():
     target_transform.transform.rotation.w = q[3]
     tf_broadcaster.sendTransform(target_transform)
 
-    target_pub.publish(msg)
+    target_pub.publish(odom_msg)
     rate.sleep()
 

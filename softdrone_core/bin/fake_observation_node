@@ -76,9 +76,9 @@ def publish_relative_target_observation():
     #q = tf.transformations.quaternion_from_euler(0.0, 0.0, target_rel_yaw_body)
 
     eps_pos = np.sqrt(R_pos)
-    #eps_pos = 0
+    eps_pos = 0
     eps_rot = np.sqrt(R_rot)
-    #eps_rot = 0
+    eps_rot = 0
     #eulers_noisy = np.array([0.,0., target_rel_yaw_body]) + eps_rot*np.random.randn(3)
     #q = tf.transformations.quaternion_from_euler(*eulers_noisy)
 

@@ -57,7 +57,7 @@
     <!-- Launch the simulated target node -->
     <group if="$(arg launch_fake_target_node)">
         <remap unless="$(arg sim_target_as_tracker_output)" from="~target_global" to="/sparkgrasptar/world"/>
-        <remap if="$(arg sim_target_as_tracker_output)" from="~target_global" to="/$(arg tracker_ns)/target_global_pose_estimate"/>
+        <remap if="$(arg sim_target_as_tracker_output)" from="~target_global" to="/$(arg tracker_ns)/target_global_odom_estimate"/>
 
         <include file="$(find softdrone_core)/launch/nodes/fake_target_node.launch">
             <arg name="x" value="$(arg target_x)"/>

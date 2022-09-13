@@ -31,6 +31,7 @@ class PolynomialGenerator:
 
 
         self.average_polynomial_velocity = rospy.get_param("~average_polynomial_velocity", 0.8)
+        self.minimum_polynomial_time = rospy.get_param("~minimum_polynomial_time", 3)
 
         self.grasp_time = rospy.get_param("~grasp_time")
         self.use_hardcoded_grasp_time = rospy.get_param("~use_hardcoded_grasp_time")
@@ -81,7 +82,9 @@ class PolynomialGenerator:
 
     def get_coeffs(self, start, end, average_vel, safety_factor):
         distance = np.linalg.norm(start - end)
-        total_time = distance / average_vel * safety_factor
+        total_time = max(distance / average_vel * safety_factor, self.minimum_polynomial_time)
+        print ("TOTAL TIME:", total_time)
+        print("VELOCITY:", self.velocity)
         coeffs = find_coeffs(start, end, time=total_time, start_velocity=self.velocity)
         return (coeffs, total_time)
 

@@ -57,18 +57,20 @@ class GraspDroneState(enum.Enum):
     TAKEOFF = 3
     HOVER = 4
     MOVING_TO_START = 5
-    SETTLE_BEFORE = 6
-    EXECUTING_MISSION = 7
-    SETTLE_AFTER = 8
-    RISE = 9
-    MOVING_TO_DROP = 10
-    DROP = 11
-    MOVING_TO_HOME = 12
-    HOVER_BEFORE_LAND = 13
-    LAND = 14
-    IDLE = 15
-    HANDLE_SWITCH_TO_MANUAL = 16
-    HANDLE_DISARM = 17
+    SETTLE_BEFORE_ALIGNMENT = 6
+    MOVING_TO_ALIGNED_START = 7
+    SETTLE_BEFORE_GRASP = 8
+    EXECUTING_MISSION = 9
+    SETTLE_AFTER = 10
+    RISE = 11
+    MOVING_TO_DROP = 12
+    DROP = 13
+    MOVING_TO_HOME = 14
+    HOVER_BEFORE_LAND = 15
+    LAND = 16
+    IDLE = 17
+    HANDLE_SWITCH_TO_MANUAL = 18
+    HANDLE_DISARM = 19
 
 
 class SetpointType(enum.IntEnum):
@@ -156,8 +158,8 @@ class GraspStateMachine:
         self._grasp_start_horz_offset = rospy.get_param("~grasp_start_horz_offset")
         self._grasp_start_vert_offset = rospy.get_param("~grasp_start_vert_offset")
         self._fixed_grasp_start_point = rospy.get_param("~fixed_grasp_start_point")
-        self._grasp_start_pos = np.array(rospy.get_param("~grasp_start_pos"))
-        self._grasp_start_theta = rospy.get_param("~grasp_start_theta")
+        self._start_pos = np.array(rospy.get_param("~start_pos"))
+        self._start_theta = rospy.get_param("~start_theta")
 
         self._land_offset = np.array(rospy.get_param("~land_offset"))
 
@@ -282,17 +284,17 @@ class GraspStateMachine:
             #self._target_omegas[2] = msg.twist.twist.angular.z
 
     def _update_grasp_start_point(self):
-        if not self._fixed_grasp_start_point:
-            # TODO: update for nonplanar target?
-            theta_approach = self._target_yaw + self._target_grasp_angle
-            offset_vector = np.zeros(3)
-            offset_vector[0] = np.cos(theta_approach) * self._grasp_start_horz_offset
-            offset_vector[1] = np.sin(theta_approach) * self._grasp_start_horz_offset
-            offset_vector[2] = self._grasp_start_vert_offset
-            grasp_start_pos = self._target_position + offset_vector
-            self._grasp_start_pos = grasp_start_pos
-            self._grasp_start_theta = theta_approach + np.pi
-            self._desired_yaw = self._grasp_start_theta
+        #if not self._fixed_grasp_start_point:
+        # TODO: update for nonplanar target?
+        theta_approach = self._target_yaw + self._target_grasp_angle
+        offset_vector = np.zeros(3)
+        offset_vector[0] = np.cos(theta_approach) * self._grasp_start_horz_offset
+        offset_vector[1] = np.sin(theta_approach) * self._grasp_start_horz_offset
+        offset_vector[2] = self._grasp_start_vert_offset
+        grasp_start_pos = self._target_position + offset_vector
+        self._grasp_start_pos = grasp_start_pos
+        self._grasp_start_theta = theta_approach + np.pi
+        self._desired_yaw = self._grasp_start_theta
         self._update_waypoint(self._grasp_start_pos, self._grasp_start_theta)
 
     def _update_waypoint(self, pos, yaw):
@@ -370,7 +372,9 @@ class GraspStateMachine:
             GraspDroneState.TAKEOFF: self._handle_takeoff,
             GraspDroneState.HOVER: self._handle_hover,
             GraspDroneState.MOVING_TO_START: self._handle_moving_to_start,
-            GraspDroneState.SETTLE_BEFORE: self._handle_settle_before,
+            GraspDroneState.SETTLE_BEFORE_ALIGNMENT: self._handle_settle_before_alignment,
+            GraspDroneState.MOVING_TO_ALIGNED_START: self._handle_moving_to_aligned_start,
+            GraspDroneState.SETTLE_BEFORE_GRASP: self._handle_settle_before_grasp,
             GraspDroneState.EXECUTING_MISSION: self._handle_executing_mission,
             GraspDroneState.SETTLE_AFTER: self._handle_settle_after,
             GraspDroneState.RISE: self._handle_rise,
@@ -406,9 +410,14 @@ class GraspStateMachine:
                     rospy.get_param("~offboard_wait_duration", 0.2)
                 )
                 continue
-            if state == GraspDroneState.SETTLE_BEFORE:
+            if state == GraspDroneState.SETTLE_BEFORE_ALIGNMENT:
                 self._state_durations[state] = rospy.Duration(
-                    rospy.get_param("~mission_settle_duration", 15.)
+                    rospy.get_param("~mission_settle_duration", 5.)
+                )
+                continue
+            if state == GraspDroneState.SETTLE_BEFORE_GRASP:
+                self._state_durations[state] = rospy.Duration(
+                    rospy.get_param("~mission_settle_duration", 5.)
                 )
                 continue
             if state == GraspDroneState.SETTLE_AFTER:
@@ -601,7 +610,7 @@ class GraspStateMachine:
         self._update_grasp_trajectory()
         self._update_waypoint_trajectory()
 
-        self._update_grasp_start_point()
+        #self._update_grasp_start_point()
         if self._arm_time is None:
             return False
         else:
@@ -651,8 +660,7 @@ class GraspStateMachine:
         """Use loiter command to hang out at hover setpoint."""
 
         self._update_grasp_trajectory()
-
-        self._update_grasp_start_point()
+        self._update_waypoint(self._start_pos, self._start_theta)
         self._loiter_at_point(
             self._home_position[0],
             self._home_position[1],
@@ -668,13 +676,13 @@ class GraspStateMachine:
         return proceed
 
     def _handle_moving_to_start(self):
-        """Move from the takeoff position to the start of the grasp."""
+        """Move from the takeoff position to arbritrary start point."""
 
         if self._replan_during_stages:
             self._update_grasp_trajectory()
             self._update_waypoint_trajectory()
 
-        self._update_grasp_start_point()
+        #self._update_grasp_start_point()
         elapsed = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
         curr_poly = self._current_waypoint_polynomial
         if elapsed >= curr_poly._total_time:
@@ -684,26 +692,35 @@ class GraspStateMachine:
             return True
 
         pos, vel, acc = curr_poly.interp(elapsed)
-        self._send_target(pos, yaw=self._desired_yaw, velocity=vel, acceleration=acc)
+        yaw_scale = min(elapsed / curr_poly._total_time, 1.0)
+        self._send_target(pos, yaw=self._start_theta * yaw_scale, velocity=vel, acceleration=acc)
         return False
 
-    def _handle_settle_before(self):
+    def _handle_settle_before_alignment(self):
         """Use loiter command to stop before executing the grasp."""
         self._update_grasp_trajectory()
         self._update_waypoint_trajectory()
+        #self._update_waypoint(self._land_position, 0)
         self._update_grasp_start_point()
-        settle_pos = self._grasp_start_pos
-        self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
-        req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
+        #settle_pos = self._grasp_start_pos
+        #self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
+        self._loiter_at_point(self._start_pos[0], self._start_pos[1], self._start_pos[2], yaw=self._start_theta)
+        req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE_ALIGNMENT)
         if req_traj:
-            self._request_grasp_trajectory_once()
-        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_grasp_polynomial_recv_from_planner) < .1 and self._grasp_trajectory_tracker is not None
-        self._target_position_fixed = self._target_position.copy()
-        self._target_yaw_fixed = self._target_yaw
-        self._target_rotation_fixed = self._target_rotation
-        grasp_cmd = Int8()
-        grasp_cmd.data = GraspCommand.OPEN_PARTIAL
-        self._gripper_pub.publish(grasp_cmd)
+            self._request_wp_once()
+            self._update_waypoint_trajectory()
+        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_recv_from_planner) < .1
+        return proceed
+        #req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
+        #if req_traj:
+        #    self._request_grasp_trajectory_once()
+        #proceed = req_traj and (rospy.Time.now().to_sec() - self._last_grasp_polynomial_recv_from_planner) < .1 and self._grasp_trajectory_tracker is not None
+        #self._target_position_fixed = self._target_position.copy()
+        #self._target_yaw_fixed = self._target_yaw
+        #self._target_rotation_fixed = self._target_rotation
+        #grasp_cmd = Int8()
+        #grasp_cmd.data = GraspCommand.OPEN_PARTIAL
+        #self._gripper_pub.publish(grasp_cmd)
         #if proceed and self._enable_gpio_grasp:
         #    grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
         #    try:
@@ -714,6 +731,46 @@ class GraspStateMachine:
         #else:
         #    grasp_cmd.data = GraspCommand.OPEN_PARTIAL
 
+        return proceed
+
+    def _handle_moving_to_aligned_start(self):
+        elapsed = rospy.Time.now().to_sec() - self._last_waypoint_polynomial_update
+        curr_poly = self._current_waypoint_polynomial
+        if elapsed >= curr_poly._total_time:
+            reset_msg = Bool()
+            reset_msg.data = True
+            self._tracker_reset_pub.publish(reset_msg)
+            return True
+
+        pos, vel, acc = curr_poly.interp(elapsed)
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(pos, vel, acc, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+        yaw_scale = min(elapsed / curr_poly._total_time, 1.0)
+        #self._send_target(pos, yaw=self._desired_yaw * yaw_scale + self._start_theta * (1 - yaw_scale), velocity=vel, acceleration=acc)
+        #self._update_grasp_start_point()
+        drone_wrt_target = self._current_position - self._target_position
+        print (self._current_position)
+        yaw = np.arctan2(drone_wrt_target[1], drone_wrt_target[0])
+        print(yaw)
+        self._send_target(pos, yaw=yaw + np.pi, velocity=vel, acceleration=acc)
+        return False
+
+    def _handle_settle_before_grasp(self):
+        """Maintain grasp start position before executing."""
+        self._update_grasp_trajectory()
+        self._update_waypoint_trajectory()
+        self._update_grasp_start_point()
+        settle_pos = self._grasp_start_pos
+        self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2], yaw=self._desired_yaw)
+        req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE_GRASP) and self._grasp_start_ok
+        if req_traj:
+            self._request_grasp_trajectory_once()
+        proceed = req_traj and (rospy.Time.now().to_sec() - self._last_grasp_polynomial_recv_from_planner) < .1 and self._grasp_trajectory_tracker is not None
+        self._target_position_fixed = self._target_position.copy()
+        self._target_yaw_fixed = self._target_yaw
+        self._target_rotation_fixed = self._target_rotation
+        grasp_cmd = Int8()
+        grasp_cmd.data = GraspCommand.OPEN_PARTIAL
+        self._gripper_pub.publish(grasp_cmd)
         return proceed
 
     def _handle_executing_mission(self):

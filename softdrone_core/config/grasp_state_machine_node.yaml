@@ -1,12 +1,13 @@
 target_grasp_angle: 0
-grasp_start_horz_offset: 2.0
+grasp_start_horz_offset: 1.0
 grasp_start_vert_offset: 1.0
 
-grasp_start_pos: [-1.0, -0.7, 0.8] # for flying with vision
-#grasp_start_pos: [-1.5, -0.7, 1.2] # for flying with vision
+#start_pos: [-1.0, -0.7, 0.8] # for flying with vision
+start_pos: [0.0, -1.7, 0.8] # for flying with vision
+#start_pos: [-1.8, -0.7, 1.5] # for flying with vision
 #grasp_start_pos: [-1.27, -3.47, 1.9]
 
-grasp_start_theta: 0.0
+start_theta: 1.57
 
 land_offset: [-1.0, 0.5, 0.0]
 
@@ -33,5 +34,5 @@ trajectory_settle_time: 2.0
 fixed_grasp_start_point: True
 replan_during_grasp_trajectory: False
 replan_during_stages: False
-require_grasp_confirmation: True
+require_grasp_confirmation: False
 enable_gpio_grasp: True
