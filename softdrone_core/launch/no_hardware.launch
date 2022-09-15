@@ -18,7 +18,7 @@
         <arg name="launch_gtsam_tracker_node" value="false" />
         <arg name="launch_robot_state_publisher" value="true" />
         <arg name="launch_rviz" default="false"/>
-        <arg name="launch_trajectory_visualizer_node" default="true"/>
+        <arg name="launch_trajectory_visualizer_node" default="false"/>
 
         <arg name="target_motion" value="$(arg target_motion)" />
         <arg name="target_x" value="$(arg target_x)" />

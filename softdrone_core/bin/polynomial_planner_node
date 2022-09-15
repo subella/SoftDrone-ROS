@@ -58,6 +58,7 @@ class PolynomialGenerator:
 
         rospy.Subscriber('~grasp_trajectory_request', Bool, self.grasp_request_cb)
         rospy.Subscriber('~waypoint_trajectory_request', Bool, self.waypoint_request_cb)
+        rospy.Subscriber('~waypoint_trajectory_target_frame_request', Bool, self.waypoint_target_frame_request_cb)
 
         self.waypoint_polynomial_publisher = rospy.Publisher('~waypoint_polynomial', PolynomialTrajectory, queue_size=1) 
         self.grasp_trajectory_publisher = rospy.Publisher('~grasp_trajectory', GraspTrajectory, queue_size=1) 
@@ -65,6 +66,10 @@ class PolynomialGenerator:
 
     def waypoint_request_cb(self, msg):
         self.update_waypoint_trajectory()
+
+    def waypoint_target_frame_request_cb(self, msg):
+        print ("got it")
+        self.update_waypoint_trajectory_target_frame()
 
     def grasp_request_cb(self, msg):
         self.update_grasp_trajectory()
@@ -140,8 +145,32 @@ class PolynomialGenerator:
         coeff_msg.coeffs_z = coeffs[2]
         self.waypoint_polynomial_publisher.publish(coeff_msg)
 
-    def update_grasp_trajectory(self):
+    def update_waypoint_trajectory_target_frame(self):
+        t0 = rospy.Time.now().to_sec()
+        drone_in_target_frame_pre_rotation = self.position - self.target_position
+        drone_in_target_frame = np.dot(self.target_rotation.T, drone_in_target_frame_pre_rotation[:,None])
+        drone_in_target_frame = np.squeeze(drone_in_target_frame)
 
+        end_in_target_frame_pre_rotation = self.waypoint_position - self.target_position
+        end_in_target_frame = np.dot(self.target_rotation.T, end_in_target_frame_pre_rotation[:,None])
+        end_in_target_frame = np.squeeze(end_in_target_frame)
+        try:
+
+            coeffs, total_time = self.get_coeffs(drone_in_target_frame, end_in_target_frame, self.average_polynomial_velocity, 1.4)
+        except Exception as ex:
+            print('Waypoint planning failed!')
+            print(ex)
+            return
+        coeff_msg = PolynomialTrajectory()
+        coeff_msg.time_start = t0
+        coeff_msg.time_end = t0 + total_time
+        coeff_msg.coeffs_x = coeffs[0]
+        coeff_msg.coeffs_y = coeffs[1]
+        coeff_msg.coeffs_z = coeffs[2]
+        print ("pubbin")
+        self.waypoint_polynomial_publisher.publish(coeff_msg)
+
+    def update_grasp_trajectory(self):
         t0 = rospy.Time.now().to_sec()
         target_dist = np.linalg.norm(self.target_position - self.position)
         if target_dist < self.grasp_lockout_distance:

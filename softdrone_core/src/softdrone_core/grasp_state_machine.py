@@ -226,6 +226,7 @@ class GraspStateMachine:
         )
 
         self._waypoint_request_pub = rospy.Publisher('~waypoint_trajectory_request', Bool, queue_size=1, latch=True)
+        self._waypoint_request_target_frame_pub = rospy.Publisher('~waypoint_trajectory_target_frame_request', Bool, queue_size=1, latch=True)
         self._grasp_request_pub = rospy.Publisher('~grasp_trajectory_request', Bool, queue_size=1, latch=True)
 
         self._waypoint_pub = rospy.Publisher("~waypoint", PoseStamped, queue_size=1)
@@ -240,13 +241,18 @@ class GraspStateMachine:
             rospy.Duration(1.0 / control_rate), self._timer_callback
         )
 
-
-
     def _request_wp_once(self):
         if not self._waiting_on_waypoint_request:
             bool_msg = Bool()
             bool_msg.data = True
             self._waypoint_request_pub.publish(bool_msg)
+            self._waiting_on_waypoint_request = True
+
+    def _request_wp_target_frame_once(self):
+        if not self._waiting_on_waypoint_request:
+            bool_msg = Bool()
+            bool_msg.data = True
+            self._waypoint_request_target_frame_pub.publish(bool_msg)
             self._waiting_on_waypoint_request = True
 
     def _request_grasp_trajectory_once(self):
@@ -327,7 +333,6 @@ class GraspStateMachine:
         self._waiting_on_waypoint_request = False
         self._last_waypoint_polynomial_recv_from_planner = rospy.Time.now().to_sec()
         self._last_received_waypoint_msg = msg
-
 
     def _grasp_trajectory_cb(self, msg):
         self._waiting_on_grasp_trajectory_request = False
@@ -707,7 +712,7 @@ class GraspStateMachine:
         self._loiter_at_point(self._start_pos[0], self._start_pos[1], self._start_pos[2], yaw=self._start_theta)
         req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE_ALIGNMENT)
         if req_traj:
-            self._request_wp_once()
+            self._request_wp_target_frame_once()
             self._update_waypoint_trajectory()
         proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_recv_from_planner) < .1
         return proceed
@@ -743,15 +748,10 @@ class GraspStateMachine:
             return True
 
         pos, vel, acc = curr_poly.interp(elapsed)
-        #g_pos, g_vel, g_acc = target_body_pva_to_global(pos, vel, acc, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
-        yaw_scale = min(elapsed / curr_poly._total_time, 1.0)
-        #self._send_target(pos, yaw=self._desired_yaw * yaw_scale + self._start_theta * (1 - yaw_scale), velocity=vel, acceleration=acc)
-        #self._update_grasp_start_point()
+        g_pos, g_vel, g_acc = target_body_pva_to_global(pos, vel, acc, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
         drone_wrt_target = self._current_position - self._target_position
-        print (self._current_position)
         yaw = np.arctan2(drone_wrt_target[1], drone_wrt_target[0])
-        print(yaw)
-        self._send_target(pos, yaw=yaw + np.pi, velocity=vel, acceleration=acc)
+        self._send_target(g_pos, yaw=yaw + np.pi, velocity=g_vel, acceleration=g_acc)
         return False
 
     def _handle_settle_before_grasp(self):
