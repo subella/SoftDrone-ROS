@@ -11,7 +11,7 @@ from softdrone.python.control.find_trajectory import PolynomialInfo, LengthInfo
 
 
 def waypoint_trajectory_cb(msg):
-    global viz_pub
+    global wpt_viz_msg
     coeffs = [msg.coeffs_x, msg.coeffs_y, msg.coeffs_z]
     poly_for_eval = [np.polynomial.polynomial.Polynomial(c) for c in coeffs]
     poly_wrapper = PolynomialInfo(poly_for_eval, msg.time_end)
@@ -22,11 +22,23 @@ def waypoint_trajectory_cb(msg):
         p.x = r[0]
         p.y = r[1]
         p.z = r[2]
-    ma = get_trajectory_viz_markers(pts, 'waypoint_trajectory', 0, (1,0,0))
-    viz_pub.publish(ma)
+    wpt_viz_msg = get_trajectory_viz_markers(pts, 'waypoint_trajectory', 0, (1,0,0), frame_id='target')
 
 
 viz_msg = None
+wpt_viz_msg = None
+
+def pub_wp_trajectory_viz():
+    global viz_pub, wpt_viz_msg
+    if wpt_viz_msg is None:
+        return
+    
+    wpt_viz_msg.markers[0].header.stamp = rospy.Time.now()
+    wpt_viz_msg.markers[1].header.stamp = rospy.Time.now()
+    wpt_viz_msg.markers[0].header.frame_id = 'target'
+    wpt_viz_msg.markers[1].header.frame_id = 'target'
+    print("working")
+    viz_pub.publish(wpt_viz_msg)
 
 def pub_grasp_trajectory_viz():
     global viz_pub, viz_msg
@@ -98,4 +110,5 @@ viz_pub = rospy.Publisher('~trajectory_viz', MarkerArray, queue_size=1)
 rate = rospy.Rate(5)
 while not rospy.is_shutdown():
     pub_grasp_trajectory_viz()
+    pub_wp_trajectory_viz()
     rate.sleep()

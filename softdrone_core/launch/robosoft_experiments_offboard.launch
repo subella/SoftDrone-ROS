@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <launch>
     <include file="$(find softdrone_core)/launch/master.launch">
-        <arg name="launch_plotter_node" value="true"/>
+        <arg name="launch_plotter_node" value="false"/>
         <arg name="launch_rviz" value="true"/>
-        <arg name="launch_trajectory_to_mocap_frame_node" value="true"/>
+        <arg name="launch_trajectory_to_mocap_frame_node" value="false"/>
         <arg name="launch_trajectory_visualizer_node" value="true"/>
         <arg name="sim_target_as_tracker_output" value="false"/>
     </include>
