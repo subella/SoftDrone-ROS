@@ -88,8 +88,6 @@ class PolynomialGenerator:
     def get_coeffs(self, start, end, average_vel, safety_factor):
         distance = np.linalg.norm(start - end)
         total_time = max(distance / average_vel * safety_factor, self.minimum_polynomial_time)
-        print ("TOTAL TIME:", total_time)
-        print("VELOCITY:", self.velocity)
         coeffs = find_coeffs(start, end, time=total_time, start_velocity=self.velocity)
         return (coeffs, total_time)
 

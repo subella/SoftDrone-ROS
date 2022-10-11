@@ -2,6 +2,7 @@
 <launch>
     <node pkg="optitrack" type="optitrack" name="optitrack" output="screen">
         <rosparam command="load" file="$(find softdrone_core)/config/pose_estimator_node.yaml"/>
+        <remap from="/sparksdrone/world" to="/sparksdrone2/world"/>
     </node>
 </launch>
 

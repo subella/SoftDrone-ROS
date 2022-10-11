@@ -128,8 +128,8 @@
         <remap from="/nav_cam/odom/sample" to="/mavros/odometry/out"/>
         <include file="$(find realsense2_camera)/launch/rs_t265.launch">
             <arg name="publish_odom_tf" value="false"/>
-            <arg name="enable_fisheye1" value="false"/>
-            <arg name="enable_fisheye2" value="false"/>
+            <arg name="enable_fisheye1" value="true"/>
+            <arg name="enable_fisheye2" value="true"/>
             <arg name="camera" value="nav_cam"/>
         </include>
     </group>

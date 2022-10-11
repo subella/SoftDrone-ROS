@@ -103,18 +103,18 @@ def start_mocap_node_process():
     finally:
         s.close()
 
-    return subprocess.Popen(
-        [
-            "rosrun",
-            "optitrack",
-            "optitrack",
-            "_server:={}".format(mocap_ip),
-            "_local:={}".format(local_ip),
-            "_command_port:={}".format(command_port),
-            "_data_port:={}".format(data_port),
-            "_multicast_group:={}".format(multicast_group),
-        ]
-    )
+    #return subprocess.Popen(
+    #    [
+    #        "rosrun",
+    #        "optitrack",
+    #        "optitrack",
+    #        "_server:={}".format(mocap_ip),
+    #        "_local:={}".format(local_ip),
+    #        "_command_port:={}".format(command_port),
+    #        "_data_port:={}".format(data_port),
+    #        "_multicast_group:={}".format(multicast_group),
+    #    ]
+    #)
 
 
 def main():

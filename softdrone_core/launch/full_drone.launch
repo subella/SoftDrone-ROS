@@ -8,15 +8,15 @@
         <arg name="launch_grasp_state_machine_node" value="true"/>
         <arg name="launch_gtsam_tracker_node" value="true" />
         <arg name="launch_robot_state_publisher" value="true" />
-        <arg name="launch_t265" value="true"/>
+        <arg name="launch_t265" value="false"/>
         <arg name="launch_d455" value="true"/>
         <arg name="launch_odom_static_transforms" value="true"/>
         <arg name="launch_mavros_odom_to_tf" value="true"/>
         <arg name="launch_keypoint_detector_node" value="true"/>
         <arg name="launch_reproject_keypoints_node" value="true"/>
         <arg name="launch_pose_estimator_node" value="true"/>
-        <arg name="launch_mocap_translator" value="false"/>
-        <arg name="launch_add_mocap_tf_node" value="false"/>
+        <arg name="launch_mocap_translator" value="true"/>
+        <arg name="launch_add_mocap_tf_node" value="true"/>
 
         <!--arg name="sim_target_as_tracker_output" value="false"/-->
     </include>
