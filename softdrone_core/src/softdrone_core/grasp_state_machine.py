@@ -293,9 +293,9 @@ class GraspStateMachine:
             self._target_vel[0] = msg.twist.twist.linear.x
             self._target_vel[1] = msg.twist.twist.linear.y
             self._target_vel[2] = msg.twist.twist.linear.z
-            #self._target_omegas[0] = msg.twist.twist.angular.x
-            #self._target_omegas[1] = msg.twist.twist.angular.y
-            #self._target_omegas[2] = msg.twist.twist.angular.z
+            self._target_omegas[0] = msg.twist.twist.angular.x
+            self._target_omegas[1] = msg.twist.twist.angular.y
+            self._target_omegas[2] = msg.twist.twist.angular.z
 
     def _update_grasp_start_point(self):
         #if not self._fixed_grasp_start_point:
@@ -774,9 +774,22 @@ class GraspStateMachine:
         self._update_waypoint_trajectory()
         self._update_grasp_start_point()
         settle_pos = self._grasp_start_pos
+
+        theta_approach = self._target_grasp_angle 
+        offset_vector = np.zeros(3)
+        offset_vector[0] = np.cos(theta_approach) * self._grasp_start_horz_offset
+        offset_vector[1] = np.sin(theta_approach) * self._grasp_start_horz_offset
+        # Negateive here bc z points down
+        offset_vector[2] = -self._grasp_start_vert_offset
+
         #self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2], yaw=self._desired_yaw)
-        g_vel = self._target_rotation.dot(self._target_vel)
-        self._send_target(settle_pos, velocity=g_vel, yaw=self._desired_yaw)
+        #g_vel = self._target_rotation.dot(self._target_vel)
+        g_pos, g_vel, g_acc = target_body_pva_to_global(offset_vector, np.zeros(3), np.zeros(3), self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+        print("g_pos", g_pos)
+        print("g_vel", g_vel)
+        print("g_acc", g_acc)
+        #self._send_target(settle_pos, velocity=g_vel, yaw=self._desired_yaw)
+        self._send_target(g_pos, yaw=self._desired_yaw, velocity=g_vel, acceleration=g_acc)
         req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE_GRASP) and self._grasp_start_ok
         if req_traj:
             self._request_grasp_trajectory_once()
