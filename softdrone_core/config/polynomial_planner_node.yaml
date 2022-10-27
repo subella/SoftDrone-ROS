@@ -7,9 +7,10 @@ gripper_latency: 0.0
 
 grasp_target: [0.257, -3.463, 0.989]
 start_position: [-2.0, 0.0, 2.0]
-#offset: [0.00, -0.025, -0.25]
 
+#offset: [0.00, -0.025, -0.22] #vision
 offset: [0.0, -0.03, -0.13] #mocap
+
 open_distance: 0.2
 #grasp_velocity: [0.2, 0.0, -0.029]
 grasp_velocity: [0.0, 0.0, 0.0]

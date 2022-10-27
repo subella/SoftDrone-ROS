@@ -44,7 +44,7 @@ def image_callback(msg):
 
 def main():
     image_topic = "/target_cam/color/image_raw"
-    rospy.Subscriber(image_topic, ImageMsg, image_callback)
+    rospy.Subscriber(image_topic, ImageMsg, image_callback, queue_size=1)
     rospy.spin()
 
 if __name__ == '__main__':

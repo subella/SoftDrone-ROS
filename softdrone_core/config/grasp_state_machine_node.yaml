@@ -2,8 +2,9 @@ target_grasp_angle: 0
 grasp_start_horz_offset: 1.0
 grasp_start_vert_offset: 1.0
 
-#start_pos: [-1.0, -0.7, 1] # for flying with vision
+#start_pos: [-1.0, 0.7, 1] # for flying with vision
 start_pos: [-1.5, -3.5, 2.07] # for flying with mocap
+
 #start_pos: [0.0, -1.7, 1.0] # for flying with vision
 #start_pos: [-1.8, -0.7, 1.5] # for flying with vision
 #grasp_start_pos: [-1.27, -3.47, 1.9]

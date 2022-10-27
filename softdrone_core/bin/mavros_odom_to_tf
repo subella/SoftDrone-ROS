@@ -9,7 +9,7 @@ transform_msg = TransformStamped()
 
 def odom_cb(msg):
 
-    transform_msg.header.stamp = rospy.Time.now()
+    transform_msg.header.stamp = msg.header.stamp
     transform_msg.header.frame_id = 'map'
     transform_msg.child_frame_id = 'base_link'
 
@@ -28,6 +28,6 @@ if __name__ == '__main__':
 
     rospy.init_node('mavros_to_odom_tf')
     broadcaster = tf2_ros.TransformBroadcaster()
-    rospy.Subscriber('/mavros/odometry/in', Odometry, odom_cb)
+    rospy.Subscriber('/mavros/odometry/in', Odometry, odom_cb, queue_size=1)
     rospy.spin()
 

@@ -28,6 +28,7 @@
     <arg name="launch_trajectory_to_mocap_frame_node" default="false"/>
     <arg name="launch_mocap_translator" default="false"/>
     <arg name="launch_gtsam_tracker_node" default="false"/>
+    <arg name="launch_rollout_node" default="false"/>
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
     <arg name="sim_target_as_tracker_output" default="$(eval (not arg('launch_tracker_node')) and (not arg('launch_gtsam_tracker_node')))" doc="Map the simulated target pose to the tracker output topic"/>
@@ -128,8 +129,8 @@
         <remap from="/nav_cam/odom/sample" to="/mavros/odometry/out"/>
         <include file="$(find realsense2_camera)/launch/rs_t265.launch">
             <arg name="publish_odom_tf" value="false"/>
-            <arg name="enable_fisheye1" value="true"/>
-            <arg name="enable_fisheye2" value="true"/>
+            <arg name="enable_fisheye1" value="false"/>
+            <arg name="enable_fisheye2" value="false"/>
             <arg name="camera" value="nav_cam"/>
         </include>
     </group>
@@ -160,8 +161,8 @@
     <include if="$(arg launch_robot_state_publisher)" file="$(find softdrone_core)/launch/nodes/robot_state_publisher.launch"/>
 
     <group if="$(arg launch_odom_static_transforms)">
-        <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 1000" />
-        <node pkg="tf" type="static_transform_publisher" name="odom_to_t265_odom" args="0 0 0 3.14159 0 0 odom nav_cam_odom_frame 1000" />
+        <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 1 map odom" />
+        <node pkg="tf2_ros" type="static_transform_publisher" name="odom_to_t265_odom" args="0 0 0 0 0 1 0 odom nav_cam_odom_frame" />
     </group>
 
     <include if="$(arg launch_mavros_odom_to_tf)" file="$(find softdrone_core)/launch/nodes/mavros_odom_to_tf.launch"/>
@@ -230,6 +231,12 @@
         <remap from="~agent_odom" to="/mavros/odometry/in"/> <!-- TODO: change this so the tracker and Mavros both listen to the odom from the camera namespace -->
         <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
         <include file="$(find softdrone_core)/launch/nodes/gtsam_tracker_node.launch"/>
+    </group>
+
+    <group if="$(arg launch_rollout_node)">
+        <remap from="~observed" to="gtsam_tracker_node/target_global_odom_estimate"/>
+        <remap from="~predicted" to="gtsam_tracker_node/predicted_target_global_pose_estimate"/>
+        <include file="$(find softdrone_core)/launch/nodes/rollout_node.launch"/>
     </group>
 
 </launch>

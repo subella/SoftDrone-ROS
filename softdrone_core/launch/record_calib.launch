@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="record_bag"    default="true"/>
+    <arg name="bag_prefix"    default="calib"/>
+    <arg name="bag_dir"       default="$(find a1_utils)/bags"/>
+    <arg name="ns_d455"       default="target_cam"/>
+    <arg name="ns_t265"       default="nav_cam"/>
+
+    <node pkg="rosbag" type="record" name="record_1d455_1t265_calib" output="screen"
+        args="-o $(arg bag_dir)/$(arg bag_prefix) /$(arg ns_d455)/color/camera_info /$(arg ns_d455)/color/image_raw /$(arg ns_d455)/imu /$(arg ns_d455)/gyro/imu_info /$(arg ns_d455)/gyro/metadata /$(arg ns_d455)/gyro/sample /$(arg ns_d455)/accel/imu_info /$(arg ns_d455)/accel/metadata /$(arg ns_d455)/accel/sample /$(arg ns_t265)/imu /$(arg ns_t265)/gyro/imu_info /$(arg ns_t265)/gyro/metadata /$(arg ns_t265)/gyro/sample /$(arg ns_t265)/accel/imu_info /$(arg ns_t265)/accel/metadata /$(arg ns_t265)/accel/sample /$(arg ns_t265)/odom/metadata /$(arg ns_t265)/odom/sample /tf /tf_static"
+        if="$(eval record_bag)" />
+</launch>
