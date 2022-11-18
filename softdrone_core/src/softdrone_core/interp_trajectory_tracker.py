@@ -11,6 +11,7 @@ class InterpTrajectoryTracker:
         polynomial,
         lengths,
         gripper_latency=0.0,
+        alpha=1,
         settle_time=None,
     ):
         """Set everything up."""
@@ -18,6 +19,7 @@ class InterpTrajectoryTracker:
         self._lengths = lengths
         self._total_time = self._polynomial._total_time
         self._gripper_latency = gripper_latency
+        self.alpha = alpha
         if settle_time is not None:
             self._final_time = self._total_time + settle_time
         else:
@@ -35,19 +37,22 @@ class InterpTrajectoryTracker:
 
     def _run_normal(self, t):
         """Interpolate the trajectory."""
-        if t > self._total_time:
+        scaled_t = self.alpha * t
+        if scaled_t > self._total_time:
             pos, vel, acc = self._polynomial.interp(self._total_time)
             lengths = self._lengths.interp(self._total_time)
         else:
-            pos, vel, acc = self._polynomial.interp(t)
-            lengths = self._lengths.interp(t + self._gripper_latency)
+            pos, vel, acc = self._polynomial.interp(scaled_t)
+            lengths = self._lengths.interp(scaled_t + self.alpha * self._gripper_latency)
+        vel *= self.alpha
+        acc *= self.alpha**2
 
         return MissionRunResult(
             pos,
             yaw=0.0,
             velocity=vel,
             acceleration=acc,
-            finished=(t > self._final_time),
+            finished=(scaled_t > self._final_time),
             lengths=lengths,
         )
 

@@ -10,7 +10,7 @@
         <arg name="launch_rollout_node" value="true" />
         <arg name="launch_robot_state_publisher" value="true" />
         <arg name="launch_t265" value="false"/>
-        <arg name="launch_d455" value="true"/>
+        <arg name="launch_d455" value="false"/>
         <arg name="launch_odom_static_transforms" value="true"/>
         <arg name="launch_mavros_odom_to_tf" value="true"/>
         <arg name="launch_keypoint_detector_node" value="true"/>
