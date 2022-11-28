@@ -29,6 +29,20 @@
     <arg name="launch_mocap_translator" default="false"/>
     <arg name="launch_gtsam_tracker_node" default="false"/>
     <arg name="launch_rollout_node" default="false"/>
+    <arg name="launch_pose_to_odom_node" default="false"/>
+
+    <arg name="enable_drone_mocap" default="false"/>
+    <arg name="enable_target_mocap" default="false"/>
+    <arg name="enable_gtsam_target_mocap" default="false"/>
+    <arg name="enable_drone_t265" default="false"/>
+    <arg name="enable_target_d455" default="false"/>
+
+<arg name="msg" default="hello $(arg enable_drone_t265)" />
+  <node name="pub_text" pkg="rostopic" type="rostopic"
+     args="pub /msg std_msgs/String '$(arg msg)'"
+     output="screen" />
+  <node name="print_text" pkg="rostopic" type="rostopic"
+     args="echo /msg" output="screen" />
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
     <arg name="sim_target_as_tracker_output" default="$(eval (not arg('launch_tracker_node')) and (not arg('launch_gtsam_tracker_node')))" doc="Map the simulated target pose to the tracker output topic"/>
@@ -126,8 +140,9 @@
         </include>
     </group>
 
+
     <group if="$(arg launch_t265)">
-        <remap from="/nav_cam/odom/sample" to="/mavros/odometry/out"/>
+        <remap from="/nav_cam/odom/sample" to="/mavros/odometry/out" if="$(arg enable_drone_t265)"/> 
         <include file="$(find realsense2_camera)/launch/rs_t265.launch">
             <arg name="publish_odom_tf" value="false"/>
             <arg name="enable_fisheye1" value="false"/>
@@ -225,6 +240,7 @@
     </group>
 
     <group if="$(arg launch_mocap_translator)">
+        <remap from="pose" to="/mavros/vision_pose/pose" if="$(arg enable_drone_mocap)"/>
         <include file="$(find softdrone_core)/launch/nodes/mocap_translator.launch"/>
     </group>
 
@@ -238,6 +254,12 @@
         <remap from="~observed" to="gtsam_tracker_node/target_global_odom_estimate"/>
         <remap from="~predicted" to="gtsam_tracker_node/predicted_target_global_pose_estimate"/>
         <include file="$(find softdrone_core)/launch/nodes/rollout_node.launch"/>
+    </group>
+
+    <group if="$(arg launch_pose_to_odom_node)">
+        <remap from="~pose" to="/sparkgrasptar/world"/>
+        <remap from="~odom" to="/sparkgrasptar/world/odom"/>
+        <include file="$(find softdrone_core)/launch/nodes/pose_to_odom.launch"/>
     </group>
 
 </launch>

@@ -7,7 +7,6 @@
         <param name="mocap_ip" value="$(arg mocap_ip)"/>
         <param name="publish_rate" value="50.0"/>
         <remap from="vicon" to="/$(arg rigid_body_name)/world"/>
-        <remap from="pose" to="/mavros/vision_pose/pose"/>
     </node>
 
 </launch>
