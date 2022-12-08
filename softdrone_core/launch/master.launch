@@ -226,6 +226,11 @@
 
     <group if="$(arg launch_mocap_translator)">
         <include file="$(find softdrone_core)/launch/nodes/mocap_translator.launch"/>
+        <remap from="~pose" to="/sparkgrasptar/world"/>
+        <remap from="~pose_cov" to="pose_estimator_node/estimated_pose_out"/>
+        <include file="$(find softdrone_core)/launch/nodes/ps_to_pwcs_node.launch">
+            <arg name="node_name" value="target_ps_to_pwcs_node"/>
+        </include>
     </group>
 
     <group if="$(arg launch_gtsam_tracker_node)">

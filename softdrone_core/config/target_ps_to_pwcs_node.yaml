@@ -1,0 +1,2 @@
+observation_covariance_translation: 0.04
+observation_covariance_rotation: 0.05

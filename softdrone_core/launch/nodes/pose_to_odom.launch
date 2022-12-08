@@ -1,0 +1,4 @@
+<launch>
+    <node name="pose_to_odom" pkg="softdrone_core" type="pose_to_odom" output="screen"/>
+</launch>
+
