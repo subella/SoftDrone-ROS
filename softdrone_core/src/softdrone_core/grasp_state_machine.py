@@ -34,7 +34,7 @@ def target_body_pva_to_global(b_pos, b_vel, b_acc, target_position, target_rotat
     g_vel = np.dot(target_rotation, b_vel)
     # correct for rotating frame
     g_rel_vel = g_vel
-    g_vel = g_rel_vel + np.cross(target_omegas, g_rel_pos) + target_vel
+    g_vel = g_rel_vel + np.cross(np.dot(target_rotation, target_omegas), g_rel_pos) + np.dot(target_rotation, target_vel)
 
     g_acc = np.dot(target_rotation, b_acc)
 
@@ -339,6 +339,9 @@ class GraspStateMachine:
             g_pos, g_vel, g_acc = target_body_pva_to_global(offset_vector, np.zeros(3), np.zeros(3), self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
             global_pose = Odometry()
             global_pose.header = msg.header
+            global_pose.pose.pose.position.x = g_pos[0]
+            global_pose.pose.pose.position.y = g_pos[1]
+            global_pose.pose.pose.position.z = g_pos[2]
             global_pose.twist.twist.linear.x = g_vel[0]
             global_pose.twist.twist.linear.y = g_vel[1]
             global_pose.twist.twist.linear.z = g_vel[2]
