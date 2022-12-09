@@ -240,6 +240,8 @@ class GraspStateMachine:
         self._waypoint_request_target_frame_pub = rospy.Publisher('~waypoint_trajectory_target_frame_request', Bool, queue_size=1, latch=True)
         self._grasp_request_pub = rospy.Publisher('~grasp_trajectory_request', Bool, queue_size=1, latch=True)
 
+        self.test_pub = rospy.Publisher("/global_target_odom", Odometry, queue_size=10)
+
         self._waypoint_pub = rospy.Publisher("~waypoint", PoseStamped, queue_size=1)
 
         control_rate = rospy.get_param("~control_rate", 100)
@@ -324,37 +326,25 @@ class GraspStateMachine:
             self._target_omegas[0] = msg.twist.twist.angular.x
             self._target_omegas[1] = msg.twist.twist.angular.y
             self._target_omegas[2] = msg.twist.twist.angular.z
-            #
-            #print("D455 pos")
-            #print(self._target_position[0])
-            #print(self._target_position[1])
-            #print(self._target_position[2])
-            #print(quat)
-            #print(self._target_yaw)
 
+            theta_approach = self._target_grasp_angle 
+            offset_vector = np.zeros(3)
+            offset_vector[0] = np.cos(theta_approach) * self._grasp_start_horz_offset
+            offset_vector[1] = np.sin(theta_approach) * self._grasp_start_horz_offset
+            # Negateive here bc z points down
+            offset_vector[2] = -self._grasp_start_vert_offset
 
-            #self._target_position[0] = 0.1
-            #self._target_position[1] = -3.5785
-            #self._target_position[2] = 1.0
-            ##quat = [-0.00106867069861, -0.0351449898811, 0.0133986119758, 0.999291831662]
-            ##quat = [0.6289520472184396, -0.6153365986667856, 0.3317045337681735, -0.34022388940014703] 
-            #quat = [0.004502242911634705, 0.9782583136812654, -0.11109396139925132, 0.17506722498192825]
-            #(r, p, y) = tf.transformations.euler_from_quaternion(quat)
-
-            #self._target_cov = np.array(msg.pose.covariance).reshape((6,6))
-            ##print('Target cov det: %f\n\n' % (np.linalg.det(self._target_cov)*1e6))
-            ##print('Target cov : {}\n\n'.format(self._target_cov))
-            ##print('\n\nTarget cov ros: {}\n\n'.format(msg.pose.covariance))
-
-            #self._target_yaw = -3.10954832053
-            #self._target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
-
-            #self._target_vel[0] = 0
-            #self._target_vel[1] = 0
-            #self._target_vel[2] = 0
-            #self._target_omegas[0] =  0
-            #self._target_omegas[1] =  0
-            #self._target_omegas[2] =  0
+            #self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2], yaw=self._desired_yaw)
+            #g_vel = self._target_rotation.dot(self._target_vel)
+            g_pos, g_vel, g_acc = target_body_pva_to_global(offset_vector, np.zeros(3), np.zeros(3), self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+            global_pose = Odometry()
+            global_pose.header = msg.header
+            global_pose.twist.twist.linear.x = g_vel[0]
+            global_pose.twist.twist.linear.y = g_vel[1]
+            global_pose.twist.twist.linear.z = g_vel[2]
+            self.test_pub.publish(global_pose)
+        
+            print("g_vel", g_vel)
 
     def _update_grasp_start_point(self):
         #if not self._fixed_grasp_start_point:

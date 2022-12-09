@@ -44,8 +44,6 @@ class RollOut(object):
         self.last_rot = quat_to_euler_np(msg.pose.pose.orientation)
         self.vel = vec_to_np(msg.twist.twist.linear)
         self.ang_vel = vec_to_np(msg.twist.twist.angular)
-        print("Observed vel", self.vel)
-        print("Observed ang_vel", self.ang_vel)
 
     def spin(self):
         rate = rospy.Rate(50.0)

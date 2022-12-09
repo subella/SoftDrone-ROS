@@ -59,8 +59,8 @@ class MocapTranslator:
                 if dist > self._distance_threshold:
                     rospy.logerr("Rejected mocap: {}".format(dist))
                     return
-            else:
-                rospy.logerr("Rejected message, too old")
+            #else:
+            #    rospy.logerr("Rejected message, too old")
 
         self._latest_pose = msg
 
