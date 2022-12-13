@@ -2,12 +2,16 @@
     <arg name="mocap_ip" default="192.168.1.12"/>
 
     <arg name="rigid_body_name" default="sparksdrone"/>
+    <arg name="target_rigid_body_name" default="sparkgrasptar"/>
 
     <node name="mocap_wrapper" pkg="softdrone_core" type="mocap_wrapper" output="screen">
+        <rosparam command="load" file="$(find softdrone_core)/config/mocap_wrapper.yaml"/>
         <param name="mocap_ip" value="$(arg mocap_ip)"/>
         <param name="publish_rate" value="50.0"/>
         <remap from="vicon" to="/$(arg rigid_body_name)/world"/>
+        <remap from="target_vicon" to="/$(arg target_rigid_body_name)/world"/>
         <remap from="pose" to="/mavros/vision_pose/pose"/>
+        <remap from="target_pose" to="/pose_estimator_node/estimated_pose_out"/>
     </node>
 
 </launch>

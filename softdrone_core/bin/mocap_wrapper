@@ -7,7 +7,9 @@ import signal
 import socket
 import rospy
 import os
-
+import time
+import tf
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 
 class MocapTranslator:
     """Class that listens to mocap pose and forwards to mavros."""
@@ -19,9 +21,19 @@ class MocapTranslator:
             rospy.logfatal("Publish rate must be >= 20.0, not {}".format(pub_rate))
             rospy.signal_shutdown("invalid publish rate")
         else:
+            translation_cov = rospy.get_param("~observation_covariance_translation")
+            rotation_cov = rospy.get_param("~observation_covariance_rotation")
+            cov_mat = np.diag([translation_cov] * 3 + [rotation_cov] * 3) 
+            self._target_covariance = cov_mat.flatten().tolist()
+
             self._pose_pub = rospy.Publisher(
                 "pose", geometry_msgs.msg.PoseStamped, queue_size=10
             )
+
+            self._target_pose_pub = rospy.Publisher(
+                'target_pose', PoseWithCovarianceStamped, queue_size=10
+            )
+
             self._vicon_sub = rospy.Subscriber(
                 "vicon",
                 geometry_msgs.msg.PoseStamped,
@@ -29,7 +41,18 @@ class MocapTranslator:
                 tcp_nodelay=True,
                 queue_size=1
             )
+
+            self._target_vicon_sub = rospy.Subscriber(
+                "target_vicon",
+                geometry_msgs.msg.PoseStamped,
+                self._target_mocap_callback,
+                tcp_nodelay=True,
+                queue_size=1
+            )
+
             self._latest_pose = None
+            self._latest_target_pose = None
+
             self._distance_threshold = rospy.get_param("~dist_threshold", 1.0)
             self._time_threshold = rospy.Duration(
                 rospy.get_param("~max_time_gap", 1.0 / pub_rate)
@@ -38,6 +61,7 @@ class MocapTranslator:
             self._timer = rospy.Timer(
                 rospy.Duration(1.0 / pub_rate), self._timer_callback
             )
+
 
     def _mocap_callback(self, msg):
         """Cache latest mocap pose."""
@@ -64,11 +88,29 @@ class MocapTranslator:
 
         self._latest_pose = msg
 
+    def _target_mocap_callback(self, msg):
+        pose_cov = PoseWithCovarianceStamped()
+        pose_cov.header = msg.header
+        quat = [msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w]
+
+        q_rot = tf.transformations.quaternion_from_euler(np.pi, 0, 0)
+        quat = tf.transformations.quaternion_multiply(quat, q_rot)
+        pose_cov.pose.pose.position = msg.pose.position
+        pose_cov.pose.pose.orientation.x = quat[0]
+        pose_cov.pose.pose.orientation.y = quat[1]
+        pose_cov.pose.pose.orientation.z = quat[2]
+        pose_cov.pose.pose.orientation.w = quat[3]
+        pose_cov.pose.covariance = self._target_covariance
+        self._latest_target_pose = pose_cov
+
     def _timer_callback(self, event):
         """Send latest pose periodically if it exists."""
         if self._latest_pose is not None:
             #self._latest_pose.header.stamp = rospy.Time.now()
             self._pose_pub.publish(self._latest_pose)
+
+        if self._latest_target_pose is not None:
+            self._target_pose_pub.publish(self._latest_target_pose)
 
 
 def start_mocap_node_process():
@@ -123,14 +165,12 @@ def main():
 
     mocap_proc = start_mocap_node_process()
 
-    try:
-        node = MocapTranslator()  # NOQA
-        rospy.spin()
-    finally:
-        mocap_proc.send_signal(signal.SIGINT)
-        mocap_proc.kill()
-        rospy.loginfo("waiting for mocap process to shutdown")
-        mocap_proc.wait()
+    node = MocapTranslator()  # NOQA
+    rospy.spin()
+    mocap_proc.send_signal(signal.SIGINT)
+    mocap_proc.kill()
+    rospy.loginfo("waiting for mocap process to shutdown")
+    mocap_proc.wait()
 
 
 if __name__ == "__main__":
