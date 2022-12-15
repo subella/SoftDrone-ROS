@@ -20,9 +20,12 @@ land_offset: [-1.0, 0.5, 0.0]
 #grasp_start_distance: .09 # for vision slow
 #grasp_start_distance: .15 # for vision
 #grasp_start_distance: .07 # for mocap
-grasp_start_distance: 0.025 # for fast mocap
+#grasp_start_distance: 0.03 # for fast mocap
 #grasp_attempted_tolerance: .6
-grasp_attempted_tolerance: .9 # for fast mocap
+#grasp_attempted_tolerance: .9 # for fast mocap
+
+grasp_start_distance: 0.05 # for moving mocap
+grasp_attempted_tolerance: 0.04 # for moving mocap
 
 #drop_position: [0.0, 1.0, 1.0] # for flying with vision
 drop_position: [-.26, -3., 1.9] # mocap
@@ -37,8 +40,8 @@ desired_yaw: 0
 ground_effect_stop_time: 10.0
 control_rate: 100
 
-feedforward_z_acc: 5.0
-#feedforward_z_acc: 0.0
+#feedforward_z_acc: 5.0
+feedforward_z_acc: 0.0
 
 trajectory_settle_time: 2.0
 

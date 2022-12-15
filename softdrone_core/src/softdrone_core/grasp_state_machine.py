@@ -346,8 +346,6 @@ class GraspStateMachine:
             global_pose.twist.twist.linear.y = g_vel[1]
             global_pose.twist.twist.linear.z = g_vel[2]
             self.test_pub.publish(global_pose)
-        
-            print("g_vel", g_vel)
 
     def _update_grasp_start_point(self):
         #if not self._fixed_grasp_start_point:
@@ -424,7 +422,7 @@ class GraspStateMachine:
         grasp_lengths = LengthInfo(init_lengths, open_lengths, grasp_lengths, lng.open_time, lng.grasp_time)
         gripper_latency = lng.gripper_latency
 
-        trajectory_tracker = InterpTrajectoryTracker(polynomial, grasp_lengths, gripper_latency=gripper_latency, settle_time=self._trajectory_settle_time, alpha=1.5)
+        trajectory_tracker = InterpTrajectoryTracker(polynomial, grasp_lengths, gripper_latency=gripper_latency, settle_time=self._trajectory_settle_time, alpha=1.)
 
         self._last_grasp_trajectory_update = poly_msg.time_start
         self._grasp_trajectory_tracker = trajectory_tracker
@@ -859,23 +857,36 @@ class GraspStateMachine:
             #theta_approach = self._target_yaw_fixed + self._target_grasp_angle
             self._desired_yaw = theta_approach + np.pi
 
+            # Hack for mocap moving target
+            grasp_cmd = Int8()
+            grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
+            self._gripper_pub.publish(grasp_cmd)
+
+
         #if not self._replan_during_grasp_trajectory:
             # results in not replanning after starting to follow the grasp trajectory
         #    self._grasp_attempted = True
 
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
-        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
-        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+        # For fixed target
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
+        # For moving target
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
 
-        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation_fixed, self._target_vel, self._target_omegas)
         self._settle_after_pos = g_pos
 
         if self._enable_gpio_grasp:
             #lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2])
             #lat_target_dist = np.linalg.norm(self._target_position_fixed[0] - self._current_position[0])
-            lat_target_dist = self._target_position_fixed[0] - self._current_position[0]
-            print("DIST", lat_target_dist)
+            #lat_target_dist = self._target_position_fixed[0] - self._current_position[0]
+            # TODO: Replace with tf tree
+            R = self._target_rotation
+            t = self._target_position.reshape(3,1)
+            tf = np.hstack((R, t))
+            tf = np.vstack((tf, [0,0,0,1]))
+            pos = np.append(self._current_position, 1)
+            lat_target_dist = np.linalg.inv(tf).dot(pos)[0]
             if lat_target_dist < self._grasp_attempted_tolerance and not self._grasp_attempted:
                 self._current_grasp_command = GraspCommand.OPEN_ASYMMETRIC
                 grasp_cmd = Int8()
