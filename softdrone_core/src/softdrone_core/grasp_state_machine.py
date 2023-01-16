@@ -437,7 +437,7 @@ class GraspStateMachine:
         grasp_lengths = LengthInfo(init_lengths, open_lengths, grasp_lengths, lng.open_time, lng.grasp_time)
         gripper_latency = lng.gripper_latency
 
-        trajectory_tracker = InterpTrajectoryTracker(polynomial, grasp_lengths, gripper_latency=gripper_latency, settle_time=self._trajectory_settle_time, alpha=0.7)
+        trajectory_tracker = InterpTrajectoryTracker(polynomial, grasp_lengths, gripper_latency=gripper_latency, settle_time=self._trajectory_settle_time, alpha=1.0)
 
         self._last_grasp_trajectory_update = poly_msg.time_start
         self._grasp_trajectory_tracker = trajectory_tracker
