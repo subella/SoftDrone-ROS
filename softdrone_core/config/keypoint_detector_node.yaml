@@ -1,2 +1,2 @@
-model_file_name: "$(env HOME)/KeypointDetectorModels/deployed_keypoint_detector_hardware_mocap.pt"
+model_file_name: "$(env HOME)/KeypointDetectorModels/pepsi_bottle.pth"
 should_publish_annotated_img: true

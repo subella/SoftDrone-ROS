@@ -1,4 +1,4 @@
-cad_frame_file_name: "$(env HOME)/CadFrames/aligned_cad_frame_cropped.csv"
+cad_frame_file_name: "$(env HOME)/CadFrames/pepsi_bottle.csv"
 noise_bound: 10
 cbar2: 1
 estimate_scaling: false

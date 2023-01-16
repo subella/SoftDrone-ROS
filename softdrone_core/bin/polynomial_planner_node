@@ -82,7 +82,9 @@ class PolynomialGenerator:
         quat = [msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w]
         (r, p, y) = tf.transformations.euler_from_quaternion(quat)
         self.target_yaw = y
-        self.target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
+        quat_projected = tf.transformations.quaternion_from_euler(0,0,y)
+        self.target_rotation = tf.transformations.quaternion_matrix(quat_projected)[:3,:3]
+        #self.target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
 
     def get_coeffs(self, start, end, average_vel, safety_factor):
         distance = np.linalg.norm(start - end)

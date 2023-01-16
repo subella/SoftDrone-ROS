@@ -2,6 +2,6 @@ velocity_prior_var: 1
 angular_velocity_prior_var: 1
 transition_position_prior_cov: .005
 transition_rotation_prior_cov: .005
-transition_velocity_prior_cov: .3
-transition_angular_velocity_prior_cov: .1
+transition_velocity_prior_cov: .01
+transition_angular_velocity_prior_cov: .01
 smoother_lag: 5.0

@@ -78,7 +78,7 @@ def detect_keypoints(cv2_image, model):
     return np.array(kps).reshape((NUM_KEYPOINTS,3))
 
 if __name__=="__main__":
-    OPTIMIZED_MODEL = 'softdrone_cropped.pth'
+    OPTIMIZED_MODEL = '/home/sparklab/KeypointDetectorModels/pepsi_bottle.pth'
     model = TRTModule()
     model.load_state_dict(torch.load(OPTIMIZED_MODEL))
     print("Model loaded!")
