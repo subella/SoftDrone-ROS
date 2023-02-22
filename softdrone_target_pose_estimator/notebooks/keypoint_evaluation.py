@@ -27,8 +27,9 @@ import teaserpp_python
 import seaborn as sns
 import pandas as pd
 import random
-import pickle
+import json
 
+from scipy import stats
 from tqdm import tqdm
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -38,9 +39,11 @@ from PIL import Image, ImageDraw, ImageOps
 from scipy.spatial.transform import Rotation as R
 from keypointserver.keypoint_helpers import *
 from notebook_helpers import *
+
+sns.set(font_scale=1.5)
 # -
 
-target_name = "pepsi"
+target_name = "cardboard_box"
 
 config_file = "../models/{}_pose.json".format(target_name)
 model_file = "../models/{}_model.pth".format(target_name)
@@ -49,20 +52,59 @@ dataset_path = "/home/subella/src/AutomatedAnnotater/Data/"
 model = KeypointDetector(config_file, model_file)
 
 # TODO: standardize this.
-training_folder = dataset_path + "FormattingTest" + "/Datasets/Training/"
-validation_folder = dataset_path + "FormattingTest" + "/Datasets/Validation/"
+training_folder = dataset_path + "Medkit" + "/Datasets/Training/"
+validation_folder = dataset_path + "Medkit" + "/Datasets/Validation/"
 
-working_folder = training_folder
+working_folder = validation_folder
 
 
 # +
+def load_rgb_image(rgb_image_filename):
+    return Image.open(rgb_image_filename).convert('RGB')
+
+def load_depth_image(depth_image_filename):
+    return cv2.imread(depth_image_filename, cv2.IMREAD_UNCHANGED)
+
+
+# +
+def write_metrics(metrics):
+    data = json.dumps(metrics)
+    filename = "{}_metrics.json".format(target_name)
+    if not os.path.isfile(filename):
+        f = open(filename,"w")
+        f.write(data)
+        f.close()
+    else:
+        print("File exists, please manually delete it first to update it.")
+
+def load_metrics():
+    with open("{}_metrics.json".format(target_name)) as json_file:
+        metrics = json.load(json_file)
+        return convert_metrics_to_np(metrics)
+    return None
+
+def convert_metrics_to_np(metrics):
+    for metric in metrics:
+        metric["gt_pixel_keypoints"] = np.array(metric["gt_pixel_keypoints"])
+        metric["est_pixel_keypoints"] = np.array(metric["est_pixel_keypoints"])
+        metric["gt_world_keypoints"] = np.array(metric["gt_world_keypoints"])
+        metric["gt_teaser_pose"] = np.array(metric["gt_teaser_pose"])
+        metric["est_teaser_pose"] = np.array(metric["est_teaser_pose"])
+        metric["K"] = np.array(metric["K"])
+    return metrics
+
+
+# -
+
 class SingleEvaluator():
-    def __init__(self, model, cad_keypoints, rgb_image, depth_image, 
+    def __init__(self, model, cad_keypoints, 
+                 rgb_image_filename, depth_image_filename, 
                  annotation, K, verbose=False):
-        self.rgb_image = rgb_image
-        self.depth_image = depth_image
-        self.width = rgb_image.width
-        self.height = rgb_image.height
+        self.rgb_image_filename = rgb_image_filename
+        self.rgb_image = load_rgb_image(rgb_image_filename)
+        self.depth_image = load_depth_image(depth_image_filename)
+        self.width = self.rgb_image.width
+        self.height = self.rgb_image.height
         self.annotation = annotation
         self.model = model
         self.K = K
@@ -82,8 +124,6 @@ class SingleEvaluator():
         self.pixel_keypoints_error = self.compute_pixel_keypoints_error()
         self.world_keypoints_error = self.compute_world_keypoints_error()
         self.rotation_error, self.translation_error = self.compute_pose_error()
-        
-#         self.return_stats(verbose=True)
 
     def get_teaser(self):
         solver_params = teaserpp_python.RobustRegistrationSolver.Params()
@@ -147,30 +187,39 @@ class SingleEvaluator():
         translation_error = np.linalg.norm(self.gt_teaser_pose[:3,3] - self.est_teaser_pose[:3,3])
         return rotation_error, translation_error
         
-    def get_df(self, verbose=False):
-        stats = {}
-        stats["average_keypoint_pixel_error"] = [self.pixel_keypoints_error]
-        stats["average_keypoint_world_error"] = [self.world_keypoints_error]
-        stats["translation_error"] = [self.translation_error]
-        stats["rotation_error"] = [self.rotation_error]
-        stats["distance"] = [self.distance]
-        if self.verbose:
-            print("Average Keypoint Pixel Error: ", self.pixel_keypoints_error)
-            print("Average Keypoint World Error: ", self.world_keypoints_error)
-            print("Euler Rotation Error: ", self.rotation_error)
-            print("Translation Error", self.translation_error)
-            print("gt", self.gt_teaser_pose)
-            print("est", self.est_teaser_pose)
-        return pd.DataFrame(stats)
+    def is_valid(self):
+        keypoints = np.array(self.annotation["keypoints"])
+        keypoints = keypoints.reshape((self.annotation["num_keypoints"], 3))
+        num_visible = np.where(keypoints[:,2]==2)[0].size
+        if num_visible < 3:
+            return False
+        return True
         
+    def get_metrics(self):
+        metrics = {}
+        metrics["gt_pixel_keypoints"] = self.gt_pixel_keypoints.tolist()
+        metrics["est_pixel_keypoints"] = self.est_pixel_keypoints.tolist()
+        metrics["gt_world_keypoints"] = self.gt_world_keypoints.tolist()
+        metrics["gt_teaser_pose"] = self.gt_teaser_pose.tolist()
+        metrics["est_teaser_pose"] = self.est_teaser_pose.tolist()
+        metrics["rgb_image_filename"] = self.rgb_image_filename
+        metrics["average_keypoint_pixel_error"] = self.pixel_keypoints_error
+        metrics["average_keypoint_world_error"] = self.world_keypoints_error
+        metrics["translation_error"] = self.translation_error
+        metrics["rotation_error"] = self.rotation_error
+        metrics["distance"] = self.distance
+        metrics["K"] = self.K.tolist()
+        metrics["is_valid"] = self.is_valid()
+        return metrics       
 
-# -
+
 
 class SinglePlotter():
-    def __init__(self, evaluator):
-        self.drawing = ImageDraw.Draw(evaluator.rgb_image)
-        self.image = evaluator.rgb_image.copy()
-        self.eval = evaluator
+    def __init__(self, single_evaluator_metrics):
+        self.metrics = single_evaluator_metrics
+        self.rgb_image = load_rgb_image(self.metrics["rgb_image_filename"])
+        self.drawing = ImageDraw.Draw(self.rgb_image)
+        self.K = self.metrics["K"]
         self.fig_3d = None
         self.ax_3d = None
     
@@ -184,26 +233,26 @@ class SinglePlotter():
         plt.show()
         
     def show_image(self):
-        display(self.image)
+        display(self.rgb_image)
         
     def crop_image(self):
-        center = np.mean(self.eval.gt_pixel_keypoints, axis=0)
+        center = np.mean(self.metrics["gt_pixel_keypoints"], axis=0)
         half_width = 150
         half_height = 150
         
         if center[0] - half_width < 0:
             center[0] = half_width
-        elif center[0] + half_width > self.image.width:
-            center[0] = self.image.width - half_width
+        elif center[0] + half_width > self.rgb_image.width:
+            center[0] = self.rgb_image.width - half_width
             
         if center[1] - half_height < 0:
             center[1] = half_height
-        elif center[1] + half_height > self.image.height:
-            center[1] = self.image.height - half_height
+        elif center[1] + half_height > self.rgb_image.height:
+            center[1] = self.rgb_image.height - half_height
             
-        cropped_image = self.eval.rgb_image.crop((center[0] - half_width, center[1] - half_height, 
+        cropped_image = self.rgb_image.crop((center[0] - half_width, center[1] - half_height, 
                                                   center[0] + half_width, center[1] + half_height))
-        self.image = ImageOps.contain(cropped_image, (self.eval.width, self.eval.height))
+        self.rgb_image = ImageOps.contain(cropped_image, (self.rgb_image.width, self.rgb_image.height))
         
     def plot_keypoints(self, keypoints, r=2, color=(0,255,0)):
         for keypoint in keypoints:
@@ -211,44 +260,43 @@ class SinglePlotter():
             self.drawing.ellipse((x-r, y-r, x+r, y+r), fill=color)
         
     def plot_gt_pixel_keypoints(self, r=2, color=(0,255,0)):
-        self.plot_keypoints(self.eval.gt_pixel_keypoints, r, color)
+        self.plot_keypoints(self.metrics["gt_pixel_keypoints"], r, color)
 
     def plot_est_pixel_keypoints(self, r=2, color=(255,0,0)):
-        self.plot_keypoints(self.eval.est_pixel_keypoints, r, color)        
+        self.plot_keypoints(self.metrics["est_pixel_keypoints"], r, color)        
         
     def plot_gt_world_keypoints(self):
         if not self.fig_3d:
             self.init_fig_3d()
-        points = self.eval.gt_world_keypoints.T
+        points = self.metrics["gt_world_keypoints"].T
         self.ax_3d.scatter(points[0], points[1], points[2],
                            c='green', label='Ground Truth Point Cloud')        
     
     def plot_est_world_keypoints(self):
         if not self.fig_3d:
             self.init_fig_3d()
-        points = self.eval.est_world_keypoints.T
+        points = self.metrics["est_world_keypoints"].T
         self.ax_3d.scatter(points[0], points[1], points[2],
                            c='red', label='Estimated Point Cloud')
-    
+        
+    def plot_correspondences(self):
+        for est_keypoint, gt_keypoint in zip(self.metrics["est_pixel_keypoints"], self.metrics["gt_pixel_keypoints"]):
+            self.drawing.line((est_keypoint[0], est_keypoint[1], \
+                               gt_keypoint[0], gt_keypoint[1]), \
+                               fill=(165, 42, 42), width=1)
+
     def plot_gt_teaser_pose(self, scale=100):
-        plot_pose(self.drawing, self.eval.gt_teaser_pose, self.eval.K)
+        plot_pose(self.drawing, self.metrics["gt_teaser_pose"], self.K)
     
     def plot_est_teaser_pose(self):
-        plot_pose(self.drawing, self.eval.est_teaser_pose, self.eval.K, 
+        plot_pose(self.drawing, self.metrics["est_teaser_pose"], self.K, 
                   x_color=(139,0,0), y_color=(0,139,0), z_color=(0,0,139))
 
 
-
-# +
 class MultiEvaluator():
     def __init__(self, folder, verbose=False):
         self.folder = folder
-        self.evaluators = []
-        self.df = pd.DataFrame({"average_keypoint_pixel_error":[],
-                                "average_keypoint_world_error":[],
-                                "translation_error":[],
-                                "rotation_error":[],
-                                "distance":[]})
+        self.metrics = []
         self.verbose = verbose
         
     def parse_metadata(self, folder):
@@ -266,65 +314,100 @@ class MultiEvaluator():
         return metadata, K_mat, K_ros, cad_keypoints
         
     def eval_annotation(self, folder, annotation, K_mat, K_ros, cad_keypoints):
-        rgb_image_path = folder + "/" + annotation["rgb_file_name"]
-        rgb_image = Image.open(rgb_image_path).convert('RGB')
-        depth_image_path = folder + "/" + annotation["depth_file_name"]
-        depth_image = cv2.imread(depth_image_path, cv2.IMREAD_UNCHANGED)
-        evaluator = SingleEvaluator(model, cad_keypoints, rgb_image, depth_image, 
+        rgb_image_filename = folder + "/" + annotation["rgb_file_name"]
+        depth_image_filename = folder + "/" + annotation["depth_file_name"]
+        evaluator = SingleEvaluator(model, cad_keypoints, 
+                                    rgb_image_filename, depth_image_filename, 
                                     annotation, K_mat, verbose=self.verbose)
-        self.evaluators.append(evaluator)
-        self.df = self.df.append(evaluator.get_df())
+        self.metrics.append(evaluator.get_metrics())
 
         
     def run(self):
-        for folder in glob.glob(self.folder + "/*"):                                       
+        for folder in glob.glob(self.folder + "/*"):
             metadata, K_mat, K_ros, cad_keypoints = self.parse_metadata(folder)
             print("Starting folder :", folder)
             for annotation in tqdm.tqdm(metadata["annotations"]):
                 self.eval_annotation(folder, annotation, K_mat, K_ros, cad_keypoints)
-    
-    def evaluate(self):
-        pass
-        
-    
 
-# -
 
+# +
 class MultiPlotter():
-    def __init__(self, multi_evaluator):
-        self.multi_evaluator = multi_evaluator
-        
-    def eval_annotation(self, folder, annotation):
-        evaluator = super().eval_annotation(folder, annotation)
-        Single
-        if self.verbose:
-            self.cur_evaluator.plot_gt_pixel_keypoints()
-            self.cur_evaluator.plot_est_pixel_keypoints()
-            self.cur_evaluator.plot_gt_teaser_pose()
-            self.cur_evaluator.plot_est_teaser_pose()
-            self.cur_evaluator.plot_gt_world_keypoints()
-            self.cur_evaluator.plot_est_world_keypoints()
-            self.cur_evaluator.finalize_fig_3d()
-            image = self.cur_evaluator.crop_object()
-            display(image)
-        
+    def __init__(self, multi_evaluator_metrics, verbose=False):
+        self.metrics = multi_evaluator_metrics
+        self.df = pd.DataFrame.from_records(self.metrics,
+                                            columns=["average_keypoint_pixel_error", 
+                                                     "average_keypoint_world_error", 
+                                                     "translation_error", 
+                                                     "rotation_error",
+                                                     "distance",
+                                                     "is_valid"])
+        self.verbose = verbose
     
     def plot_keypoint_pixel_error_vs_distance(self):
-        fig = plt.figure()
-        self.multi_evaluator.df.plot(x="distance", y="average_keypoint_pixel_error")
+        fig = plt.figure(figsize=(15,8))
+        pruned_df = self.df[self.df["average_keypoint_pixel_error"] < 10]
+#         pruned_df = self.df[self.df["is_valid"] == True]
+        pruned_df = self.df
+        data_used = int(len(pruned_df) / len(self.df) * 100)
+        
+        values = np.vstack([pruned_df["distance"], pruned_df["average_keypoint_pixel_error"]])
+        kernel = stats.gaussian_kde(values)(values)
+        ax = sns.scatterplot(
+            data=pruned_df,
+            x="distance",
+            y="average_keypoint_pixel_error",
+            c=kernel,
+            cmap="viridis"
+            )
+#         ax = fig.add_subplot(1, 1, 1, projection='scatter_density')
+#         density = ax.scatter_density(pruned_df["distance"], pruned_df["average_keypoint_pixel_error"], cmap=white_viridis)
+#         fig.colorbar(density, label='Number of points per pixel')
+#         ax = sns.kdeplot(data=pruned_df, x="distance", y="average_keypoint_pixel_error")
+        ax.set_title("Average Keypoint Error (using {}% of data)".format(data_used))
+        ax.set(xlabel="Distance [mm]", ylabel="Keypoint Error [px]")
         
     def plot_translation_error_vs_distance(self):
-        fig = plt.figure()
-        self.multi_evaluator.df.plot(x="distance", y="translation_error")
-    
+        fig = plt.figure(figsize=(15,8))
+        pruned_df = self.df[self.df["translation_error"] < 250]
+#         pruned_df = self.df[self.df["is_valid"] == True]
+        pruned_df = self.df
+        data_used = int(len(pruned_df) / len(self.df) * 100)
+        values = np.vstack([pruned_df["distance"], pruned_df["translation_error"]])
+        kernel = stats.gaussian_kde(values)(values)
+        ax = sns.scatterplot(
+            data=pruned_df,
+            x="distance",
+            y="translation_error",
+            c=kernel,
+            cmap="viridis"
+            )
+        ax.set_title("Translation Error (using {}% of data)".format(data_used))
+        ax.set(xlabel="Distance [mm]", ylabel="Translation Error [mm]")
+        
     def plot_rotation_error_vs_distance(self):
-        fig = plt.figure()
-        self.multi_evaluator.df.plot(x="distance", y="rotation_error")
+        fig = plt.figure(figsize=(15,8))
+        pruned_df = self.df[self.df["rotation_error"] < 50]
+#         pruned_df = self.df[self.df["is_valid"] == True]
+        pruned_df = self.df
+        data_used = int(len(pruned_df) / len(self.df) * 100)
+        values = np.vstack([pruned_df["distance"], pruned_df["rotation_error"]])
+        kernel = stats.gaussian_kde(values)(values)
+        ax = sns.scatterplot(
+            data=pruned_df,
+            x="distance",
+            y="rotation_error",
+            c=kernel,
+            cmap="viridis"
+            )
+        
+#         ax = sns.scatterplot(data=pruned_df, x="distance", y="rotation_error")
+        ax.set_title("Rotation Error (using {}% of data)".format(data_used))
+        ax.set(xlabel="Distance [mm]", ylabel="Rotation Error [Deg]")
           
     def plot_multiple(self, rows=3, cols=3):
         # %matplotlib inline
 
-        fig = plt.figure(1,(20,20))
+        fig = plt.figure(1,(7 * rows, 7 * cols))
         grid = ImageGrid(fig, 111,
                          nrows_ncols=(rows,cols),
                          axes_pad=0.1,
@@ -334,57 +417,53 @@ class MultiPlotter():
         grid[0].get_xaxis().set_ticks([])
 
         for i in range(rows * cols):
-            evaluator = random.choice(self.multi_evaluator.evaluators)
-            plotter = SinglePlotter(evaluator)
+            metric = random.choice(self.metrics)
+            plotter = SinglePlotter(metric)
             plotter.plot_gt_pixel_keypoints()
             plotter.plot_est_pixel_keypoints()
             plotter.plot_gt_teaser_pose()
             plotter.plot_est_teaser_pose()
+            plotter.plot_correspondences()
             plotter.crop_image()
-            grid[i].imshow(plotter.image)
+            grid[i].imshow(plotter.rgb_image)
+        
+    def plot_sequence(self):
+        for metric in self.metrics:
+            fig = plt.figure()
+            plotter = SinglePlotter(metric)
+            plotter.plot_gt_pixel_keypoints()
+            plotter.plot_est_pixel_keypoints()
+            plotter.plot_correspondences()
+            plotter.plot_gt_teaser_pose()
+            plotter.plot_est_teaser_pose()
+            plotter.crop_image()
+            plotter.show_image()
+            
+            if self.verbose:
+                print("Average Keypoint Pixel Error: ", metric["average_keypoint_pixel_error"])
+                print("Average Keypoint World Error: ", metric["average_keypoint_world_error"])
+                print("Euler Rotation Error: ", metric["rotation_error"])
+                print("Translation Error", metric["translation_error"])
+                print("gt", metric["gt_teaser_pose"])
+                print("est", metric["est_teaser_pose"])
 
-data_folder_array = []
-for data_folder in glob.glob(working_folder + "/*"):                                       
-    data_folder_array.append(data_folder)
+
+# -
 
 multi_evaluator = MultiEvaluator(working_folder, verbose=False)
 multi_evaluator.run()
 
-multi_evaluator.df
+write_metrics(multi_evaluator.metrics)
 
-multi_plotter = MultiPlotter(multi_evaluator)
+metrics = load_metrics()
+
+metrics = convert_metrics_to_np(multi_evaluator.metrics)
+
+multi_plotter = MultiPlotter(metrics, verbose=True)
+# multi_plotter.plot_sequence()
 multi_plotter.plot_multiple()
 multi_plotter.plot_keypoint_pixel_error_vs_distance()
 multi_plotter.plot_translation_error_vs_distance()
 multi_plotter.plot_rotation_error_vs_distance()
-
-multi_plotter.df
-
-for folder in data_folder_array:
-    metadata_path = folder + "/metadata.json"
-    f = open(metadata_path)
-    metadata = json.load(f)
-    K = np.array(metadata["intrinsics"]).T
-    cad_keypoints = np.array(metadata["cad_frame"])
-    for annotation in metadata["annotations"]:
-        rgb_image_path = folder + "/" + annotation["rgb_file_name"]
-        rgb_image = Image.open(rgb_image_path).convert('RGB')
-        depth_image_path = folder + "/" + annotation["depth_file_name"]
-        depth_image = cv2.imread(depth_image_path, cv2.IMREAD_UNCHANGED)
-        
-        drawing = ImageDraw.Draw(rgb_image)
-        plotter = SinglePlotter(model, cad_keypoints, rgb_image, depth_image, 
-                                annotation, K, drawing)
-        plotter.plot_gt_pixel_keypoints()
-        plotter.plot_est_pixel_keypoints()
-        plotter.plot_gt_teaser_pose()
-        plotter.plot_est_teaser_pose()
-        plotter.plot_gt_world_keypoints()
-        plotter.plot_est_world_keypoints()
-        plotter.finalize_fig_3d()
-        image = plotter.crop_object()
-        display(image)
-
-
 
 
