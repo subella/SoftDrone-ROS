@@ -937,8 +937,9 @@ class GraspStateMachine:
 
                 if not self._start_feedforward_z_acc:
                     self._start_feedforward_z_acc = True
+                    self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + 0.1
                     #self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + 0.3
-                    self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + 0.7 #slow vision
+                    #self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + 0.7 #slow vision
 
             #grasp_cmd = Int8()
             #grasp_cmd.data = self._current_grasp_command
@@ -979,6 +980,8 @@ class GraspStateMachine:
 
     def _handle_rise(self):
         """Use loiter command to hang out at hover setpoint."""
+    
+        return True
 
         self._update_grasp_trajectory()
         self._update_waypoint_trajectory()

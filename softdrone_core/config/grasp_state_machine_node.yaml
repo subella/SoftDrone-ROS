@@ -18,7 +18,7 @@ land_offset: [-1.0, 0.5, 0.0]
 # Set this to a very large number to force the grasp state machine to call the gripper close service immediately upon starting the "execute mission" state
 #grasp_start_distance: .09 # for vision slow
 #grasp_start_distance: .15 # for vision
-grasp_start_distance: .05 # for mocap
+grasp_start_distance: .02 # for mocap
 #grasp_start_distance: 0.03 # for fast mocap
 #grasp_attempted_tolerance: .6
 #grasp_attempted_tolerance: .9 # for fast mocap
@@ -26,7 +26,7 @@ grasp_start_distance: .05 # for mocap
 #grasp_start_distance: 0.05 # for moving mocap
 #grasp_attempted_tolerance: 0.04 # for moving mocap
 
-drop_position: [0.0, 1.0, 1.0] # for flying with vision
+drop_position: [1.0, -3.5, 0.0] # for flying with vision
 #drop_position: [-.26, -3., 1.9] # mocap
 
 takeoff_offset: 0.4
@@ -39,8 +39,9 @@ desired_yaw: 0
 ground_effect_stop_time: 10.0
 control_rate: 30
 
-feedforward_z_acc: 5.0
-#feedforward_z_acc: 0.0
+#feedforward_z_acc: 10.0
+feedforward_z_acc: 0.0
+feedforward_z_acc_duration: 0.1
 
 trajectory_settle_time: 2.0
 
