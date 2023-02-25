@@ -206,6 +206,7 @@ class GraspStateMachine:
         self._feedforward_z_acc_start_time = None
         self._feedforward_z_acc_duration = rospy.get_param("~feedforward_z_acc_duration", 3.0)
         self._feedforward_z_acc = rospy.get_param("~feedforward_z_acc", 6.0)
+        self._feedforward_z_acc_delay = rospy.get_param("~feedforward_z_acc_delay", 0.2)
 
         require_grasp_confirmation = rospy.get_param("~require_grasp_confirmation", False)
         if require_grasp_confirmation:
@@ -501,7 +502,7 @@ class GraspStateMachine:
                 continue
             if state == GraspDroneState.SETTLE_AFTER:
                 self._state_durations[state] = rospy.Duration(
-                    rospy.get_param("~mission_settle_duration", 2.0)
+                    rospy.get_param("~mission_settle_duration", 4.0)
                 )
                 continue
             if state == GraspDroneState.DROP:
@@ -937,9 +938,7 @@ class GraspStateMachine:
 
                 if not self._start_feedforward_z_acc:
                     self._start_feedforward_z_acc = True
-                    self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + 0.1
-                    #self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + 0.3
-                    #self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + 0.7 #slow vision
+                    self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + self._feedforward_z_acc_delay
 
             #grasp_cmd = Int8()
             #grasp_cmd.data = self._current_grasp_command
@@ -967,8 +966,10 @@ class GraspStateMachine:
         """Use loiter command to stop after executing the grasp."""
 
         self._update_grasp_trajectory()
+        self._drop_position = self._current_position
+        self._drop_position[2] -= 2
 
-        self._update_waypoint(self._drop_position, 0)
+        self._update_waypoint(self._drop_position, self._desired_yaw)
         settle_pos = self._settle_after_pos
         self._loiter_at_point(settle_pos[0], settle_pos[1], settle_pos[2])
         req_traj = self._has_elapsed(GraspDroneState.SETTLE_AFTER)
