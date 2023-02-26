@@ -13,8 +13,8 @@ start_position: [-2.0, 0.0, 2.0]
 #offset: [0.00, -0.025, -0.14] #vision slow and close
 #offset: [0.00, -0.025, -0.22] #vision
 #offset: [0.0, 0.05, -0.21] #mocap
-#offset: [0.0, -0.03, -0.20] #mocap cardboard box
-offset: [0.0, 0.03, -0.18] #mocap medkit
+offset: [0.0, 0.01, -0.19] #mocap cardboard box
+#offset: [0.0, 0.03, -0.18] #mocap medkit
 #offset: [0.0, 0.03, -0.18] #mocap fast pepsi
 
 
