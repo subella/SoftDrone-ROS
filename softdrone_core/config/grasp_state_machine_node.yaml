@@ -19,8 +19,8 @@ land_offset: [-1.0, 0.5, 0.0]
 #grasp_start_distance: .09 # for vision slow
 #grasp_start_distance: .15 # for vision
 #grasp_start_distance: .07 # for medkit mocap
-grasp_start_distance: .09 # for medkit mocap
-#grasp_start_distance: .14 # for pepsi fast mocap
+#grasp_start_distance: .09 # for medkit mocap
+grasp_start_distance: .12 # for pepsi fast mocap
 
 #grasp_attempted_tolerance: .6
 #grasp_attempted_tolerance: .9 # for fast mocap
