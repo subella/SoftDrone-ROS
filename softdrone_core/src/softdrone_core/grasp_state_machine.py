@@ -957,7 +957,7 @@ class GraspStateMachine:
             yaw=self._desired_yaw,
             velocity=g_vel,
             acceleration=g_acc + np.array([0., 0., feedforward_z_acc]),
-            is_grasp=False,
+            is_grasp=True,
         )
 
         return result.finished
