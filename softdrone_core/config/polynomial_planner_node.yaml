@@ -20,14 +20,14 @@ start_position: [-2.0, 0.0, 2.0]
 #offset: [0.0, 0.03, -0.18] #mocap fast pepsi
 
 #offset: [0.0, -0.04, -0.24] #robo dog
-offset: [0.0, 0.02, -0.25] # moving pepsi
+offset: [0.0, 0.07, -0.25] # moving pepsi
 
 
 
 open_distance: 0.2
 #grasp_velocity: [0.2, 0.0, -0.029]
 #grasp_velocity: [0.0, 0.0, 0.0]
-grasp_speed_horz: 0.0
+grasp_speed_horz: 1.0
 grasp_speed_vert: -0.02
 ground_effect_stop_time: 5.5
 
