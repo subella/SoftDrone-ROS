@@ -249,6 +249,7 @@ class GraspStateMachine:
         self._waypoint_request_pub = rospy.Publisher('~waypoint_trajectory_request', Bool, queue_size=1, latch=True)
         self._waypoint_request_target_frame_pub = rospy.Publisher('~waypoint_trajectory_target_frame_request', Bool, queue_size=1, latch=True)
         self._grasp_request_pub = rospy.Publisher('~grasp_trajectory_request', Bool, queue_size=1, latch=True)
+        self._grasp_started_pub = rospy.Publisher('~grasp_started', Bool, queue_size=1, latch=True)
 
         self.test_pub = rospy.Publisher("/global_target_odom", Odometry, queue_size=10)
 
@@ -750,7 +751,7 @@ class GraspStateMachine:
             self._home_position[0],
             self._home_position[1],
             self._home_position[2] + self._takeoff_offset,
-            yaw=self._desired_yaw * self._get_elapsed_ratio(GraspDroneState.HOVER)
+            yaw=self._start_theta
         )
 
         req_traj = self._has_elapsed(GraspDroneState.HOVER)
@@ -778,7 +779,7 @@ class GraspStateMachine:
 
         pos, vel, acc = curr_poly.interp(elapsed)
         yaw_scale = min(elapsed / curr_poly._total_time, 1.0)
-        self._send_target(pos, yaw=self._start_theta * yaw_scale, velocity=vel, acceleration=acc)
+        self._send_target(pos, yaw=self._start_theta, velocity=vel, acceleration=acc)
         return False
 
     def _handle_settle_before_alignment(self):
@@ -868,6 +869,7 @@ class GraspStateMachine:
 
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
+        self._grasp_started_pub.publish(True)
 
         if not self._grasp_attempted:
             theta_approach = self._target_yaw + self._target_grasp_angle

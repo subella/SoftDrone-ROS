@@ -202,7 +202,8 @@ class PolynomialGenerator:
         grasp_velocity_target_frame = np.squeeze(np.dot(self.target_rotation.T, grasp_velocity[:,None]))
         #grasp_velocity = np.array([self.grasp_speed_horz, 0., self.grasp_speed_vert])
 
-        grasp_offset_target_frame = np.dot(self.target_rotation.T, -self.offset)
+        #grasp_offset_target_frame = np.dot(self.target_rotation.T, -self.offset)
+        grasp_offset_target_frame = -self.offset
 
         # This is a horrible, horrible hack that breaks our ability to replan
         # but apparently is necessary because the gripper can't be commanded
