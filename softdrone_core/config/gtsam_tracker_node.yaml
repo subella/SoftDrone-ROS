@@ -1,4 +1,4 @@
-velocity_prior_var: 1
+velocity_prior_var: 10
 angular_velocity_prior_var: 1
 transition_position_prior_cov: .005
 transition_rotation_prior_cov: .005

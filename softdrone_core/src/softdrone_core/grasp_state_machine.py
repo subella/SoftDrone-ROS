@@ -907,7 +907,8 @@ class GraspStateMachine:
             tf = np.hstack((R, t))
             tf = np.vstack((tf, [0,0,0,1]))
             pos = np.append(self._current_position, 1)
-            lat_target_dist = abs(invert_transform(tf).dot(pos)[0])
+            #lat_target_dist = abs(invert_transform(tf).dot(pos)[0])
+            lat_target_dist = -invert_transform(tf).dot(pos)[0]
             if lat_target_dist < self._grasp_attempted_tolerance and not self._grasp_attempted:
                 self._current_grasp_command = GraspCommand.OPEN_ASYMMETRIC
                 grasp_cmd = Int8()
