@@ -870,6 +870,7 @@ class GraspStateMachine:
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
         self._grasp_started_pub.publish(True)
+        grasp_cmd = Int8()
 
         if not self._grasp_attempted:
             theta_approach = self._target_yaw + self._target_grasp_angle
@@ -877,9 +878,8 @@ class GraspStateMachine:
             self._desired_yaw = theta_approach + np.pi
 
             # Hack for mocap moving target
-            grasp_cmd = Int8()
             grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
-            self._gripper_pub.publish(grasp_cmd)
+            #self._gripper_pub.publish(grasp_cmd)
 
 
         #if not self._replan_during_grasp_trajectory:
@@ -911,9 +911,8 @@ class GraspStateMachine:
             lat_target_dist = -invert_transform(tf).dot(pos)[0]
             if lat_target_dist < self._grasp_attempted_tolerance and not self._grasp_attempted:
                 self._current_grasp_command = GraspCommand.OPEN_ASYMMETRIC
-                grasp_cmd = Int8()
                 grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
-                self._gripper_pub.publish(grasp_cmd)
+                #self._gripper_pub.publish(grasp_cmd)
                 rospy.loginfo("Called open asymmetric gripper!")
                 self._grasp_attempted = True
                 self._stop_updating_target_position = True
@@ -934,14 +933,15 @@ class GraspStateMachine:
                 #lat_target_dist = np.linalg.norm(self._target_position_fixed[:2] - self._current_position[:2])
             if lat_target_dist < self._grasp_start_distance:
                 self._current_grasp_command = GraspCommand.CLOSE
-                grasp_cmd = Int8()
                 grasp_cmd.data = GraspCommand.CLOSE
-                self._gripper_pub.publish(grasp_cmd)
+                #self._gripper_pub.publish(grasp_cmd)
                 rospy.loginfo("Called close gripper!")
 
                 if not self._start_feedforward_z_acc:
                     self._start_feedforward_z_acc = True
                     self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + self._feedforward_z_acc_delay
+
+            self._gripper_pub.publish(grasp_cmd)
 
             #grasp_cmd = Int8()
             #grasp_cmd.data = self._current_grasp_command
