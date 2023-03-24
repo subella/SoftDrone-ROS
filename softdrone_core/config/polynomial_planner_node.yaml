@@ -26,7 +26,7 @@ offset: [-0.0, 0.0, -0.265]
 open_distance: 0.2
 #grasp_velocity: [0.2, 0.0, -0.029]
 #grasp_velocity: [0.0, 0.0, 0.0]
-grasp_speed_horz: 1.5
+grasp_speed_horz: 1.0
 grasp_speed_vert: -0.02
 ground_effect_stop_time: 5.5
 
