@@ -3,6 +3,8 @@
 
     <arg name="rigid_body_name" default="sparksdrone"/>
     <arg name="target_rigid_body_name" default="sparkgrasptar"/>
+    <arg name="mocap_drone_pose_topic" default="/mavros/vision_pose/pose"/> <!-- use /mocap/vision_pose/pose for data-only mocap -->
+    <arg name="mocap_target_pose_topic" default="/pose_estimator_node/estimated_pose_out"/>  <!-- use /mocap/estimated_pose_out for data-only mocap -->
 
     <node name="mocap_wrapper" pkg="softdrone_core" type="mocap_wrapper" output="screen">
         <rosparam command="load" file="$(find softdrone_core)/config/mocap_wrapper.yaml"/>
@@ -10,8 +12,8 @@
         <param name="publish_rate" value="50.0"/>
         <remap from="vicon" to="/$(arg rigid_body_name)/world"/>
         <remap from="target_vicon" to="/$(arg target_rigid_body_name)/world"/>
-        <remap from="pose" to="/mavros/vision_pose/pose"/>
-        <remap from="target_pose" to="/pose_estimator_node/estimated_pose_out"/>
+        <remap from="pose" to="$(arg mocap_drone_pose_topic)"/>
+        <remap from="target_pose" to="$(arg mocap_target_pose_topic)"/>
     </node>
 
 </launch>

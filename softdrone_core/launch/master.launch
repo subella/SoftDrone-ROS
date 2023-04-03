@@ -199,7 +199,7 @@
 
     <!-- Launch the EKF estimator that updates estimate of target's state -->
     <group if="$(arg launch_tracker_node)">
-        <remap from="~agent_odom" to="/mavros/odometry/in"/> <!-- TODO: change this so the tracker and Mavros both listen to the odom from the camera namespace -->
+        <remap from="~agent_odom" to="/mavros/odometry/in"/>
         <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
         <remap if="$(arg sim_target_as_tracker_output)" from="~target_global_pose_estimate" to="~target_global_pose_estimate_debug"/>
         <include file="$(find softdrone_core)/launch/nodes/tracker_node.launch"/>
@@ -229,8 +229,14 @@
     </group>
 
     <group if="$(arg launch_gtsam_tracker_node)">
-        <remap from="~agent_odom" to="/mavros/odometry/in"/> <!-- TODO: change this so the tracker and Mavros both listen to the odom from the camera namespace -->
+        <remap from="~agent_odom" to="/mavros/odometry/in"/>
         <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
+        <include file="$(find softdrone_core)/launch/nodes/gtsam_tracker_node.launch"/>
+    </group>
+
+    <group if="$(arg launch_gtsam_tracker_node_secondary_mocap)">
+        <remap from="~agent_pose" to="/mocap/vision_pose/pose"/>
+        <remap from="~estimated_relative_pose" to="mocap/estimated_pose_out"/>
         <include file="$(find softdrone_core)/launch/nodes/gtsam_tracker_node.launch"/>
     </group>
 
