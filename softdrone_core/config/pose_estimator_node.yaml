@@ -1,4 +1,4 @@
-cad_frame_file_name: "$(env HOME)/CadFrames/pepsi_bottle.csv"
+cad_frame_file_name: "$(env HOME)/soft_ws/src/SoftDrone-ROS/softdrone_target_pose_estimator/models/pepsi_bottle_cad.csv"
 noise_bound: 10
 cbar2: 1
 estimate_scaling: false

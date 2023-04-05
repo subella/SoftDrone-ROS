@@ -169,8 +169,26 @@ class GraspStateMachine:
         self._grasp_start_horz_offset = rospy.get_param("~grasp_start_horz_offset")
         self._grasp_start_vert_offset = rospy.get_param("~grasp_start_vert_offset")
         self._fixed_grasp_start_point = rospy.get_param("~fixed_grasp_start_point")
-        self._start_pos = np.array(rospy.get_param("~start_pos"))
-        self._start_theta = rospy.get_param("~start_theta")
+
+        self._random_start = rospy.get_param("~random_start")
+        if not self._random_start:
+            self._start_pos = np.array(rospy.get_param("~start_pos"))
+            self._start_theta = rospy.get_param("~start_theta")
+        else:
+            # Assumes target is roughly +1 x +0.25 y from drone start
+            rand_theta = np.random.uniform(2/3. * np.pi, np.pi) 
+            rand_r = np.random.uniform(1.0, 1.0)
+            print("rand_theta", rand_theta)
+            print("rand_r", rand_r)
+            rand_x = 1 + rand_r * np.cos(rand_theta)
+            rand_y = 0.25 + rand_r * np.sin(rand_theta)
+            self._start_pos = np.array([rand_x, rand_y, 0.8])
+            self._start_theta = rand_theta - np.pi 
+            print("rand_x", rand_x)
+            print("rand_y", rand_y)
+            print(self._start_pos)
+            print(self._start_theta)
+            
 
         self._land_offset = np.array(rospy.get_param("~land_offset"))
 
@@ -591,6 +609,7 @@ class GraspStateMachine:
         self._target_pub.publish(msg)
         self.end_timer = time.time()
         self.start_timer = time.time()
+        print("ELAPSED", self.end_timer - self.start_timer)
 
     def _timer_callback(self, msg):
         """Handle timer."""
@@ -873,8 +892,8 @@ class GraspStateMachine:
         grasp_cmd = Int8()
 
         if not self._grasp_attempted:
-            theta_approach = self._target_yaw + self._target_grasp_angle
-            #theta_approach = self._target_yaw_fixed + self._target_grasp_angle
+            #theta_approach = self._target_yaw + self._target_grasp_angle
+            theta_approach = self._target_yaw_fixed + self._target_grasp_angle
             self._desired_yaw = theta_approach + np.pi
 
             # Hack for mocap moving target
@@ -889,9 +908,9 @@ class GraspStateMachine:
         elapsed = rospy.Time.now().to_sec() - self._last_grasp_trajectory_update
         result = self._grasp_trajectory_tracker._run_normal(elapsed)
         # For fixed target
-        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
+        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
         # For moving target
-        g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(result.position, result.velocity, result.acceleration, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
 
         self._settle_after_pos = g_pos
 
@@ -900,10 +919,10 @@ class GraspStateMachine:
             #lat_target_dist = np.linalg.norm(self._target_position_fixed[0] - self._current_position[0])
             #lat_target_dist = self._target_position_fixed[0] - self._current_position[0]
             # TODO: Replace with tf tree
-            R = self._target_rotation
-            t = self._target_position.reshape(3,1)
-            #R = self._target_rotation_fixed
-            #t = self._target_position_fixed.reshape(3,1)
+            #R = self._target_rotation
+            #t = self._target_position.reshape(3,1)
+            R = self._target_rotation_fixed
+            t = self._target_position_fixed.reshape(3,1)
             tf = np.hstack((R, t))
             tf = np.vstack((tf, [0,0,0,1]))
             pos = np.append(self._current_position, 1)
