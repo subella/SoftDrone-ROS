@@ -26,6 +26,7 @@ namespace sdrone {
 class GTSAMNode {
     public:
         typedef geometry_msgs::PoseWithCovarianceStamped PoseWCovStamped;
+        typedef geometry_msgs::PoseStamped PoseStamped;
         typedef std_msgs::Bool Bool;
         typedef nav_msgs::Odometry Odom;
         typedef message_filters::sync_policies::ApproximateTime<Odom, PoseWCovStamped> SyncPolicy;
@@ -50,6 +51,7 @@ class GTSAMNode {
 
         ros::Publisher target_pose_pub_;
         ros::Publisher target_odom_pub_;
+        ros::Publisher teaser_global_ps_pub_;
 
         bool is_initialized_;
         double lag_;

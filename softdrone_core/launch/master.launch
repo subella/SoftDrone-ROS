@@ -29,6 +29,7 @@
     <arg name="launch_mocap_translator" default="false"/>
     <arg name="launch_gtsam_tracker_node" default="false"/>
     <arg name="launch_rollout_node" default="false"/>
+    <arg name="launch_gtsam_tracker_node_secondary_mocap" default="false"/>
 
     <arg name="camera_odom_passthrough" default="false" doc="Fake mavros publishes t265 odometry as if it were from mavros"/>
     <arg name="sim_target_as_tracker_output" default="$(eval (not arg('launch_tracker_node')) and (not arg('launch_gtsam_tracker_node')))" doc="Map the simulated target pose to the tracker output topic"/>
@@ -235,9 +236,11 @@
     </group>
 
     <group if="$(arg launch_gtsam_tracker_node_secondary_mocap)">
-        <remap from="~agent_pose" to="/mocap/vision_pose/pose"/>
-        <remap from="~estimated_relative_pose" to="mocap/estimated_pose_out"/>
-        <include file="$(find softdrone_core)/launch/nodes/gtsam_tracker_node.launch"/>
+        <remap from="~agent_pose" to="/mocap_wrapper/pose_wc"/>
+        <remap from="~estimated_relative_pose" to="pose_estimator_node/estimated_pose_out"/>
+        <include file="$(find softdrone_core)/launch/nodes/gtsam_tracker_node.launch">
+            <arg name="name" value="gtsam_tracker_node_secondary"/>
+        </include>
     </group>
 
     <group if="$(arg launch_rollout_node)">
