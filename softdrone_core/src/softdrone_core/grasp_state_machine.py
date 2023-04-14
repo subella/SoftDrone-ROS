@@ -176,12 +176,15 @@ class GraspStateMachine:
             self._start_theta = rospy.get_param("~start_theta")
         else:
             # Assumes target is roughly +1 x +0.25 y from drone start
-            rand_theta = np.random.uniform(2/3. * np.pi, np.pi) 
+            x_offset = 1.2
+            y_offset = 0.6
+            rand_theta = np.random.uniform(1/2. * np.pi, np.pi) 
             rand_r = np.random.uniform(1.0, 1.0)
+            rand_z = np.random.uniform(0.7, 1.0)
             print("rand_theta", rand_theta)
             print("rand_r", rand_r)
-            rand_x = 1 + rand_r * np.cos(rand_theta)
-            rand_y = 0.25 + rand_r * np.sin(rand_theta)
+            rand_x = x_offset + rand_r * np.cos(rand_theta)
+            rand_y = y_offset + rand_r * np.sin(rand_theta)
             self._start_pos = np.array([rand_x, rand_y, 0.8])
             self._start_theta = rand_theta - np.pi 
             print("rand_x", rand_x)
@@ -213,6 +216,7 @@ class GraspStateMachine:
         self._replan_during_stages = rospy.get_param("~replan_during_stages", False)
         self._replan_during_grasp_trajectory = rospy.get_param("~replan_during_grasp_trajectory", False)
         self._grasp_attempted_tolerance = rospy.get_param("~grasp_attempted_tolerance", 1)
+        self._grasp_attempted_tolerance_sec = rospy.get_param("~grasp_attempted_tolerance_sec", 2)
         self._average_polynomial_velocity = rospy.get_param(
             "~average_polynomial_velocity", 0.8
         )
@@ -511,12 +515,12 @@ class GraspStateMachine:
                 continue
             if state == GraspDroneState.SETTLE_BEFORE_ALIGNMENT:
                 self._state_durations[state] = rospy.Duration(
-                    rospy.get_param("~mission_settle_duration", 6.)
+                    rospy.get_param("~mission_settle_duration", 4.)
                 )
                 continue
             if state == GraspDroneState.SETTLE_BEFORE_GRASP:
                 self._state_durations[state] = rospy.Duration(
-                    rospy.get_param("~mission_settle_duration", 5.)
+                    rospy.get_param("~mission_settle_duration", 9.)
                 )
                 continue
             if state == GraspDroneState.SETTLE_AFTER:
@@ -770,7 +774,8 @@ class GraspStateMachine:
             self._home_position[0],
             self._home_position[1],
             self._home_position[2] + self._takeoff_offset,
-            yaw=self._start_theta
+            #yaw=self._start_theta
+            yaw=0
         )
 
         req_traj = self._has_elapsed(GraspDroneState.HOVER)
@@ -798,7 +803,7 @@ class GraspStateMachine:
 
         pos, vel, acc = curr_poly.interp(elapsed)
         yaw_scale = min(elapsed / curr_poly._total_time, 1.0)
-        self._send_target(pos, yaw=self._start_theta, velocity=vel, acceleration=acc)
+        self._send_target(pos, yaw=yaw_scale * self._start_theta, velocity=vel, acceleration=acc)
         return False
 
     def _handle_settle_before_alignment(self):
@@ -815,6 +820,9 @@ class GraspStateMachine:
             self._request_wp_target_frame_once()
             self._update_waypoint_trajectory()
         proceed = req_traj and (rospy.Time.now().to_sec() - self._last_waypoint_polynomial_recv_from_planner) < .1
+        self._target_position_fixed = self._target_position.copy()
+        self._target_yaw_fixed = self._target_yaw
+        self._target_rotation_fixed = self._target_rotation
         return proceed
         #req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
         #if req_traj:
@@ -848,8 +856,14 @@ class GraspStateMachine:
             return True
 
         pos, vel, acc = curr_poly.interp(elapsed)
-        g_pos, g_vel, g_acc = target_body_pva_to_global(pos, vel, acc, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
-        drone_wrt_target = self._current_position - self._target_position
+        # Moving
+        #g_pos, g_vel, g_acc = target_body_pva_to_global(pos, vel, acc, self._target_position, self._target_rotation, self._target_vel, self._target_omegas)
+        # Fixed
+        g_pos, g_vel, g_acc = target_body_pva_to_global(pos, vel, acc, self._target_position_fixed, self._target_rotation_fixed, np.zeros(3), np.zeros(3))
+        # Moving
+        #drone_wrt_target = self._current_position - self._target_position
+        # Fixed
+        drone_wrt_target = self._current_position - self._target_position_fixed
         yaw = np.arctan2(drone_wrt_target[1], drone_wrt_target[0])
         self._send_target(g_pos, yaw=yaw + np.pi, velocity=g_vel, acceleration=g_acc)
         return False
@@ -897,8 +911,9 @@ class GraspStateMachine:
             self._desired_yaw = theta_approach + np.pi
 
             # Hack for mocap moving target
-            grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
-            #self._gripper_pub.publish(grasp_cmd)
+            #grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
+            grasp_cmd.data = GraspCommand.OPEN_PARTIAL
+            self._gripper_pub.publish(grasp_cmd)
 
 
         #if not self._replan_during_grasp_trajectory:
@@ -928,10 +943,12 @@ class GraspStateMachine:
             pos = np.append(self._current_position, 1)
             #lat_target_dist = abs(invert_transform(tf).dot(pos)[0])
             lat_target_dist = -invert_transform(tf).dot(pos)[0]
-            if lat_target_dist < self._grasp_attempted_tolerance and not self._grasp_attempted:
+            #if lat_target_dist < self._grasp_attempted_tolerance and not self._grasp_attempted:
+            #if lat_target_dist < self._grasp_attempted_tolerance:
+            if elapsed > self._grasp_attempted_tolerance_sec and not self._grasp_attempted:
                 self._current_grasp_command = GraspCommand.OPEN_ASYMMETRIC
                 grasp_cmd.data = GraspCommand.OPEN_ASYMMETRIC
-                #self._gripper_pub.publish(grasp_cmd)
+                self._gripper_pub.publish(grasp_cmd)
                 rospy.loginfo("Called open asymmetric gripper!")
                 self._grasp_attempted = True
                 self._stop_updating_target_position = True
@@ -953,14 +970,14 @@ class GraspStateMachine:
             if lat_target_dist < self._grasp_start_distance:
                 self._current_grasp_command = GraspCommand.CLOSE
                 grasp_cmd.data = GraspCommand.CLOSE
-                #self._gripper_pub.publish(grasp_cmd)
+                self._gripper_pub.publish(grasp_cmd)
                 rospy.loginfo("Called close gripper!")
 
                 if not self._start_feedforward_z_acc:
                     self._start_feedforward_z_acc = True
                     self._feedforward_z_acc_start_time = rospy.Time.now().to_sec() + self._feedforward_z_acc_delay
 
-            self._gripper_pub.publish(grasp_cmd)
+            #self._gripper_pub.publish(grasp_cmd)
 
             #grasp_cmd = Int8()
             #grasp_cmd.data = self._current_grasp_command
