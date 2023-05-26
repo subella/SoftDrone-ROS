@@ -1,6 +1,7 @@
 <launch>
+    <arg name="name" default="gtsam_tracker_node"/>
     <node pkg="gtsam_tracker"
-          name="gtsam_tracker_node"
+          name="$(arg name)"
           type="gtsam_tracker_node"
           output="screen">
         <rosparam command="load" file="$(find softdrone_core)/config/gtsam_tracker_node.yaml"/>

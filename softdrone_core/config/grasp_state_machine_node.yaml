@@ -4,7 +4,8 @@ grasp_start_vert_offset: 0.9
 #grasp_start_horz_offset: 1.0
 #grasp_start_vert_offset: 1.0
 
-start_pos: [-2.2, -3.45, 2]
+start_pos: [0, 0, 0.8]
+random_start: true
 #start_pos: [-0.9, 0.7, 0.7] # for flying with vision
 #start_pos: [-1.1, -4.7, 2.07] # for flying with mocap
 #start_pos: [-2.77, -3.37, 2.07] # for flying with mocap moving
@@ -24,9 +25,9 @@ land_offset: [-1.0, 0.5, 0.0]
 #grasp_start_distance: .09 # for medkit mocap
 #grasp_start_distance: .12 # for pepsi 1.25m/s mocap
 #grasp_start_distance: .04 # for pepsi 2m/s mocap
-grasp_start_distance: .1
+grasp_start_distance: .11
 
-grasp_attempted_tolerance: .01
+grasp_attempted_tolerance: 0.85
 #grasp_attempted_tolerance: .9 # for fast mocap
 
 #grasp_start_distance: 0.05 # for moving mocap

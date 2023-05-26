@@ -2,13 +2,16 @@
 
 namespace sdrone {
 
-GTSAMNode::GTSAMNode(const ros::NodeHandle &nh) : nh_(nh), agent_sub_(nh_, "agent_odom", 1), target_rel_sub_(nh_, "estimated_relative_pose", 1),
-sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_), tf_listener_(tf_buffer_) {
+GTSAMNode::GTSAMNode(const ros::NodeHandle &nh) : nh_(nh), agent_sub_(nh_, "agent_odom", 1), agent_sub_pose_(nh_, "agent_pose", 1), target_rel_sub_(nh_, "estimated_relative_pose", 1),
+sync_(SyncPolicy(1000), agent_sub_, target_rel_sub_), sync_pose_(SyncPolicyPose(1000), agent_sub_pose_, target_rel_sub_), tf_listener_(tf_buffer_) {
     is_initialized_ = false;
     reset_sub_ = nh_.subscribe("reset_target_estimator", 1, &GTSAMNode::reset_callback, this);
     target_pose_pub_ = nh_.advertise<PoseWCovStamped>("target_global_pose_estimate", 1);
     target_odom_pub_ = nh_.advertise<Odom>("target_global_odom_estimate", 1);
+    teaser_global_ps_pub_ = nh_.advertise<PoseStamped>("teaser_global", 1);
+
     sync_.registerCallback(boost::bind(&GTSAMNode::syncCallback, this, _1, _2));
+    sync_pose_.registerCallback(boost::bind(&GTSAMNode::syncCallbackPose, this, _1, _2));
     nh_.getParam("velocity_prior_var", velocity_prior_var_);
     nh_.getParam("angular_velocity_prior_var", angular_velocity_prior_var_);
     nh_.getParam("transition_position_prior_cov", transition_position_prior_cov_);
@@ -50,7 +53,61 @@ void GTSAMNode::syncCallback(const Odom::ConstPtr &odom, const PoseWCovStamped::
         gtsam::Matrix omegas_cov = estimator_.current_angle_vel_cov_;
         publishTargetEstimate(ns, ns_cov, omegas, omegas_cov);
     }
+
+    Belief7D b7d(b_target_meas);
+    PoseStamped ps_teaser_global;
+    ps_teaser_global.header.stamp = odom->header.stamp;
+    ps_teaser_global.header.frame_id = odom->header.frame_id;
+    ps_teaser_global.pose.position.x = b7d.mean.m_coords[0];
+    ps_teaser_global.pose.position.y = b7d.mean.m_coords[1];
+    ps_teaser_global.pose.position.z = b7d.mean.m_coords[2];
+    ps_teaser_global.pose.orientation.x = b7d.mean.m_quat.x();
+    ps_teaser_global.pose.orientation.y = b7d.mean.m_quat.y();
+    ps_teaser_global.pose.orientation.z = b7d.mean.m_quat.z();
+    ps_teaser_global.pose.orientation.w = b7d.mean.m_quat.r();
+
+    teaser_global_ps_pub_.publish(ps_teaser_global);
 }
+
+void GTSAMNode::syncCallbackPose(const PoseWCovStamped::ConstPtr &pwcs_drone, const PoseWCovStamped::ConstPtr &pwcs_target) {
+    std::cout << "got sync callback" << std::endl;
+    frame_id_ = pwcs_drone->header.frame_id;
+    double time = pwcs_drone->header.stamp.toSec();
+
+    geometry_msgs::TransformStamped optical_to_body_tf = tf_buffer_.lookupTransform("base_link", pwcs_target->header.frame_id, ros::Time(0), ros::Duration(1.0));
+    geometry_msgs::PoseWithCovarianceStamped pwcs_body;
+    tf2::doTransform(*pwcs_target, pwcs_body, optical_to_body_tf);
+
+    Belief6D b_agent = belief6DFromPoseWCov(pwcs_drone->pose);
+    Belief6D b_target_rel = belief6DFromPoseWCov(pwcs_body.pose);
+    Belief6D b_target_meas = b_agent + b_target_rel;
+    updateFromRos(b_target_meas, time);
+    estimator_.update_solution();
+    if (estimator_.result_ready_) {
+        gtsam::NavState ns = estimator_.current_nav_state_;
+        gtsam::Matrix ns_cov = estimator_.current_nav_cov_;
+        gtsam::Vector3 omegas = estimator_.current_angle_vel_;
+        gtsam::Matrix omegas_cov = estimator_.current_angle_vel_cov_;
+        publishTargetEstimate(ns, ns_cov, omegas, omegas_cov);
+    }
+
+    // take target in world frame and publish
+    Belief7D b7d(b_target_meas);
+    PoseStamped ps_teaser_global;
+    ps_teaser_global.header.stamp = pwcs_drone->header.stamp;
+    ps_teaser_global.header.frame_id = pwcs_drone->header.frame_id;
+    ps_teaser_global.pose.position.x = b7d.mean.m_coords[0];
+    ps_teaser_global.pose.position.y = b7d.mean.m_coords[1];
+    ps_teaser_global.pose.position.z = b7d.mean.m_coords[2];
+    ps_teaser_global.pose.orientation.x = b7d.mean.m_quat.x();
+    ps_teaser_global.pose.orientation.y = b7d.mean.m_quat.y();
+    ps_teaser_global.pose.orientation.z = b7d.mean.m_quat.z();
+    ps_teaser_global.pose.orientation.w = b7d.mean.m_quat.r();
+
+    teaser_global_ps_pub_.publish(ps_teaser_global);
+
+}
+
 
 void GTSAMNode::publishTargetEstimate(gtsam::NavState ns, gtsam::Matrix ns_cov, gtsam::Vector3 omegas, gtsam::Matrix omegas_cov) {
     geometry_msgs::PoseWithCovarianceStamped pwcs;
