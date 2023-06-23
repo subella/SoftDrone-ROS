@@ -97,22 +97,22 @@ class Arrow3D(FancyArrowPatch):
         self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
         FancyArrowPatch.draw(self, renderer)
 
-def plot_pose(drawing, tf, K, x_color=(255,0,0), y_color=(0,255,0), z_color=(0,0,255), scale=100):
+def plot_pose(drawing, tf, K, x_color=(255,0,0), y_color=(0,255,0), z_color=(0,0,255), scale=150, resize_factor=1):
      center = tf[:3,3].T
-     center_px = project(center, K)
+     center_px = resize_factor * np.array(project(center, K))
      drawing.ellipse((center_px[0] - 2, center_px[1] - 2,
                            center_px[0] + 2, center_px[1] + 2),
                            fill=(0,0,0))
      x_tip = center +  tf[:3,0] * scale
-     x_tip_px = project(x_tip, K)
+     x_tip_px = resize_factor * np.array(project(x_tip, K))
      drawing.line((center_px[0], center_px[1], x_tip_px[0], x_tip_px[1]), \
-                   fill=x_color, width=3)
+                   fill=x_color, width=5*resize_factor)
      y_tip = center + tf[:3,1] * scale
-     y_tip_px = project(y_tip, K)
+     y_tip_px = resize_factor * np.array(project(y_tip, K))
      drawing.line((center_px[0], center_px[1], y_tip_px[0], y_tip_px[1]), \
-                   fill=y_color, width=3)
+                   fill=y_color, width=5*resize_factor)
      z_tip = center + tf[:3,2] * scale
-     z_tip_px = project(z_tip, K)
+     z_tip_px = resize_factor * np.array(project(z_tip, K))
      drawing.line((center_px[0], center_px[1], z_tip_px[0], z_tip_px[1]), \
-                   fill=z_color, width=3)
+                   fill=z_color, width=5*resize_factor)
 
