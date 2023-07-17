@@ -19,14 +19,14 @@ start_position: [-2.0, 0.0, 2.0]
 #offset: [0.0, 0.03, -0.18] #mocap medkit
 #offset: [0.0, 0.03, -0.18] #mocap fast pepsi
 
-offset: [-0.0, -0.08, -0.155]
+offset: [-0.0, -0.03, -0.15]
 
 
 
 open_distance: 0.2
 #grasp_velocity: [0.2, 0.0, -0.029]
 #grasp_velocity: [0.0, 0.0, 0.0]
-grasp_speed_horz: 0.5
+grasp_speed_horz: 3.0
 grasp_speed_vert: -0.02
 ground_effect_stop_time: 5.5
 
