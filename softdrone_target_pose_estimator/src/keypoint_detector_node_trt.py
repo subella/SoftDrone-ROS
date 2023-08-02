@@ -35,9 +35,9 @@ def image_callback(msg):
             kps_pub.publish(kps_msg)
 
             for kp in kps:
-                img = cv2.circle(img, (kp[0], kp[1]), 2, (255,0,0),2)
+                img = cv2.circle(img, (kp[0], kp[1]), 2, (0,255,0),2)
 
-            annotated_img_pub.publish(bridge.cv2_to_imgmsg(img, "rgb8"))
+        annotated_img_pub.publish(bridge.cv2_to_imgmsg(img, "rgb8"))
 
     except CvBridgeError, e:
         print(e)

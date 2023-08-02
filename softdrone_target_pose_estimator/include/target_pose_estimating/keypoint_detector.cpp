@@ -106,7 +106,7 @@ DrawKeypoints(cv::Mat& img, torch::Tensor& keypoints)
         double px = keypoints[0][i][0].item<int>();
         double py = keypoints[0][i][1].item<int>();
         cv::Point pt = cv::Point(px, py);
-        cv::circle(img, pt, 3, cv::Scalar(0, 0, 255), cv::FILLED, cv::LINE_AA);
+        cv::circle(img, pt, 3, cv::Scalar(255, 0, 0), cv::FILLED, cv::LINE_AA);
     }
 }
 

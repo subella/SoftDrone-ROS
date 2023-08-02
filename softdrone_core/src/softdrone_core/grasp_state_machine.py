@@ -3,6 +3,7 @@ from softdrone.python.control.find_trajectory import find_polynomials, Polynomia
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from visualization_msgs.msg import Marker, MarkerArray
 import tf
+import tf2_ros
 
 from softdrone_core.msg import PolynomialTrajectory, LengthInfoMsg, GraspTrajectory, GraspCommand
 from softdrone_core.utils import get_trajectory_viz_markers
@@ -11,6 +12,7 @@ from softdrone_core.srv import SendGraspCommand, SendGraspCommandRequest
 
 from nav_msgs.msg import Odometry
 import geometry_msgs.msg
+from geometry_msgs.msg import TransformStamped
 import mavros_msgs.msg
 import mavros_msgs.srv
 from std_msgs.msg import Bool, Int8
@@ -152,6 +154,8 @@ class GraspStateMachine:
         self._target_position_fixed = None
         self._stop_updating_target_position = False
 
+        self._grasp_started = False
+
         self._target_vel = np.zeros(3)
         self._target_omegas = np.zeros(3)
 
@@ -160,8 +164,17 @@ class GraspStateMachine:
         self._target_yaw = 0.0
         self._target_yaw_fixed = 0.0
         self._target_rotation = np.eye(3)
+        self._unprojected_target_quat = []
+        self._projected_target_quat = []
         self._target_rotation_fixed = np.eye(3)
+        self._unprojected_target_quat_fixed = []
+        self._projected_target_quat_fixed = []
         self._settle_after_pos = np.array([0.,0.,0.])
+
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+        self.projected_target_transform = TransformStamped()
+        self.projected_target_transform.header.frame_id = "map"
+        self.projected_target_transform.child_frame_id = "projected_fixed_target"
 
         self._current_grasp_command = None
 
@@ -178,7 +191,7 @@ class GraspStateMachine:
             # Assumes target is roughly +1 x +0.25 y from drone start
             x_offset = 1.2
             y_offset = 0.6
-            rand_theta = np.random.uniform(1/2. * np.pi, np.pi) 
+            rand_theta = np.random.uniform(3/4. * np.pi, np.pi) 
             rand_r = np.random.uniform(1.0, 1.0)
             rand_z = np.random.uniform(0.7, 1.0)
             print("rand_theta", rand_theta)
@@ -244,6 +257,9 @@ class GraspStateMachine:
             #self._gripper_client = rospy.ServiceProxy('cmd_gripper', SendGraspCommand)
             self._gripper_pub = rospy.Publisher('cmd_gripper_sub', Int8)
 
+        self._fixed_pub = rospy.Publisher("~fixed_target", Odometry, queue_size=1)
+        self._projected_fixed_pub = rospy.Publisher("~projected_fixed_target", Odometry, queue_size=1)
+
         rospy.Subscriber("~state", mavros_msgs.msg.State, self._state_callback, queue_size=10)
         rospy.Subscriber("~pose", PoseStamped, self._pose_callback, queue_size=10)
 
@@ -276,6 +292,7 @@ class GraspStateMachine:
         self.test_pub = rospy.Publisher("/global_target_odom", Odometry, queue_size=10)
 
         self._waypoint_pub = rospy.Publisher("~waypoint", PoseStamped, queue_size=1)
+
 
         control_rate = rospy.get_param("~control_rate", 100)
         if control_rate < 20.0:
@@ -356,6 +373,8 @@ class GraspStateMachine:
             self._target_yaw = y
             quat_projected = tf.transformations.quaternion_from_euler(0,0,y)
             self._target_rotation = tf.transformations.quaternion_matrix(quat_projected)[:3,:3]
+            self._unprojected_target_quat = quat
+            self._projected_target_quat = quat_projected
 
             #self._target_rotation = tf.transformations.quaternion_matrix(quat)[:3,:3]
 
@@ -385,6 +404,56 @@ class GraspStateMachine:
             global_pose.twist.twist.linear.y = g_vel[1]
             global_pose.twist.twist.linear.z = g_vel[2]
             self.test_pub.publish(global_pose)
+
+        if not self._grasp_started:
+            self._fixed_pub.publish(msg)
+
+            projected_msg = Odometry()
+            projected_msg.header = msg.header
+            projected_msg.child_frame_id = "projected_fixed_target"
+            projected_msg.pose.pose.position.x = self._target_position[0]
+            projected_msg.pose.pose.position.y = self._target_position[1]
+            projected_msg.pose.pose.position.z = self._target_position[2]
+            projected_msg.pose.pose.orientation.x = self._projected_target_quat[0]
+            projected_msg.pose.pose.orientation.y = self._projected_target_quat[1]
+            projected_msg.pose.pose.orientation.z = self._projected_target_quat[2]
+            projected_msg.pose.pose.orientation.w = self._projected_target_quat[3]
+            self._projected_fixed_pub.publish(projected_msg)
+
+        else:
+            fixed_msg = Odometry()
+            fixed_msg.header = msg.header
+            fixed_msg.child_frame_id = "fixed_target"
+            fixed_msg.pose.pose.position.x = self._target_position_fixed[0]
+            fixed_msg.pose.pose.position.y = self._target_position_fixed[1]
+            fixed_msg.pose.pose.position.z = self._target_position_fixed[2]
+            fixed_msg.pose.pose.orientation.x = self._unprojected_target_quat_fixed[0]
+            fixed_msg.pose.pose.orientation.y = self._unprojected_target_quat_fixed[1]
+            fixed_msg.pose.pose.orientation.z = self._unprojected_target_quat_fixed[2]
+            fixed_msg.pose.pose.orientation.w = self._unprojected_target_quat_fixed[3]
+            self._fixed_pub.publish(fixed_msg)
+
+            projected_fixed_msg = Odometry()
+            projected_fixed_msg.header = msg.header
+            projected_fixed_msg.child_frame_id = "projected_fixed_target"
+            projected_fixed_msg.pose.pose.position.x = self._target_position_fixed[0]
+            projected_fixed_msg.pose.pose.position.y = self._target_position_fixed[1]
+            projected_fixed_msg.pose.pose.position.z = self._target_position_fixed[2]
+            projected_fixed_msg.pose.pose.orientation.x = self._projected_target_quat_fixed[0]
+            projected_fixed_msg.pose.pose.orientation.y = self._projected_target_quat_fixed[1]
+            projected_fixed_msg.pose.pose.orientation.z = self._projected_target_quat_fixed[2]
+            projected_fixed_msg.pose.pose.orientation.w = self._projected_target_quat_fixed[3]
+            self._projected_fixed_pub.publish(projected_fixed_msg)
+
+            self.projected_target_transform.header.stamp = rospy.Time.now()
+            self.projected_target_transform.transform.translation.x = self._target_position_fixed[0]
+            self.projected_target_transform.transform.translation.y = self._target_position_fixed[1]
+            self.projected_target_transform.transform.translation.z = self._target_position_fixed[2]
+            self.projected_target_transform.transform.rotation.x = self._projected_target_quat_fixed[0]
+            self.projected_target_transform.transform.rotation.y = self._projected_target_quat_fixed[1]
+            self.projected_target_transform.transform.rotation.z = self._projected_target_quat_fixed[2]
+            self.projected_target_transform.transform.rotation.w = self._projected_target_quat_fixed[3]
+            self.tf_broadcaster.sendTransform(self.projected_target_transform)
 
     def _update_grasp_start_point(self):
         #if not self._fixed_grasp_start_point:
@@ -823,6 +892,8 @@ class GraspStateMachine:
         self._target_position_fixed = self._target_position.copy()
         self._target_yaw_fixed = self._target_yaw
         self._target_rotation_fixed = self._target_rotation
+        self._unprojected_target_quat_fixed = self._unprojected_target_quat
+        self._projected_target_quat_fixed = self._projected_target_quat
         return proceed
         #req_traj = self._has_elapsed(GraspDroneState.SETTLE_BEFORE) and self._grasp_start_ok
         #if req_traj:
@@ -895,6 +966,8 @@ class GraspStateMachine:
         self._target_position_fixed = self._target_position.copy()
         self._target_yaw_fixed = self._target_yaw
         self._target_rotation_fixed = self._target_rotation
+        self._unprojected_target_quat_fixed = self._unprojected_target_quat
+        self._projected_target_quat_fixed = self._projected_target_quat
         grasp_cmd = Int8()
         grasp_cmd.data = GraspCommand.OPEN_PARTIAL
         self._gripper_pub.publish(grasp_cmd)
@@ -903,6 +976,7 @@ class GraspStateMachine:
     def _handle_executing_mission(self):
         """State handler for EXECUTING_MISSION."""
         self._grasp_started_pub.publish(True)
+        self._grasp_started = True
         grasp_cmd = Int8()
 
         if not self._grasp_attempted:
