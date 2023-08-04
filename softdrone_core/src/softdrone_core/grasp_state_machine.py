@@ -420,6 +420,16 @@ class GraspStateMachine:
             projected_msg.pose.pose.orientation.w = self._projected_target_quat[3]
             self._projected_fixed_pub.publish(projected_msg)
 
+            self.projected_target_transform.header.stamp = rospy.Time.now()
+            self.projected_target_transform.transform.translation.x = self._target_position[0]
+            self.projected_target_transform.transform.translation.y = self._target_position[1]
+            self.projected_target_transform.transform.translation.z = self._target_position[2]
+            self.projected_target_transform.transform.rotation.x = self._projected_target_quat[0]
+            self.projected_target_transform.transform.rotation.y = self._projected_target_quat[1]
+            self.projected_target_transform.transform.rotation.z = self._projected_target_quat[2]
+            self.projected_target_transform.transform.rotation.w = self._projected_target_quat[3]
+            self.tf_broadcaster.sendTransform(self.projected_target_transform)
+
         else:
             fixed_msg = Odometry()
             fixed_msg.header = msg.header
