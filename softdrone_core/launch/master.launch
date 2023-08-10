@@ -216,7 +216,7 @@
     </group>
 
     <group if="$(arg launch_add_mocap_tf_node)">
-        <remap from="~mocap_pose" to="/mocap/vision_pose/pose"/>
+        <remap from="~mocap_pose" to="/mavros/vision_pose/pose"/>
         <include file="$(find softdrone_core)/launch/nodes/add_mocap_tf_node.launch"/>
     </group>
 
