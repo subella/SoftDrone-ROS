@@ -19,7 +19,7 @@ start_position: [-2.0, 0.0, 2.0]
 #offset: [0.0, 0.03, -0.18] #mocap medkit
 #offset: [0.0, 0.03, -0.18] #mocap fast pepsi
 
-offset: [-0.0, -0.06, -0.20]
+offset: [-0.0, -0.03, -0.18]
 
 
 

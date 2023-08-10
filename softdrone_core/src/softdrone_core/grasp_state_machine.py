@@ -189,11 +189,11 @@ class GraspStateMachine:
             self._start_theta = rospy.get_param("~start_theta")
         else:
             # Assumes target is roughly +1 x +0.25 y from drone start
-            x_offset = 1.2
+            x_offset = .9
             y_offset = 0.6
-            rand_theta = np.random.uniform(3/4. * np.pi, np.pi) 
+            rand_theta = np.random.uniform(4/5. * np.pi, np.pi) 
             rand_r = np.random.uniform(1.0, 1.0)
-            rand_z = np.random.uniform(0.7, 1.0)
+            rand_z = np.random.uniform(1.0, 1.0)
             print("rand_theta", rand_theta)
             print("rand_r", rand_r)
             rand_x = x_offset + rand_r * np.cos(rand_theta)

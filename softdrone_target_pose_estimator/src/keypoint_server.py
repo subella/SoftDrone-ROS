@@ -16,8 +16,8 @@ def send_array(socket, A, flags=0, copy=True, track=False):
 
 if __name__=="__main__":
 
-    config_file = "../models/medkit_pose.json"
-    model_file = "../models/medkit_model.pth"
+    config_file = "../models/pepsi_bottle_pose.json"
+    model_file = "../models/pepsi_bottle_model.pth"
     
     model = KeypointDetector(config_file, model_file)
     context = zmq.Context()
