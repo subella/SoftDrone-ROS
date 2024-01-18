@@ -14,12 +14,6 @@
 
 # # Keypoint Evaluation
 
-model = load_model_from_json(10, "../models/medkit_pose.json", "/home/subella/src/trt_pose/tasks/target_pose/configs/medkit/target.json.checkpoints/epoch_75.pth")
-opt_model = optimize_model(model)
-
-OPTIMIZED_MODEL = 'medkit_softdrone.pth'
-torch.save(opt_model.state_dict(), OPTIMIZED_MODEL)
-
 # +
 # %load_ext autoreload
 # %autoreload 2
@@ -51,20 +45,33 @@ sns.set(font_scale=1)
 sns.set_style("ticks",{'axes.grid' : True})
 # -
 
-target_name = "medkit"
+model = load_model_from_json(10, "/home/subella/src/KeypointTraining/tasks/target_pose/configs/cat_bottle/target_pose.json", "/home/subella/src/KeypointTraining/tasks/target_pose/configs/cat_bottle/target.json.checkpoints/epoch_70.pth")
+opt_model = optimize_model(model)
 
-config_file = "../models/{}_pose.json".format(target_name)
-model_file = "../models/{}_model.pth".format(target_name)
+OPTIMIZED_MODEL = 'opt_model.pth'
+torch.save(opt_model.state_dict(), OPTIMIZED_MODEL)
+
+target_name = "cat_bottle"
+
+# +
+# config_file = "../models/{}_pose.json".format(target_name)
+# model_file = "../models/{}_model.pth".format(target_name)
+# dataset_path = "/home/subella/src/AutomatedAnnotater/Data/"
+
+config_file = "/home/subella/src/KeypointTraining/tasks/target_pose/configs/{}/target_pose.json".format(target_name)
+model_file = "opt_model.pth"
 dataset_path = "/home/subella/src/AutomatedAnnotater/Data/"
+# -
 
-# model = KeypointDetector(config_file, model_file)
-model = KeypointDetector(config_file, "medkit_softdrone.pth")
+model = KeypointDetector(config_file, model_file)
+# model = KeypointDetector(config_file, "medkit_softdrone.pth")
 
 # TODO: standardize this.
-training_folder = dataset_path + "Medkit" + "/Datasets/Training/"
-validation_folder = dataset_path + "Medkit" + "/Datasets/Validation/"
+training_folder = dataset_path + "CatBottle" + "/Datasets/Training/"
+validation_folder = dataset_path + "CatBottle" + "/Datasets/Validation/"
 
-working_folder = validation_folder
+# working_folder = validation_folder
+working_folder = training_folder
 
 
 # +
@@ -168,7 +175,7 @@ class SingleEvaluator():
     def get_est_world_keypoints(self):
         pxs = np.clip(self.est_pixel_keypoints[:,0].astype(int), 0, self.width - 1)
         pys = np.clip(self.est_pixel_keypoints[:,1].astype(int), 0 , self.height - 1)
-        z = self.depth_image[pys,pxs]
+        z = self.depth_image[pys,pxs] / 10
         est_world_keypoints = reproject(pxs, pys, z, self.K_ros)
         return est_world_keypoints
     
@@ -398,7 +405,7 @@ class MultiEvaluator():
         for folder in glob.glob(self.folder + "/*"):
             metadata, K_mat, K_ros, cad_keypoints = self.parse_metadata(folder)
             print("Starting folder :", folder)
-            for annotation in tqdm.tqdm(metadata["annotations"]):
+            for annotation in tqdm.tqdm(metadata["annotations"][:700]):
                 self.eval_annotation(folder, annotation, K_mat, K_ros, cad_keypoints)
 
 
@@ -462,8 +469,8 @@ class MultiPlotter():
         ax = sns.scatterplot(
             x=x,
             y=y,
-#             c=z,
-#             cmap="viridis",
+            c=z,
+            cmap="viridis",
             ax=ax,
             linewidth=0
             )
@@ -663,17 +670,17 @@ write_metrics(multi_evaluator.metrics)
 
 metrics = load_metrics()
 
-metrics2 = convert_metrics_to_np(multi_evaluator.metrics)
+metrics = convert_metrics_to_np(multi_evaluator.metrics)
 
 multi_plotter.df
 
 multi_plotter = MultiPlotter(metrics, verbose=True)
-# multi_plotter.plot_sequence()
+multi_plotter.plot_sequence()
 # multi_plotter.plot_multiple()
-multi_plotter.plot_keypoint_pixel_error_vs_distance()
-multi_plotter.plot_translation_error_vs_distance()
-multi_plotter.plot_rotation_error_vs_distance()
-multi_plotter.plot_inliers()
+# multi_plotter.plot_keypoint_pixel_error_vs_distance()
+# multi_plotter.plot_translation_error_vs_distance()
+# multi_plotter.plot_rotation_error_vs_distance()
+# multi_plotter.plot_inliers()
 # multi_plotter.plot_composite()
 
 # +
