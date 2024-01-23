@@ -21,6 +21,8 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <target_pose_estimating/reproject_keypoints.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include "softdrone_target_pose_estimator/Keypoints2D.h"
 #include "softdrone_target_pose_estimator/Keypoints3D.h"
@@ -66,7 +68,13 @@ class ReprojectKeypointsROS : public ReprojectKeypoints {
 
     ros::Publisher keypoints_3D_pub_;
 
+    ros::Publisher keypoints_3D_global_pub_;
+
     message_filters::Synchronizer<SyncPolicy> sync_;
+
+    tf2_ros::Buffer tf_buffer_;
+
+    tf2_ros::TransformListener tf_listener_;
 
     void rgbCamInfoCallback(const CameraInfoMsg& camera_info_msg);
 
@@ -79,6 +87,8 @@ class ReprojectKeypointsROS : public ReprojectKeypoints {
     void makeKeypoints3DMat(const std::vector<Keypoint3DMsg>& keypoints_3D, Eigen::MatrixX3d& keypoints_3D_mat);
 
     void keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg);
+
+    void keypoints3DMatToKeypoints3DGlobalMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_global_msg);
 
     void keypoints2DMatToKeypoints2DMsg(Eigen::MatrixX2i& keypoints_2D_mat, Keypoints2DMsg& keypoints_2D_msg);
 

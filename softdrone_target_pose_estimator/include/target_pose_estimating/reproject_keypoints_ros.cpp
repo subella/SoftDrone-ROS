@@ -19,7 +19,8 @@ ReprojectKeypointsROS(const ros::NodeHandle& nh)
     it_(nh_),
     keypoints_2D_sub_(nh_, "keypoints_2d_in", 1),
     depth_img_sub_(it_, "depth_img_in", 1),
-    sync_(SyncPolicy(100), keypoints_2D_sub_, depth_img_sub_)
+    sync_(SyncPolicy(100), keypoints_2D_sub_, depth_img_sub_),
+    tf_listener_(tf_buffer_)
 {
   sync_.registerCallback(boost::bind(&ReprojectKeypointsROS::keypoints2DCallback, this, _1, _2));
   rgb_cam_info_sub_ = nh_.subscribe("rgb_cam_info_in", 1, &ReprojectKeypointsROS::rgbCamInfoCallback, this);
@@ -27,6 +28,7 @@ ReprojectKeypointsROS(const ros::NodeHandle& nh)
 
   keypoints_2D_pub_ = nh_.advertise<Keypoints2DMsg>("keypoints_2d_out",  1);
   keypoints_3D_pub_ = nh_.advertise<Keypoints3DMsg>("keypoints_3d_out",  1);
+  keypoints_3D_global_pub_ = nh_.advertise<Keypoints3DMsg>("keypoints_3d_global_out",  1);
   
 };
 
@@ -78,6 +80,10 @@ keypoints2DCallback(const Keypoints2DMsg::ConstPtr& keypoints_2D_msg, const Imag
     Keypoints3DMsg keypoints_3D_msg;
     keypoints3DMatToKeypoints3DMsg(keypoints_3D_mat, keypoints_3D_msg);
     keypoints_3D_pub_.publish(keypoints_3D_msg);
+
+    Keypoints3DMsg keypoints_3D_global_msg;
+    keypoints3DMatToKeypoints3DGlobalMsg(keypoints_3D_mat, keypoints_3D_global_msg);
+    keypoints_3D_global_pub_.publish(keypoints_3D_global_msg);
   }
 
 };
@@ -131,12 +137,40 @@ void ReprojectKeypointsROS::
 keypoints3DMatToKeypoints3DMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg)
 {
   keypoints_3D_msg.header.stamp = time_stamp_;
+  keypoints_3D_msg.header.frame_id = "target_cam_color_optical_frame";
   for (int i=0; i < keypoints_3D_mat.rows(); i++)
   {
     Keypoint3DMsg keypoint_3D_msg;
     keypoint_3D_msg.x = keypoints_3D_mat(i, 0);
     keypoint_3D_msg.y = keypoints_3D_mat(i, 1);
     keypoint_3D_msg.z = keypoints_3D_mat(i, 2);
+    keypoints_3D_msg.keypoints_3D.push_back(keypoint_3D_msg);
+  }  
+
+}
+
+void ReprojectKeypointsROS::
+keypoints3DMatToKeypoints3DGlobalMsg(Eigen::MatrixX3d& keypoints_3D_mat, Keypoints3DMsg& keypoints_3D_msg)
+{
+  keypoints_3D_msg.header.stamp = time_stamp_;
+  keypoints_3D_msg.header.frame_id = "map";
+  geometry_msgs::TransformStamped optical_to_body_tf = tf_buffer_.lookupTransform("map", "target_cam_color_optical_frame", ros::Time(0), ros::Duration(1.0));
+  for (int i=0; i < keypoints_3D_mat.rows(); i++)
+  {
+    geometry_msgs::PointStamped initial_pt, transformed_pt;
+    initial_pt.header.stamp = time_stamp_;
+    initial_pt.point.x = keypoints_3D_mat(i, 0)/1000.;
+    initial_pt.point.y = keypoints_3D_mat(i, 1)/1000.;
+    initial_pt.point.z = keypoints_3D_mat(i, 2)/1000.;
+
+    
+    tf2::doTransform(initial_pt, transformed_pt, optical_to_body_tf);
+
+
+    Keypoint3DMsg keypoint_3D_msg;
+    keypoint_3D_msg.x = transformed_pt.point.x;
+    keypoint_3D_msg.y = transformed_pt.point.y;
+    keypoint_3D_msg.z = transformed_pt.point.z;
     keypoints_3D_msg.keypoints_3D.push_back(keypoint_3D_msg);
   }  
 

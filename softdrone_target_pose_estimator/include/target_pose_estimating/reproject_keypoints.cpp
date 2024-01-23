@@ -41,8 +41,8 @@ reprojectSingleKeypoint(Eigen::Vector2i& keypoint_2D_vec, double z, Eigen::Vecto
     double fy = camera_intrinsics_(1,1);
     double cx = camera_intrinsics_(0,2);
     double cy = camera_intrinsics_(1,2);
-    int px = keypoint_2D_vec(0);
-    int py = keypoint_2D_vec(1);
+    double px = keypoint_2D_vec(0);
+    double py = keypoint_2D_vec(1);
     double x = (px - cx) * z / fx;
     double y = (py - cy) * z / fy;
     keypoint_3D_vec << x, y, z;
