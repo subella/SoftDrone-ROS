@@ -10,9 +10,9 @@ from PIL import Image
 from torch2trt import TRTModule
 
 # TODO(sam): these values should not be hardcoded
-WIDTH = 619
-HEIGHT = 464
-IMAGE_AREA = 288000
+WIDTH = 912
+HEIGHT = 256
+IMAGE_AREA = 234000
 
 
 def load_model_from_json(self, filename, model_weights):
@@ -59,7 +59,7 @@ class KeypointDetector():
         model.load_state_dict(torch.load(filename))
         return model
     
-    def detect_keypoints(self, input_image, from_cv=True, vertical_crop=0.0):
+    def detect_keypoints(self, input_image, from_cv=True, vertical_crop=0.5):
         if from_cv:
             orig_image = Image.fromarray(input_image).convert("RGB")
         else:
@@ -92,7 +92,7 @@ class KeypointDetector():
                     x = (peak[1] - 0.5) + 0.5
                     y = peak[0]
                     x = round(float(orig_image.width * x))
-                    y = round(float(orig_image.height * y))
+                    y = round(float(orig_image.height + orig_image.height * y))
                     kps[j * 3 + 0] = x
                     kps[j * 3 + 1] = y
                     kps[j * 3 + 2] = 2
