@@ -10,9 +10,9 @@ from PIL import Image
 from torch2trt import TRTModule
 
 # TODO(sam): these values should not be hardcoded
-WIDTH = 912
-HEIGHT = 256
-IMAGE_AREA = 234000
+WIDTH = 640
+HEIGHT = 480
+IMAGE_AREA = 307200
 
 
 def load_model_from_json(self, filename, model_weights):
@@ -59,7 +59,7 @@ class KeypointDetector():
         model.load_state_dict(torch.load(filename))
         return model
     
-    def detect_keypoints(self, input_image, from_cv=True, vertical_crop=0.5):
+    def detect_keypoints(self, input_image, from_cv=True, vertical_crop=0.0):
         if from_cv:
             orig_image = Image.fromarray(input_image).convert("RGB")
         else:
@@ -77,9 +77,9 @@ class KeypointDetector():
         quad = get_quad(0.0, (0, 0), 1.0, aspect_ratio=1.0)
         image = transform_image(orig_image, image_shape, quad)
         data = self.transform(image).cuda()[None, ...]
-        cmap = self.model(data)
-        cmap = cmap.cpu()
-        object_counts, objects, peaks = self.parse_objects(cmap, cmap)
+        cmap, paf = self.model(data)
+        cmap, paf = cmap.cpu(), paf.cpu()
+        object_counts, objects, peaks = self.parse_objects(cmap, paf)
         object_counts, objects, peaks = int(object_counts[0]), objects[0], peaks[0]
         kps = [0] * (self.num_keypoints * 3)
         for i in range(object_counts):
@@ -92,7 +92,7 @@ class KeypointDetector():
                     x = (peak[1] - 0.5) + 0.5
                     y = peak[0]
                     x = round(float(orig_image.width * x))
-                    y = round(float(orig_image.height + orig_image.height * y))
+                    y = round(float(orig_image.height * y))
                     kps[j * 3 + 0] = x
                     kps[j * 3 + 1] = y
                     kps[j * 3 + 2] = 2

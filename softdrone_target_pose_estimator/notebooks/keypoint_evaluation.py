@@ -7,9 +7,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.13.7
 #   kernelspec:
-#     display_name: trt_venv
+#     display_name: keypoint_venv
 #     language: python
-#     name: envname
+#     name: keypoint_venv
 # ---
 
 # # Keypoint Evaluation
@@ -45,20 +45,20 @@ sns.set(font_scale=1)
 sns.set_style("ticks",{'axes.grid' : True})
 # -
 
-model = load_model_from_json(10, "/home/subella/src/KeypointTraining/tasks/target_pose/configs/medkit/target_pose.json", "/home/subella/src/KeypointTraining/tasks/target_pose/configs/medkit/target.json.checkpoints/epoch_75.pth")
+model = load_model_from_json(10, "/home/subella/src/KeypointTraining/tasks/obj_000012/obj_000012_pose.json", "/home/subella/src/KeypointTraining/tasks/obj_000012/obj_000012.json.checkpoints/epoch_75.pth")
 opt_model = optimize_model(model)
 
-OPTIMIZED_MODEL = 'medkit_model.pth'
+OPTIMIZED_MODEL = 'cleaner_model.pth'
 torch.save(opt_model.state_dict(), OPTIMIZED_MODEL)
 
-target_name = "medkit"
+target_name = "obj_000012"
 
 # +
 # config_file = "../models/{}_pose.json".format(target_name)
 # model_file = "../models/{}_model.pth".format(target_name)
 # dataset_path = "/home/subella/src/AutomatedAnnotater/Data/"
 
-config_file = "/home/subella/src/KeypointTraining/tasks/target_pose/configs/{}/target_pose.json".format(target_name)
+config_file = "/home/subella/src/KeypointTraining/tasks/obj_000012/{}_pose.json".format(target_name)
 model_file = OPTIMIZED_MODEL
 dataset_path = "/home/subella/src/AutomatedAnnotater/Data/"
 # -
@@ -67,12 +67,12 @@ model = KeypointDetector(config_file, model_file)
 # model = KeypointDetector(config_file, "medkit_softdrone.pth")
 
 # TODO: standardize this.
-training_folder = dataset_path + "CleanerPBR" + "/Datasets/Training/"
+training_folder = dataset_path + "CleanerPBRAugmented" + "/Datasets/Training/"
 validation_folder = dataset_path + "Medkit" + "/Datasets/Validation/"
-test_folder = dataset_path + "CleanerPBR" + "/Datasets/Test/"
+test_folder = dataset_path + "CleanerPBRAugmented" + "/Datasets/Test/"
 
-# working_folder = test_folder
-working_folder = validation_folder
+working_folder = test_folder
+# working_folder = validation_folder
 # working_folder = training_folder
 
 # +
@@ -160,15 +160,21 @@ class SingleEvaluator():
         self.gt_pixel_keypoints = self.get_gt_pixel_keypoints()
         self.est_pixel_keypoints = self.get_est_pixel_keypoints()
         self.gt_world_keypoints = self.get_gt_world_keypoints()
+        print("GT", self.gt_world_keypoints)
         self.est_world_keypoints = self.get_est_world_keypoints()
+        print("EST", self.est_world_keypoints)
 #         self.est_interp_pixel_keypoints, self.interp_cad_keypoints = self.get_interp_keypoints()
         self.est_interp_pixel_keypoints, self.interp_cad_keypoints = self.get_spherical_keypoints()
         self.est_interp_world_keypoints = self.get_est_interp_world_keypoints()
         self.gt_pixel_est_depth_world_keypoints = self.get_gt_pixel_est_depth_world_keypoints()
+        print("GT DEPTH", self.gt_pixel_est_depth_world_keypoints)
         self.gt_teaser_pose = self.get_gt_teaser_pose()
         self.est_teaser_pose = self.get_est_teaser_pose()
+#         print("GT", self.gt_teaser_pose)
+#         print("EST", self.est_teaser_pose)
         self.est_interp_teaser_pose = self.get_est_interp_teaser_pose()
         self.gt_pixel_est_depth_teaser_pose = self.get_gt_pixel_est_depth_teaser_pose()
+#         print("GT DEPTH", self.gt_pixel_est_depth_teaser_pose)
         self.est_all_inliers_teaser_pose = self.get_est_all_inliers_teaser_pose()
         self.distance = np.linalg.norm(self.gt_teaser_pose[:3,3])
         
@@ -533,9 +539,10 @@ class SinglePlotter():
                                fill=(165, 42, 42), width=1)
 
     def plot_gt_teaser_pose(self, scale=100):
+        print(self.metrics["gt_teaser_pose"])
         plot_pose(self.drawing, self.metrics["gt_teaser_pose"], self.K_mat, resize_factor=self.upscale)
     
-    def plot_est_teaser_pose(self):
+    def plot_est_teaser_pose(self, scale=100):
         plot_pose(self.drawing, self.metrics["est_teaser_pose"], self.K_ros, 
                   x_color=(139,0,0), y_color=(0,139,0), z_color=(0,0,139), resize_factor=self.upscale)
   
@@ -547,6 +554,7 @@ class SinglePlotter():
             pass
         
     def plot_gt_pixel_est_depth_teaser_pose(self):
+        print(self.metrics["gt_pixel_est_depth_teaser_pose"])
         plot_pose(self.drawing, self.metrics["gt_pixel_est_depth_teaser_pose"], self.K_ros, 
                   x_color=(139,0,0), y_color=(0,139,0), z_color=(0,0,139), resize_factor=self.upscale)
         
@@ -751,7 +759,7 @@ class MultiPlotter():
         i = 0
         step_size = 1
         while i < len(self.metrics):
-            print("plotting")
+            print("plotting", i)
             
             metric = self.metrics[i]
             fig = plt.figure()
@@ -766,8 +774,8 @@ class MultiPlotter():
 #             plotter.plot_gt_pixel_est_depth_inlier_pixel_keypoints()
 #             plotter.plot_correspondences()
             plotter.plot_gt_teaser_pose()
-#             plotter.plot_est_teaser_pose()
-            plotter.plot_est_interp_teaser_pose()
+            plotter.plot_est_teaser_pose()
+#             plotter.plot_est_interp_teaser_pose()
 #             plotter.plot_gt_pixel_est_depth_teaser_pose()
 #             plotter.plot_cast_pose()
     #             plotter.crop_image()
@@ -901,13 +909,13 @@ multi_plotter.df
 
 # +
 multi_plotter = MultiPlotter(metrics, verbose=False)
-# multi_plotter.plot_sequence()
+multi_plotter.plot_sequence()
 # multi_plotter.plot_multiple()
 
-multi_plotter.plot_keypoint_pixel_error_vs_distance()
-multi_plotter.plot_translation_error_vs_distance()
-multi_plotter.plot_rotation_error_vs_distance()
-multi_plotter.plot_inliers()
+# multi_plotter.plot_keypoint_pixel_error_vs_distance()
+# multi_plotter.plot_translation_error_vs_distance()
+# multi_plotter.plot_rotation_error_vs_distance()
+# multi_plotter.plot_inliers()
 # multi_plotter.plot_composite()
 # -
 
