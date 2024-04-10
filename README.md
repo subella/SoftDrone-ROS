@@ -49,9 +49,9 @@ There is a 3 wire jumper cable that needs to be connected from the xavier to the
 # Flashing the ESCs
 The ESCs we were using shipped with wrong firmware so we need to change it. First, when you are making a new ESC make sure that all the cables match what the ESC before had. The wire colors don't necessarily match the motor phases (the current ESC does match). 
 
-When its done, in the top drawer of my desk theres an Arduino Uno with a brown and red wire. Move the red wire into index 1 (opposite side of the brown wire). The brown wire should never be touched. Plug in the connector to the ESC.
+When its done, in the top drawer of my desk theres an Arduino Uno with a brown and red wire. The brown wire should go to GND on the arduino and the red to pin 11. The brown wire should be on the very left pin of the connector when viewing it where you can see the metal crimps exposed. Move the red wire into index 1 (opposite side of the brown wire). Plug in the white connector to the ESC.
 
-You will need to be on Windows and run BLHeli...
+You will need to be on Windows and run BLHeliSuite32. Click read setup and follow the instructions. If it looks good go to ESC flash tab and flash the ESC to version 3.9. Disconnect and power off ESC. Then move the red wire to the next pin index (its a 4 in 1 ESC and each pin writes to a different ESC). Repeat the process until all 4 ESCs are flashed.
 # Flying the Drone
 
 ## Mocap
